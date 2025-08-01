@@ -12,7 +12,7 @@ export class ScamformController {
         @Query('limit') limit: string = '10',
         @Query('search') search: string = ''
     ) {
-        return this.scamformService.getAllScamFormsWithFileUrls(
+        return this.scamformService.findAll(
             parseInt(page),
             parseInt(limit),
             search

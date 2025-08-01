@@ -1,33 +1,34 @@
 import { UserCheckMiddleware } from "@/auth/strategies/telegram.strategy";
+import { DatabaseService } from "@/database/database.service";
 import { UseGuards } from "@nestjs/common";
 import { Command, Ctx, Update } from "nestjs-telegraf";
-import { TelegramUpdate } from "../telegram.update";
 import { Context } from "telegraf";
 
 @UseGuards(UserCheckMiddleware)
 @Update()
 export class GarantsUpdate {
+    constructor(
+        private readonly database: DatabaseService
+    ) { }
 
     @Command('garants')
     async showGarants(@Ctx() ctx: Context) {
-
-        ctx.reply(
+        const garants = await this.database.garants.findMany()
+        
+        if (garants.length === 0) {
+            ctx.reply(
             `
-        ✅ Список надежных гарантов:
+            ❌ Список гарантов пуст.
+                
+В данный момент нет доступных гарантов.
+            `)
+            return
+        }
+        
+        ctx.reply(`
+            ✅ Список надежных гарантов:
 
-• @gid_garant
-• @aizek
-• @bIackkro
-• @hooligan154
-• @M_Brightside
-• @quechulo_garant
-• @garant_heisenberg
-• @Alexander_Vart1
-• @el_capitano8
-• @A_preLskiy
-• @ladesov
-• @hamka`
-        )
-
+${garants.map((g) => `• @${g.username}`).join('\n')}
+        `)
     }
 }

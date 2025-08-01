@@ -2,11 +2,17 @@ import { ScamformService } from "@/scamform/scamform.service";
 import { Injectable } from "@nestjs/common";
 import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
-import { SCENES } from "../constants/telegram.constants";
+import { BOT_NAME, SCENES } from "../constants/telegram.constants";
+
+export interface IScammerData {
+    username?: string
+    telegramId?: string
+
+}
 
 interface IScammerFormData {
     step: number;
-    username: string | null;
+    scammerData: IScammerData;
     description: string | null;
     media: Array<{ type: string; file_id: string }>;
     lastInstructionMessageId?: number;
@@ -23,14 +29,14 @@ export class ScammerFrom {
 
     constructor(
         private readonly scamformService: ScamformService
-    ){}
+    ) { }
 
 
     @SceneEnter()
     async onSceneEnter(@Ctx() ctx: ScammerFormSession) {
         ctx.session.scamForm = {
             step: 1,
-            username: null,
+            scammerData: {},
             description: null,
             media: [],
             processedMediaGroups: new Set()
@@ -95,12 +101,27 @@ export class ScammerFrom {
 
         await ctx.replyWithMediaGroup(mediaGroup);
 
-        await ctx.reply(`💎 **GID Anti-Scam Bot**\n\n**Доказательства мошенничества**\n\n` +
-                `Жалоба на пользователя: ${form.username} [${form.username.replace(/[^\d]/g, '') || 'ID не указан'}]\n\n` +
-                `📱 Вечная ссылка Android\n` +
-                `🍎 Вечная ссылка Apple\n\n` +
-                `**Описание ситуации от пострадавшего:** ${form.description}\n\n` +
-                `✅ В таком виде ваша жалоба будет отправлена модерации бота. Если вас все устраивает, не забудьте нажать на кнопку «Подтверждаю отправление»`, {
+        const { username, telegramId } = form.scammerData
+        
+        let userInfo = '';
+        if (username && telegramId) {
+            userInfo = `@${username}
+            [ID: ${telegramId}]`;
+        } else if (username) {
+            userInfo = `@${username}
+            [ID: не указан]`;
+        } else if (telegramId) {
+            userInfo = `username не указан
+            [ID: ${telegramId}]`;
+        } else {
+            userInfo = 'Информация не указана';
+        }
+        
+        await ctx.reply(`💎 **@${BOT_NAME}**\n\n**Доказательства мошенничества**\n\n` +
+            `Жалоба на пользователя:
+            ${userInfo}\n\n` +
+            `**Описание ситуации от пострадавшего:** ${form.description}\n\n` +
+            `✅ В таком виде ваша жалоба будет отправлена модерации бота. Если вас все устраивает, не забудьте нажать на кнопку «Подтверждаю отправление»`, {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [
@@ -155,10 +176,17 @@ export class ScammerFrom {
             {
                 reply_markup: {
                     keyboard: [
-                        [{ text: '👉 Выбрать мошенника' }],
+                        [{
+                            text: '👉 Выбрать мошенника',
+                            request_user: {
+                                request_id: 1,
+                                user_is_bot: false
+                            }
+                        } as any],
                         [{ text: '🔴 Отменить жалобу' }]
                     ],
-                    resize_keyboard: true
+                    resize_keyboard: true,
+                    one_time_keyboard: true
                 }
             }
         );
@@ -166,23 +194,10 @@ export class ScammerFrom {
 
     @Hears('👉 Выбрать мошенника')
     async onSelectScammer(@Ctx() ctx: ScammerFormSession) {
-        await ctx.reply('Выберите пользователя:', {
-            reply_markup: {
-                keyboard: [
-                    [{
-                        text: '🔍 Выбрать пользователя',
-                        request_user: {
-                            request_id: 1,
-                            user_is_bot: false
-                        }
-                    } as any]
-                ],
-                resize_keyboard: true,
-                one_time_keyboard: true
-            }
-        });
+        // Эта кнопка уже содержит request_user, поэтому просто игнорируем нажатие
+        // и ждем события user_shared
+        return;
     }
-
 
 
     @On('callback_query')
@@ -196,10 +211,18 @@ export class ScammerFrom {
                 {
                     reply_markup: {
                         keyboard: [
-                            [{ text: '👉 Выбрать мошенника' }],
+                            [{
+                                text: '👉 Выбрать мошенника',
+                                request_user: {
+                                    request_id: 1,
+                                    user_is_bot: false
+                                }
+                            } as any],
                             [{ text: '🔴 Отменить жалобу' }]
                         ],
-                        resize_keyboard: true
+                        resize_keyboard: true,
+                        one_time_keyboard: true
+
                     }
                 }
             );
@@ -209,28 +232,28 @@ export class ScammerFrom {
             console.log(ctx.session.scamForm)
 
             await this.scamformService.create({
-                username: ctx.session.scamForm.username,
+                scammerData: ctx.session.scamForm.scammerData,
                 description: ctx.session.scamForm.description,
                 media: ctx.session.scamForm.media,
-                telegramId: ctx.from?.id
+                userTelegramId: String(ctx.from?.id)
             })
-            
+
             await ctx.reply('✅ Жалоба успешно отправлена! Спасибо за вашу бдительность.', {
                 reply_markup: {
                     remove_keyboard: true
                 }
             });
-            
+
             ctx.session.scamForm = undefined;
             await ctx.scene.leave();
         } else if (callbackData === 'restart_form') {
             await ctx.answerCbQuery();
-            
+
             // Начинаем форму заново
-            ctx.session.scamForm = { 
-                step: 1, 
-                username: null, 
-                description: null, 
+            ctx.session.scamForm = {
+                step: 1,
+                scammerData: {},
+                description: null,
                 media: [],
                 processedMediaGroups: new Set()
             };
@@ -256,13 +279,20 @@ export class ScammerFrom {
     async onText(@Ctx() ctx: ScammerFormSession) {
         const form = ctx.session.scamForm;
         if (!form) return;
-        const text = (ctx.message as any)?.text;
+        const text: string = (ctx.message as any)?.text;
         if (form.step === 1) {
             if (!text || (!text.startsWith('@') && !/\d+/.test(text))) {
                 await ctx.reply('❗️ Пожалуйста, отправьте корректный юзернейм или Telegram ID.');
                 return;
             }
-            form.username = text;
+
+    
+            if (text.startsWith('@')) {
+                form.scammerData.username = text.replace('@', '');
+            } else {
+                form.scammerData.telegramId = text;
+            }
+
             form.step = 2;
             await ctx.reply(
                 '⚡️ Оперативная подача жалоб.\n\n2 – Отправьте описание мошенничества (Ограничение 500 символов)',
@@ -303,6 +333,28 @@ export class ScammerFrom {
     async onMessage(@Ctx() ctx: ScammerFormSession) {
         const form = ctx.session.scamForm;
         if (!form) return;
+
+        // Обработка выбранного пользователя (шаг 1)
+        if (form.step === 1) {
+            const userShared = (ctx.message as any)?.user_shared;
+            if (userShared) {
+                console.log('Выбран пользователь:', {
+                    user_id: userShared.user_id,
+                    request_id: userShared.request_id
+                });
+
+                console.log(userShared)
+
+                form.scammerData.telegramId = userShared.user_id.toString();
+                form.step = 2;
+
+                await ctx.reply(
+                    `✅ Пользователь выбран:\n\nID: ${userShared.user_id}\n\n⚡️ Оперативная подача жалоб.\n\n2 – Отправьте описание мошенничества (Ограничение 500 символов)`,
+                    { reply_markup: { keyboard: [[{ text: '🔴 Отменить жалобу' }]], resize_keyboard: true } }
+                );
+                return;
+            }
+        }
 
         // Обработка пересланных сообщений (шаг 1)
         // if (form.step === 1) {

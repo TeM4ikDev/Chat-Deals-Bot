@@ -3,10 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Context, Scenes } from 'telegraf';
 import { IMAGE_PATH } from './constants/telegram.constants';
 import { TelegramService } from './telegram.service';
-import { Action, Ctx } from 'nestjs-telegraf';
-import { Language } from './decorators/language.decorator';
-import { LocalizationService } from './services/localization.service';
-
+import { InlineQuery as TgInlineQuery, InlineQueryResult } from 'telegraf/typings/core/types/typegram';
+import { Ctx, InlineQuery, Update } from 'nestjs-telegraf';
 
 export abstract class TelegramUpdate {
   protected image: any;
@@ -27,6 +25,9 @@ export abstract class TelegramUpdate {
       console.error('Error deleting message:', error);
     }
   }
+
+
+ 
 }
 
 

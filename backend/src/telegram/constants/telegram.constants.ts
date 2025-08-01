@@ -6,6 +6,6 @@ export enum SCENES {
  SCAMMER_FORM = 'SCAMMERFORM'
 }
 
-export const BOT_NAME = 'BloomGiftRobot';
+export const BOT_NAME = 'svdbasebot';
 export const SUPPORT = ''
 

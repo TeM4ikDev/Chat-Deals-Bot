@@ -1,8 +1,11 @@
+import { Pagination as ListPagination } from "@/components/ui/Pagination"
 import { AdminService } from "@/services/admin.service"
 import { useStore } from "@/store/root.store"
+import { IPagination } from "@/types"
 import { onRequest } from "@/utils/handleReq"
-import { AlertTriangle, ChevronLeft, ChevronRight, Eye, Image, Trash2, User, Video } from "lucide-react"
+import { AlertTriangle, Eye, Image, User, Video } from "lucide-react"
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "react-toastify"
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -13,9 +16,6 @@ import { PageContainer } from "../../layout/PageContainer"
 import { Block } from "../../ui/Block"
 import { Button } from "../../ui/Button"
 import { Modal } from "../../ui/Modal"
-import { Link } from "react-router-dom"
-import { Pagination as ListPagination } from "@/components/ui/Pagination"
-import { IPagination } from "@/types"
 
 interface IMedia {
     id: string
@@ -28,7 +28,8 @@ interface IScamForm {
     id: string
     description: string
     media: IMedia[]
-    username: string
+    scammerUsername?: string
+    scammerTelegramId?: string
     createdAt: string
     status: 'pending' | 'reviewed' | 'resolved'
 }
@@ -113,13 +114,13 @@ export const ScamForms: React.FC = () => {
 
                     {scamForms.map((form) => (
 
-                        <Block key={form.id} icons={[<User />]} title={`Жалоба на @${form.username.replace('@', '')}`}>
+                        <Block key={form.id} icons={[<User />]} title={`Жалоба на ${form.scammerUsername ? `@${form.scammerUsername.replace('@', '')}` : form.scammerTelegramId || 'Неизвестный пользователь'}`}>
                             <div className="flex flex-row">
                                 <div className="flex flex-col flex-1">
 
                                     <p className="text-gray-300 text-sm mb-2">
                                         {form.description.length > 150
-                                            ? `${form.description.substring(0, 150)}...`
+                                            ? `${form.description.substring(0, 100)}...`
                                             : form.description
                                         }
                                     </p>
@@ -164,9 +165,17 @@ export const ScamForms: React.FC = () => {
 
 
             <Modal
-                title={<Link className="text-blue-500" to={`https://t.me/${selectedForm?.username.replace('@', '')}`}>
-                    Жалоба на @{selectedForm?.username.replace('@', '')}
-                </Link>}
+                title={
+                    selectedForm?.scammerUsername ? (
+                        <Link className="text-blue-500" to={`https://t.me/${selectedForm.scammerUsername.replace('@', '')}`}>
+                            Жалоба на @{selectedForm.scammerUsername.replace('@', '')}
+                        </Link>
+                    ) : (
+                        <span className="text-white">
+                            Жалоба на {selectedForm?.scammerTelegramId || 'Неизвестный пользователь'}
+                        </span>
+                    )
+                }
                 isOpen={showModal}
                 setIsOpen={setShowModal}
             >
@@ -178,7 +187,28 @@ export const ScamForms: React.FC = () => {
                         </div>
 
                         <Block>
-                            {selectedForm.description}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-400">Username:</span>
+                                    <span className="text-white font-medium">
+                                        {selectedForm.scammerUsername ? `@${selectedForm.scammerUsername.replace('@', '')}` : 'Не указан'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-400">Telegram ID:</span>
+                                    <span className="text-white font-medium">
+                                        {selectedForm.scammerTelegramId || 'Не указан'}
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        </Block>
+
+                        <Block>
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-gray-400">Описание жалобы:</h4>
+                                <p className="text-white leading-relaxed">{selectedForm.description}</p>
+                            </div>
                         </Block>
 
 
@@ -222,7 +252,7 @@ export const ScamForms: React.FC = () => {
 
                                                     </div>
 
-                                                    <div className="relative py-5">
+                                                    <div className="flex justify-center relative py-5">
                                                         {media.type === 'photo' ? (
                                                             <img
                                                                 src={`http://localhost:8080/api/scamform/file/${media.fileId}`}
@@ -235,23 +265,11 @@ export const ScamForms: React.FC = () => {
                                                                 controls
                                                             />
                                                         )}
-
-
                                                     </div>
-
-
                                                 </Block>
                                             </SwiperSlide>
                                         ))}
                                     </SwiperReact>
-
-                                    {/* Кастомные стрелочки
-                                    <button className="swiper-button-prev absolute left-2 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors">
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <button className="swiper-button-next absolute right-2 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors">
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button> */}
                                 </div>
                             </div>
                         )}

@@ -21,7 +21,7 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     ConfigModule,
     DatabaseModule,
     JwtModule,
-    ScamformModule,
+    forwardRef(() => ScamformModule),
     forwardRef(() => UsersModule),
     TelegrafModule.forRootAsync({
       imports: [ConfigModule, forwardRef(() => UsersModule)],

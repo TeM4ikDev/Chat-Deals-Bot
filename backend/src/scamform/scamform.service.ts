@@ -1,54 +1,43 @@
 import { DatabaseService } from '@/database/database.service';
+import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
+import { UsersService } from '@/users/users.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 interface CreateScamFormData {
-  username: string;
+  scammerData: IScammerData;
   description: string;
   media: Array<{ type: string; file_id: string }>;
-  telegramId?: number;
+
+  userTelegramId: string
+
 }
 
-interface TelegramFile {
-  file_id: string;
-  file_unique_id: string;
-  file_size?: number;
-  file_path?: string;
-}
 
 @Injectable()
 export class ScamformService {
   constructor(
     private readonly database: DatabaseService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService
   ) { }
 
   async create(data: CreateScamFormData) {
-    let userId: string | null = null;
 
-    if (data.telegramId) {
-      const user = await this.database.user.findUnique({
-        where: { telegramId: String(data.telegramId) }
-      });
-
-      if (!user) {
-        const newUser = await this.database.user.create({
-          data: {
-            telegramId: String(data.telegramId),
-            role: 'USER'
-          }
-        });
-        userId = newUser.id;
-      } else {
-        userId = user.id;
-      }
+    if (!data.scammerData.username && !data.scammerData.telegramId) {
+      throw new Error('Необходимо указать либо username, либо telegramId мошенника');
     }
+
+    const user = await this.usersService.findUserByTelegramId(data.userTelegramId)
+
 
     const scamForm = await this.database.scamForm.create({
       data: {
-        username: data.username,
+        scammerUsername: data.scammerData.username,
+        scammerTelegramId: data.scammerData.telegramId,
+
         description: data.description,
-        userId: userId,
+        userId: user.id,
         media: {
           create: data.media.map(media => ({
             type: media.type,
@@ -58,17 +47,7 @@ export class ScamformService {
       },
       include: {
         media: true,
-        user: {
-          select: {
-            id: true,
-            telegramId: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            createdAt: true
-          }
-        }
+        user: true
       }
     });
 
@@ -151,20 +130,15 @@ export class ScamformService {
         throw new Error('BOT_TOKEN not configured');
       }
 
-      console.log('Getting file URL for fileId:', fileId);
       const response = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
       const data = await response.json();
 
-      console.log('Telegram API response:', data);
-
       if (data.ok && data.result.file_path) {
         const fileUrl = `https://api.telegram.org/file/bot${botToken}/${data.result.file_path}`;
-        console.log('Generated file URL:', fileUrl);
         return fileUrl;
       } else {
         console.log('File path not available or API error:', data);
       }
-
       return null;
     } catch (error) {
       console.error('Error getting file URL:', error);
