@@ -11,6 +11,8 @@ import { UsersShow } from './components/subpages/admin/usersShow';
 import { UserDetails } from './components/subpages/admin/userDetails';
 import { UserRoles } from './types/auth';
 import { Garants } from './components/subpages/admin/garants';
+import { Scale } from 'lucide-react';
+import { ScamForms } from './components/subpages/admin/scamforms';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -67,6 +69,10 @@ const ProtectedRoutes = observer(() => {
         <Route path="users/:id" element={<UserDetails />} />
 
         <Route path="garants" element={<Garants />} />
+
+        <Route path="scamforms" element={<ScamForms />} />
+
+        
       </Route>
 
       <Route index element={<MainPage />} />

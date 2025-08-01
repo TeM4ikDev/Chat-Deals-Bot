@@ -9,13 +9,9 @@ import { toast } from "react-toastify"
 import { PageContainer } from "../../layout/PageContainer"
 import { Block } from "../../ui/Block"
 import { Input } from "../../ui/Input"
+import { IPagination } from "@/types"
 
-interface IPagination {
-  totalCount: number
-  maxPage: number
-  currentPage: number
-  limit: number
-}
+
 
 interface IUsersList {
   users: IUser[]

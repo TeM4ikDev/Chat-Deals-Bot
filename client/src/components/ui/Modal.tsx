@@ -2,9 +2,10 @@ import { Dialog, DialogTitle } from '@headlessui/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from './Button';
+import { ReactNode } from 'react';
 
 interface Props {
-  title: string;
+  title: string | ReactNode;
   buttonFC?: () => void;
   content?: string;
   buttonCloseText?: string;

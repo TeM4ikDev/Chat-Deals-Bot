@@ -21,6 +21,13 @@ declare global {
     }
 }
 
+export interface IPagination {
+    totalCount: number
+    maxPage: number
+    currentPage: number
+    limit: number
+  }
+
 export const appName = "SVD SCAM BASE BOT"
 
 export const TelegramBot: string = "tem4ik_ru_bot"
