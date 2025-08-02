@@ -7,16 +7,31 @@ export class ScamformController {
     constructor(private readonly scamformService: ScamformService) {}
 
     @Get()
-    async findAll(
+    async findAllScamforms(
         @Query('page') page: string = '1',
         @Query('limit') limit: string = '10',
         @Query('search') search: string = ''
     ) {
-        return this.scamformService.findAll(
-            parseInt(page),
-            parseInt(limit),
-            search
-        );
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+
+        return await this.scamformService.findAll(pageNum, limitNum, search)
+    }
+
+
+    @Get('/users/:data')
+    async getAllUserScamForms(
+      @Query('page') page: string = '1',
+      @Query('limit') limit: string = '10',
+
+      @Param('data') data: string
+    ){
+
+      const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+
+        return await this.scamformService.findAll(pageNum, limitNum, data)
+
     }
 
 

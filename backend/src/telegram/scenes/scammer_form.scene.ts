@@ -1,4 +1,5 @@
 import { ScamformService } from "@/scamform/scamform.service";
+import { TelegramService } from "@/telegram/telegram.service";
 import { Injectable } from "@nestjs/common";
 import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
@@ -28,7 +29,8 @@ type ScammerFormSession = Scenes.SceneContext & {
 export class ScammerFrom {
 
     constructor(
-        private readonly scamformService: ScamformService
+        private readonly scamformService: ScamformService,
+        private readonly telegramService: TelegramService
     ) { }
 
 
@@ -231,12 +233,54 @@ export class ScammerFrom {
 
             console.log(ctx.session.scamForm)
 
-            await this.scamformService.create({
+            // Создаем жалобу в базе данных
+            const scamForm = await this.scamformService.create({
                 scammerData: ctx.session.scamForm.scammerData,
                 description: ctx.session.scamForm.description,
                 media: ctx.session.scamForm.media,
                 userTelegramId: String(ctx.from?.id)
             })
+
+            // Отправляем в канал
+            const channelId = '@qyqly'; // Замените на ваш канал
+            const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
+            
+            // Формируем информацию о мошеннике как в пользовательском сообщении
+            let scammerInfo = '';
+            if (ctx.session.scamForm.scammerData.username && ctx.session.scamForm.scammerData.telegramId) {
+                scammerInfo = `@${ctx.session.scamForm.scammerData.username}\n[ID: ${ctx.session.scamForm.scammerData.telegramId}]`;
+            } else if (ctx.session.scamForm.scammerData.username) {
+                scammerInfo = `@${ctx.session.scamForm.scammerData.username}\n[ID: не указан]`;
+            } else if (ctx.session.scamForm.scammerData.telegramId) {
+                scammerInfo = `username не указан\n[ID: ${ctx.session.scamForm.scammerData.telegramId}]`;
+            } else {
+                scammerInfo = 'Информация не указана';
+            }
+            
+            const channelMessage = `💎 **@${BOT_NAME}**\n\n**Доказательства мошенничества**\n\n` +
+                `Жалоба на пользователя:\n${scammerInfo}\n\n` +
+                `**Описание ситуации от пострадавшего:** ${ctx.session.scamForm.description}\n\n` +
+                `👤 **Отправитель:** ${userInfo}`;
+
+            try {
+                // Если есть медиафайлы, отправляем с медиа
+                if (ctx.session.scamForm.media.length > 0) {
+                    const mediaGroup = ctx.session.scamForm.media.slice(0, 10).map((media, index) => ({
+                        type: media.type === 'photo' ? 'photo' : 'video',
+                        media: media.file_id,
+                        ...(index === 0 && { caption: channelMessage, parse_mode: 'Markdown' })
+                    }));
+
+                    await this.telegramService.sendMediaGroupToChannel(channelId, mediaGroup);
+                } else {
+                    // Если нет медиа, отправляем только текст
+                    await this.telegramService.sendMessageToChannel(channelId, channelMessage, {
+                        parse_mode: 'Markdown'
+                    });
+                }
+            } catch (error) {
+                console.error('Error sending to channel:', error);
+            }
 
             await ctx.reply('✅ Жалоба успешно отправлена! Спасибо за вашу бдительность.', {
                 reply_markup: {

@@ -76,46 +76,11 @@ export const Header: React.FC = observer(() => {
         <header
             className={`fixed top-0 left-0 right-0 w-full max-w-full z-50 transition-all duration-300 bg-slate-800/60 backdrop-blur-lg`}
         >
-            <div className="max-w-7xl mx-auto py-2 px-2 sm:px-3 lg:px-8">
-                <div className="flex justify-between items-center md:h-20">
+            <div className="max-w-7xl mx-auto py-1 px-2 sm:px-3 lg:px-8">
+                <div className="flex justify-between items-center md:h-14">
                     <div className="flex-shrink-0">
-                        <Logo className="hover:opacity-80 transition-opacity duration-300 w-auto h-8 md:h-10" />
+                        <Logo className="hover:opacity-80 transition-opacity duration-300 w-auto h-6 md:h-8" />
                     </div>
-
-                    <div className="hidden md:block flex-1 justify-center ">
-                        <nav className="flex items-center justify-end gap-2 overflow-x-auto scrollbar-none p-1">
-                            {navLinks.map(route => {
-                                const hasSubRoutes = !!getSubRoutes(route.key).length;
-                                return (
-                                    <div
-                                        key={route.key}
-                                        id={`nav-item-${route.key}`}
-                                        className="relative shrink-0 cursor-pointer"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleBlockClick(e, route.key, route.path, hasSubRoutes);
-                                        }}
-                                    >
-                                        <Block
-                                            variant="transparent"
-                                            canCollapse={hasSubRoutes}
-                                            isCollapsedInitially
-                                            className="h-auto w-auto text-center"
-                                            titleCenter
-                                            title={
-                                                <div className={`flex !items-center !justify-center m-auto text-lg !text-center font-bold ${route.path === location.pathname ? 'text-cyan-500' : 'text-gray-200 hover:text-cyan-400'}`}> 
-                                                    <p className="w-full text-center">{route.label}</p>
-                                                </div>
-                                            }
-                                        >
-                                            {null}
-                                        </Block>
-                                    </div>
-                                );
-                            })}
-                        </nav>
-                    </div>
-
                 
                     <Sidebar />
                 </div>

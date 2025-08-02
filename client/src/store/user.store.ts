@@ -1,105 +1,88 @@
 import { AuthService } from "@/services/auth.service";
 import { ITelegramUser, IUser } from "@/types/auth";
 import { onRequest } from "@/utils/handleReq";
-import { getDataFromLocalStorage, removeDataFromLocalStorage, removeTokenFromLocalStorage, setDataToLocalStorage, setTokenToLocalStorage } from "@/utils/localstorage";
+import { setTokenToLocalStorage } from "@/utils/localstorage";
 import { makeAutoObservable, runInAction } from "mobx";
-import { toast } from "react-toastify";
+import { fromPromise } from "mobx-utils";
+
+const mockData = {
+    id: 2027571609,
+    first_name: "Artem",
+    last_name: "",
+    username: "TeM4ik20",
+    language_code: "ru",
+    is_premium: true,
+    allows_write_to_pm: true,
+    photo_url: "https://t.me/i/userpic/320/kf7ulebcULGdGk8Fpe4W3PkcpX2DxWO1rIHZdwT60vM.svg"
+};
 
 class UserStore {
     user: IUser | null = null;
-    isAuth = false;
-    isLoading = false;
-    updateTrigger = false;
+    isAuth: boolean = false;
+    isLoading: boolean = true;
+    updateTrigger: boolean = false;
 
     constructor() {
         makeAutoObservable(this);
         this.checkAuth();
     }
 
-    checkAuth = async () => {
+    checkAuth = () => {
         this.isLoading = true;
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const dataParam = urlParams.get('data');
-    
-            let userData: ITelegramUser | null = null;
-    
-            if (dataParam) {
-                try {
-                    const decodedData = decodeURIComponent(dataParam);
-                    userData = JSON.parse(decodedData);
-    
-                    if (!userData || typeof userData !== 'object' || !userData.id) {
-                        throw new Error('Неверная структура данных пользователя');
+        const authPromise = fromPromise(this.getAuthPromise());
+
+        authPromise.then(
+            (data) => {
+                runInAction(() => {
+                    if (data?.user) {
+                        setTokenToLocalStorage(data.token);
+                        this.login(data.user);
+                    } else {
+                        this.logout();
                     }
-    
-                    setDataToLocalStorage('userData', userData);
-    
-                    const newUrl = window.location.pathname + window.location.hash;
-                    window.history.replaceState({}, '', newUrl);
-    
-                    toast.success('Данные пользователя успешно получены');
-                } catch (error) {
-                    console.error('Ошибка при парсинге данных из URL:', error);
-                    toast.error('Неверный формат данных в URL');
-                    removeDataFromLocalStorage('userData');
-                }
-            } else {
-                userData = getDataFromLocalStorage('userData');
+                });
+            },
+            (error) => {
+                console.error("Ошибка при получении профиля:", error);
+                runInAction(() => {
+                    this.logout();
+                });
             }
-    
-    
-            if (userData) {
-                const data: { token: string, user: IUser } = await onRequest(AuthService.login(userData));
-    
-                console.log(data)
-    
-                setTokenToLocalStorage(data.token);
-                this.login(data);
+        );
+    };
+
+    getAuthPromise(): Promise<{ token: string, user: IUser }> {
+        if (import.meta.env.DEV) {
+            return onRequest(AuthService.login(mockData));
+        } else {
+            const newUserData = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            if (newUserData) {
+                return onRequest(AuthService.login(newUserData as ITelegramUser));
             } else {
-                toast.warning('Нет данных пользователя');
-                this.logout();
+                return Promise.reject('no telegram data');
             }
-    
-        } catch (error) {
-            console.error("Ошибка при получении профиля:", error);
-            runInAction(() => {
-                this.logout();
-                this.isLoading = false;
-            });
         }
-    };
+    }
 
-    setUser = (user: IUser) => {
-        this.user = user;
-    };
+    login(userData: IUser) {
+        this.user = userData;
+        this.isAuth = true;
+        this.isLoading = false;
+    }
 
-    login = (userData: { user: IUser; token: string }) => {
-        setTokenToLocalStorage(userData.token);
-        runInAction(() => {
-            this.setUser(userData.user);
-            this.isAuth = true;
-            this.isLoading = false;
-        });
-    };
+    logout() {
+        this.isAuth = false;
+        this.user = null;
+        this.isLoading = false;
+    }
 
-
-    logout = () => {
-        runInAction(() => {
-            removeTokenFromLocalStorage();
-            this.isAuth = false;
-            this.user = null;
-            this.isLoading = false;
-        });
-    };
-
-    setLoading = (loading: boolean) => {
+    setLoading(loading: boolean) {
         this.isLoading = loading;
-    };
+    }
 
-    updateData = () => {
+    updateData() {
         this.updateTrigger = !this.updateTrigger;
-    };
+    }
 
     get userRole() {
         return this.user?.role;

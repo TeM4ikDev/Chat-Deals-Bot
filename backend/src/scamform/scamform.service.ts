@@ -59,34 +59,25 @@ export class ScamformService {
     const where = search
       ? {
         OR: [
-          { username: { contains: search } },
-          { description: { contains: search } }
+          { scammerUsername: { contains: search } },
+          { scammerTelegramId: { contains: search } },
         ]
       }
       : undefined;
 
     const [scamForms, totalCount] = await Promise.all([
       this.database.scamForm.findMany({
+        where,
         skip,
         take: limit,
         include: {
           media: true,
-          user: {
-            select: {
-              id: true,
-              telegramId: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-              createdAt: true
-            }
-          }
+          user: true
         },
         orderBy: {
           createdAt: 'desc'
         },
-        where,
+
       }),
       this.database.scamForm.count({ where }),
     ]);
@@ -102,6 +93,41 @@ export class ScamformService {
       },
     };
   }
+
+  // async findAllUserScamForms(page: number = 1, limit: number = 10, userData: string) {
+  //   const skip = (page - 1) * limit;
+   
+  //   const [scamForms, totalCount] = await Promise.all([
+  //     this.database.scamForm.findMany({
+  //       where,
+  //       skip,
+  //       take: limit,
+  //       include: {
+  //         media: true,
+  //         user: true
+  //       },
+  //       orderBy: {
+  //         createdAt: 'desc'
+  //       },
+
+  //     }),
+  //     this.database.scamForm.count({ where }),
+  //   ]);
+
+  //   const maxPage = Math.ceil(totalCount / limit);
+  //   return {
+  //     scamForms,
+  //     pagination: {
+  //       totalCount,
+  //       maxPage,
+  //       currentPage: page,
+  //       limit,
+  //     },
+  //   };
+  // }
+  
+
+
 
   async findById(id: string) {
     return this.database.scamForm.findUnique({
@@ -121,6 +147,46 @@ export class ScamformService {
         }
       }
     });
+  }
+
+  async getScammers(search: string = '') {
+    const where = search
+      ? {
+        OR: [
+          { scammerUsername: { contains: search } },
+          { scammerTelegramId: { contains: search } }
+        ]
+      }
+      : undefined;
+
+    const scamForms = await this.database.scamForm.findMany({
+      where,
+
+      select: {
+        scammerUsername: true,
+        scammerTelegramId: true,
+      }
+    });
+
+    const scammersMap = new Map<string, any>();
+
+    scamForms.forEach(form => {
+      const key = form.scammerUsername || form.scammerTelegramId || 'unknown';
+
+      if (!scammersMap.has(key)) {
+        scammersMap.set(key, {
+          username: form.scammerUsername,
+          telegramId: form.scammerTelegramId,
+          count: 0
+        });
+      }
+
+      scammersMap.get(key).count++;
+    });
+
+    const scammers = Array.from(scammersMap.values());
+
+    return scammers;
   }
 
   async getFileUrl(fileId: string): Promise<string | null> {

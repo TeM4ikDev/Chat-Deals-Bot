@@ -1,5 +1,4 @@
 import { AxiosInstance } from "axios";
-import { toast } from "react-toastify";
 import { ITelegramUser } from "./auth";
 
 declare global {
@@ -8,6 +7,7 @@ declare global {
             WebApp: {
                 initDataUnsafe: {
                     user?: ITelegramUser;
+                    start_param?: string;
                 };
                 sendData: (data: string) => void;
                 close: () => void;
@@ -28,7 +28,7 @@ export interface IPagination {
     limit: number
   }
 
-export const appName = "SVD SCAM BASE BOT"
+export const appName = "SVD BASE BOT"
 
 export const TelegramBot: string = "tem4ik_ru_bot"
 

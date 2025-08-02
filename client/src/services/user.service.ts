@@ -23,6 +23,11 @@ export class userService implements ApiRoute {
     }
 
 
+    async getMediaData(fileId: string){
+        return this.instance.get(`scamform/file/${fileId}`)
+    }
+
+
 
 
 

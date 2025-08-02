@@ -74,8 +74,8 @@
     "isSubRoute": false
   },
   {
-    "key": "ADMIN_SCAMFORMS",
-    "path": "/admin/scamforms",
+    "key": "SCAMFORMS",
+    "path": "/scamforms",
     "showInHeader": false,
     "label": "Жалобы",
     "icon": NotebookPen,

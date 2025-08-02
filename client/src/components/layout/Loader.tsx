@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { PageContainer } from './PageContainer';
 
 export const Loader = () => (
-    <PageContainer className="flex relative justify-center items-center w-full min-h-[200px]">
+    <PageContainer className="flex relative justify-center h-screen items-center w-full min-h-[200px]">
+        {/* <></> */}
         <div className="flex flex-col gap-2 items-center">
             <div className="flex gap-2">
                 {[0, 1, 2].map(i => (

@@ -19,19 +19,7 @@ export class ScamformController {
         private readonly scamformService: ScamformService
     ) { }
 
-    @Get()
-    async findAllScamforms(
-        @Query('page') page: string = '1',
-        @Query('limit') limit: string = '10',
-        @Query('search') search: string = ''
-    ) {
-        const pageNum = parseInt(page, 10) || 1;
-        const limitNum = parseInt(limit, 10) || 10;
-
-
-        return await this.scamformService.findAll(pageNum, limitNum, search)
-    }
-
+   
     // @Post()
     // async addGarant(@Body() body: { username: string }) {
     //     console.log(body)

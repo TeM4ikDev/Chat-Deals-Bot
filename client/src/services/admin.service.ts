@@ -20,8 +20,6 @@ export class adminService implements ApiRoute {
     }
 
 
-
-
     updateUserRole = async (userId: string, role: UserRoles) => {
         const { data } = await this.instance.patch(`${this.baseUrl.users.updateRole}`, { userId, role })
         return data
@@ -36,8 +34,6 @@ export class adminService implements ApiRoute {
         const { data } = await this.instance.patch(`${this.baseUrl.users.updateBanned}`, { userId, banned })
         return data
     }
-
-
 
 
 
@@ -57,14 +53,7 @@ export class adminService implements ApiRoute {
         return data
     }
 
-    getAllScamForms = async (params: any) => {
-        const { page = 1, limit = 10, search = '' } = params;
-        const query = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
-        const { data } = await this.instance.get(`${this.baseUrl.scamforms.main}?${query}`)
-        return data
-    }
-
-
+   
 
 
 

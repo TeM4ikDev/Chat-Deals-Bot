@@ -21,16 +21,18 @@ class ApiConfig {
             main: '/garants'
         },
 
-        scamforms:{
-            main: 'scamforms'
-        },
-
         users: {
             main: "users",
             updateRole: "users/update-role",
             updateBanned: "users/update-banned",
         },
      
+    }
+
+    scamform={
+        baseInstance: createAxiosInstance('scamform/'),
+
+        users: 'users'
     }
 
     users = {

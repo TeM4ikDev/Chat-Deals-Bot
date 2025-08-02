@@ -1,4 +1,5 @@
 import { DatabaseService } from '@/database/database.service';
+import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -14,7 +15,8 @@ export class TelegramService implements OnModuleInit {
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     private readonly database: DatabaseService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly scamformService: ScamformService
   ) { }
 
   getPhotoStream(filePath: string): InputFile {
@@ -25,6 +27,17 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMessage(telegramId, message)
   }
 
+  async sendMessageToChannel(channelId: string, message: string, options?: any) {
+    return await this.bot.telegram.sendMessage(channelId, message, options)
+  }
+
+  async forwardMessageToChannel(channelId: string, fromChatId: string, messageId: number) {
+    return await this.bot.telegram.forwardMessage(channelId, fromChatId, messageId)
+  }
+
+  async sendMediaGroupToChannel(channelId: string, mediaGroup: any[]) {
+    return await this.bot.telegram.sendMediaGroup(channelId, mediaGroup)
+  }
 
 
   isUserHasAccept(telegramId: string, arrAccepted: string[]): boolean {
@@ -40,65 +53,58 @@ export class TelegramService implements OnModuleInit {
 
   private async handleInlineQuery(ctx: any) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
-    
-    // Если запрос пустой, показываем инструкцию
+
     if (!query) {
       const results: InlineQueryResult[] = [
         {
           type: 'article',
           id: 'instruction',
-          title: 'Введите @username для поиска',
+          title: 'Введите @username для поиска мошенников',
           input_message_content: {
-            message_text: '🔍 Введите @username пользователя для поиска',
+            message_text: '🔍 Введите @username мошенника для поиска в базе жалоб',
           },
-          description: 'Начните вводить username пользователя',
+          description: 'Начните вводить username мошенника',
         },
       ];
       await ctx.answerInlineQuery(results);
       return;
     }
 
-    // Ищем пользователей по username
-    const searchResult = await this.usersService.findAllUsers(1, 10, query);
-    const users = searchResult.users;
+    const scammers = await this.scamformService.getScammers(query);
 
     const results: InlineQueryResult[] = [];
-
-    if (users.length === 0) {
+    if (scammers.length === 0) {
       results.push({
         type: 'article',
         id: 'not_found',
-        title: 'Пользователь не найден',
+        title: 'Мошенник не найден',
         input_message_content: {
-          message_text: `❌ Пользователь с username "${query}" не найден в базе данных`,
+          message_text: `❌ Мошенник с username "${query}" не найден в базе жалоб`,
         },
         description: 'Попробуйте другой username',
       });
     } else {
-      users.forEach((user, index) => {
-        const displayName = user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}`
-          : user.firstName || user.lastName || 'Без имени';
-        
-        const roleText = user.role === 'ADMIN' ? '👑 Админ' : 
-                        user.role === 'SUPER_ADMIN' ? '👑 Супер админ' : '👤 Пользователь';
-
+      scammers.forEach((scammer, index) => {
+        const displayName = scammer.username || scammer.telegramId || 'Неизвестный';
+      
         results.push({
           type: 'article',
-          id: `user_${user.id}`,
-          title: `@${user.username}`,
+          id: `scammer_${index}`,
+          title: scammer.username ? `@${scammer.username}` : `ID: ${scammer.telegramId}`,
           input_message_content: {
-            message_text: `👤 **Пользователь найден**\n\n` +
-                         `**Username:** @${user.username}\n` +
-                         `**Имя:** ${displayName}\n` +
-                         `**Роль:** ${roleText}\n` +
-                         `**Telegram ID:** ${user.telegramId}\n\n` +
-                         `_Найден через inline-поиск бота_`,
+            message_text: 
+`
+├ Username: ${scammer.username ? `@${scammer.username}` : 'не указан'}
+├ Telegram ID: ${scammer.telegramId || 'не указан'}
+└ Кол-во жалоб: ${scammer.count}
+[Просмотреть жалобы](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})
+            `.trim(),
             parse_mode: 'Markdown',
+
           },
-          description: `${displayName} • ${roleText}`,
+          description: `${displayName} • ${scammer.count} жалоб`,
         });
-      });
+      })
     }
 
     await ctx.answerInlineQuery(results);

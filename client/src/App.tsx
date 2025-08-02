@@ -4,15 +4,14 @@ import { Suspense, lazy } from 'react';
 import { Route, BrowserRouter as Router, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Footer } from './components/layout/Footer';
 import { Loader } from './components/layout/Loader';
-import { useStore } from './store/root.store';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
-import { MainAdmin } from './components/subpages/admin/main';
-import { UsersShow } from './components/subpages/admin/usersShow';
-import { UserDetails } from './components/subpages/admin/userDetails';
-import { UserRoles } from './types/auth';
 import { Garants } from './components/subpages/admin/garants';
-import { Scale } from 'lucide-react';
-import { ScamForms } from './components/subpages/admin/scamforms';
+import { MainAdmin } from './components/subpages/admin/main';
+import { UserDetails } from './components/subpages/admin/userDetails';
+import { UsersShow } from './components/subpages/admin/usersShow';
+import { ScamForms } from './pages/ScamformsPage';
+import { useStore } from './store/root.store';
+import { UserRoles } from './types/auth';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -70,13 +69,19 @@ const ProtectedRoutes = observer(() => {
 
         <Route path="garants" element={<Garants />} />
 
-        <Route path="scamforms" element={<ScamForms />} />
 
-        
+
       </Route>
 
       <Route index element={<MainPage />} />
       <Route path={getPathByKey('PROFILE')} element={<ProfilePage />} />
+
+      <Route path={'scamforms/:id'} element={<ScamForms />} />
+      <Route path={getPathByKey('SCAMFORMS')} element={<ScamForms />} />
+
+
+
+
 
       <Route path='*' element={<NotFoundPage />} />
     </Routes>

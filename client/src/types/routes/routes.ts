@@ -61,15 +61,36 @@ export let RoutesConfigMain: Route[] = [
                 icon: 'UserRoundPen' 
 
             },
-            SCAMFORMS:{
-                key: 'SCAMFORMS',
-                path: '/scamforms',
-                showInHeader: false,
-                label: 'Жалобы',
-                icon: 'NotebookPen' 
-
-            }
+           
         }
+    },
+    {
+        key: 'SCAMFORMS',
+        path: '/scamforms',
+        showInHeader: false,
+        label: 'Жалобы',
+        icon: 'NotebookPen', 
+        // subRoutes:{
+        //     USERS: {
+        //         key: 'USERS',
+        //         path: '/users',
+        //         disabled: true,
+        //         label: 'Пользователи',
+        //         showInHeader: false,
+        //         icon: 'UserIcon',
+        //         subRoutes: {
+        //             USER_DETAIL: {
+        //                 key: 'ID',
+        //                 path: '/:id',
+        //                 label: 'Детали пользователя',
+        //                 showInHeader: false,
+
+        //             },
+                   
+        //         }
+        //     },
+        // }
+
     },
     {
         key: 'NO_RIGHTS',

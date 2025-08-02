@@ -20,13 +20,7 @@ const ProfilePage: React.FC = observer(() => {
 
     return (
         <PageContainer needAuth itemsStart>
-
-            <div className="flex justify-end w-full mt-2 mb-4">
-                <Button text="Выйти" color="red" icon={<LogOut />} FC={handleLogout} widthMin />
-            </div>
             <UserProfile user={user!} />
-
-
         </PageContainer>
     )
 })

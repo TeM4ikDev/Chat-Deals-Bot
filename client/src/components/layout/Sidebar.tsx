@@ -68,18 +68,6 @@ export const Sidebar = () => {
                                             userRole={user?.role}
                                         />
                                     ))}
-
-                                    <div className="flex flex-1 justify-end">
-                                        {user && (
-                                            <Button
-                                                FC={handleLogout}
-                                                icon={<LogOut size={20} />}
-                                                color="red"
-                                                text="Выйти"
-                                                className="!mt-auto"
-                                            />
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                         </Dialog.Panel>

@@ -1,4 +1,5 @@
 import { UserCheckMiddleware } from '@/auth/strategies/telegram.strategy';
+import { ScamformService } from '@/scamform/scamform.service';
 import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { UseGuards } from '@nestjs/common';
@@ -21,8 +22,8 @@ export class MainMenuUpdate extends TelegramUpdate {
         protected readonly telegramService: TelegramService,
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
-
         private readonly localizationService: LocalizationService,
+        private readonly scamformService: ScamformService,
     ) {
         super(telegramService, configService, userService);
     }
@@ -30,18 +31,6 @@ export class MainMenuUpdate extends TelegramUpdate {
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
         const { user, isNew } = await this.userService.findOrCreateUser(ctx.from);
-        const showAdminButtons = (user.role == UserRoles.SUPER_ADMIN || user.role == UserRoles.ADMIN)
-
-
-        const telegramUser: ITelegramUser = {
-            id: ctx.from.id,
-            first_name: ctx.from.first_name,
-            last_name: ctx.from.last_name,
-            username: ctx.from.username,
-            language_code: ctx.from.language_code,
-            is_premium: ctx.from.is_premium
-        };
-
 
         if (isNew) {
             ctx.reply(this.localizationService.getT('mainMenu.welcome', language))
@@ -53,7 +42,7 @@ export class MainMenuUpdate extends TelegramUpdate {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: this.localizationService.getT('mainMenu.buttons.changeLang', language), callback_data: 'change_lang' }],
+                        // [{ text: this.localizationService.getT('mainMenu.buttons.changeLang', language), callback_data: 'change_lang' }],
                         [{ text: this.localizationService.getT('mainMenu.buttons.submitComplaint', language), callback_data: 'submit_complaint' }],
                         [
                             { text: this.localizationService.getT('mainMenu.buttons.catalog', language), url: 'https://t.me/nftcatalog' },
@@ -63,11 +52,11 @@ export class MainMenuUpdate extends TelegramUpdate {
                             { text: this.localizationService.getT('mainMenu.buttons.addToGroup', language), url: 'https://t.me/svdbasebot?startgroup=true' },
                             { text: this.localizationService.getT('mainMenu.buttons.allProjects', language), url: 'https://t.me/giftthread' }
                         ],
-                        ...(
-                            showAdminButtons
-                                ? [[{ text: 'Запустить приложение', url: `https://rnxsk3jf-8080.euw.devtunnels.ms/?data=${encodeURIComponent(JSON.stringify(telegramUser))}` }]]
-                                : []
-                        )
+                        // ...(
+                        //     showAdminButtons
+                        //         ? [[{ text: 'Запустить приложение', url: `https://rnxsk3jf-8080.euw.devtunnels.ms/?data=${encodeURIComponent(JSON.stringify(telegramUser))}` }]]
+                        //         : []
+                        // )
                     ],
                 },
             });
@@ -77,7 +66,6 @@ export class MainMenuUpdate extends TelegramUpdate {
     async reportUser(@Ctx() ctx: SceneContext, @Language() language: string) {
         await this.onSubmitComplaint(ctx, language)
     }
-
 
     @Action('submit_complaint')
     async onSubmitComplaint(@Ctx() ctx: Context, @Language() language: string) {
@@ -134,11 +122,4 @@ export class MainMenuUpdate extends TelegramUpdate {
 
         this.onStart(ctx, language)
     }
-
-
-
-
-
-  
-
 }
