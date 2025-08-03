@@ -1,32 +1,24 @@
 import { UserCheckMiddleware } from '@/auth/strategies/telegram.strategy';
-import { ScamformService } from '@/scamform/scamform.service';
-import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UserRoles } from '@prisma/client';
 import { Action, Command, Ctx, Start, Update } from 'nestjs-telegraf';
 import { Context, Scenes } from 'telegraf';
-import { SceneContext } from 'telegraf/typings/scenes';
-import { SCENES } from '../constants/telegram.constants';
+import { BOT_NAME, SCENES } from '../constants/telegram.constants';
 import { Language } from '../decorators/language.decorator';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
-import { TelegramUpdate } from '../telegram.update';
 
 
 @UseGuards(UserCheckMiddleware)
 @Update()
-export class MainMenuUpdate extends TelegramUpdate {
+export class MainMenuUpdate {
     constructor(
         protected readonly telegramService: TelegramService,
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
-        private readonly scamformService: ScamformService,
-    ) {
-        super(telegramService, configService, userService);
-    }
+    ) {}
 
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
@@ -42,8 +34,10 @@ export class MainMenuUpdate extends TelegramUpdate {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
-                        // [{ text: this.localizationService.getT('mainMenu.buttons.changeLang', language), callback_data: 'change_lang' }],
+                        [{ text: this.localizationService.getT('mainMenu.buttons.changeLang', language), callback_data: 'change_lang' }],
                         [{ text: this.localizationService.getT('mainMenu.buttons.submitComplaint', language), callback_data: 'submit_complaint' }],
+                        [{ text: this.localizationService.getT('mainMenu.buttons.submitAppeal', language), callback_data: 'submit_appeal' }],
+
                         [
                             { text: this.localizationService.getT('mainMenu.buttons.catalog', language), url: 'https://t.me/nftcatalog' },
                             { text: this.localizationService.getT('mainMenu.buttons.tags', language), url: 'https://t.me/svdteg' },
@@ -52,19 +46,40 @@ export class MainMenuUpdate extends TelegramUpdate {
                             { text: this.localizationService.getT('mainMenu.buttons.addToGroup', language), url: 'https://t.me/svdbasebot?startgroup=true' },
                             { text: this.localizationService.getT('mainMenu.buttons.allProjects', language), url: 'https://t.me/giftthread' }
                         ],
-                        // ...(
-                        //     showAdminButtons
-                        //         ? [[{ text: 'Запустить приложение', url: `https://rnxsk3jf-8080.euw.devtunnels.ms/?data=${encodeURIComponent(JSON.stringify(telegramUser))}` }]]
-                        //         : []
-                        // )
+
+                        [{ text: this.localizationService.getT('mainMenu.buttons.launchApp', language), url: `https://t.me/${BOT_NAME}?startapp` }]
                     ],
                 },
             });
     }
 
     @Command('report')
-    async reportUser(@Ctx() ctx: SceneContext, @Language() language: string) {
-        await this.onSubmitComplaint(ctx, language)
+    async reportUser(@Ctx() ctx: Context, @Language() language: string) {
+
+        await ctx.reply(
+            this.localizationService.getT('complaint.fullInstructions', language), {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_scammer_form' }
+                    ],
+                ]
+            }
+        }
+        );
+    }
+
+    @Command('appeal')
+    async onSubmitAppeal(@Ctx() ctx: Context, @Language() language: string) {
+        await ctx.reply(this.localizationService.getT('appeal.fullInstructions', language), {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_appeal_form' }]
+                ]
+            }
+        });
     }
 
     @Action('submit_complaint')
@@ -73,24 +88,26 @@ export class MainMenuUpdate extends TelegramUpdate {
             await ctx.answerCbQuery();
         }
 
-        await ctx.reply(
-            this.localizationService.getT('complaint.fullInstructions', language),
-            {
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: '📁 Заполнить форму', callback_data: 'fill_form' }
-                        ],
-                    ]
-                }
-            }
-        );
+        await this.reportUser(ctx, language)
     }
 
-    @Action('fill_form')
-    fillForm(@Ctx() ctx: Scenes.SceneContext) {
+    @Action('submit_appeal')
+    async onSubmitAppealAction(@Ctx() ctx: Context, @Language() language: string) {
+        if ('callback_query' in ctx && ctx.callbackQuery?.id) {
+            await ctx.answerCbQuery();
+        }
+
+        await this.onSubmitAppeal(ctx, language)
+    }
+
+    @Action('fill_scammer_form')
+    fillScammerForm(@Ctx() ctx: Scenes.SceneContext) {
         ctx.scene.enter(SCENES.SCAMMER_FORM)
+    }
+
+    @Action('fill_appeal_form')
+    fillAppealForm(@Ctx() ctx: Scenes.SceneContext) {
+        ctx.scene.enter(SCENES.APPEAL_FORM)
     }
 
     @Action('select_user')
@@ -120,6 +137,6 @@ export class MainMenuUpdate extends TelegramUpdate {
             } catch (e) { }
         }
 
-        this.onStart(ctx, language)
-    }
+        await this.onStart(ctx, language)
+    }    
 }

@@ -1,10 +1,17 @@
-import { Body, Controller, Get, Param, Put, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Put, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { ScamformService } from './scamform.service';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { UserId } from '@/decorators/userid.decorator';
+import { VoteType } from '@prisma/client';
+import { UsersService } from '@/users/users.service';
 
 @Controller('scamform')
 export class ScamformController {
-    constructor(private readonly scamformService: ScamformService) {}
+    constructor(
+        private readonly scamformService: ScamformService,
+        private readonly usersService: UsersService
+    ) { }
 
     @Get()
     async findAllScamforms(
@@ -18,34 +25,25 @@ export class ScamformController {
         return await this.scamformService.findAll(pageNum, limitNum, search)
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Patch('vote/:voteType/:id')
+    async vote(@Param('id') id: string, @Param('voteType') voteType: VoteType, @UserId() userId: string) {
+        const user = await this.usersService.findUserById(userId)
 
-    @Get('/users/:data')
-    async getAllUserScamForms(
-      @Query('page') page: string = '1',
-      @Query('limit') limit: string = '10',
-
-      @Param('data') data: string
-    ){
-
-      const pageNum = parseInt(page, 10) || 1;
-        const limitNum = parseInt(limit, 10) || 10;
-
-        return await this.scamformService.findAll(pageNum, limitNum, data)
-
+        return await this.scamformService.voteUser(user.telegramId, id, voteType)
     }
-
 
     @Get('file/:fileId')
     async getFile(@Param('fileId') fileId: string, @Res() res: Response) {
         try {
             const fileUrl = await this.scamformService.getFileUrl(fileId);
-            
+
             if (!fileUrl) {
                 return res.status(404).json({ error: 'File not found' });
             }
 
             const response = await fetch(fileUrl);
-            
+
             if (!response.ok) {
                 return res.status(404).json({ error: 'Image not found' });
             }

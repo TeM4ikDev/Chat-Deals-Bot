@@ -3,8 +3,8 @@ import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectBot } from 'nestjs-telegraf';
-import { Input, Telegraf } from 'telegraf';
+import { Action, Ctx, InjectBot } from 'nestjs-telegraf';
+import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
 
 @Injectable()
@@ -39,7 +39,6 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMediaGroup(channelId, mediaGroup)
   }
 
-
   isUserHasAccept(telegramId: string, arrAccepted: string[]): boolean {
     return arrAccepted.includes(telegramId)
   }
@@ -51,7 +50,7 @@ export class TelegramService implements OnModuleInit {
     });
   }
 
-  private async handleInlineQuery(ctx: any) {
+  private async handleInlineQuery(ctx: Context) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
 
     if (!query) {
@@ -109,4 +108,9 @@ export class TelegramService implements OnModuleInit {
 
     await ctx.answerInlineQuery(results);
   }
+
+
+
+
+ 
 }

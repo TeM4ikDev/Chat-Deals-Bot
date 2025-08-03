@@ -12,16 +12,6 @@ const MainPage: React.FC = () => {
     const [garants, setGarants] = useState<{ username: string }[] | null>(null);
     const [isLoadingGarants, setIsLoadingGarants] = useState(false);
 
-    const handleComplaint = () => {
-        // Логика для подачи жалобы
-        console.log("Подать жалобу");
-    };
-
-    const handleAddBot = () => {
-        // Логика для добавления бота в чат
-        console.log("Добавить бота в чат");
-    };
-
     const getGarants = async () => {
         setIsLoadingGarants(true);
         const data = await onRequest(AdminService.getAllGarants());
@@ -164,7 +154,6 @@ const MainPage: React.FC = () => {
                         </p>
                         <Button
                             text="Подать жалобу"
-                            FC={handleComplaint}
                             icon={<AlertTriangle className="w-5 h-5" />}
                             color="red"
                             className="w-full"

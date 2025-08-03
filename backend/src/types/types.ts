@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-export const superAdminsTelegramIds = ['2027571609', '7073999454', '8010075021']
+export const superAdminsTelegramIds = ['2027571609', '1162525174']
 
 export type IUser = Prisma.UserGetPayload<{}>
 

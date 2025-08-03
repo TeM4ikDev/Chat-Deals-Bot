@@ -1,4 +1,4 @@
-import { ApiRoute } from "@/types";
+import { ApiRoute, voteType } from "@/types";
 import { apiConfig } from "@/types/pagesConfig";
 
 export class scamformsService implements ApiRoute {
@@ -24,6 +24,12 @@ export class scamformsService implements ApiRoute {
         return data
     }
 
+
+
+    userVote = async (formId: string, voteType: voteType) => {
+        const { data } = await this.instance.patch(`${this.baseUrl.vote}/${voteType}/${formId}`)
+        return data
+    }
 
 
 

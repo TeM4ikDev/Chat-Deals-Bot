@@ -3,29 +3,12 @@ import { Input } from "@/components/ui/Input"
 import { Pagination as ListPagination } from "@/components/ui/Pagination"
 import { ScamformsService } from "@/services/scamforms.service"
 import { useStore } from "@/store/root.store"
-import { IPagination } from "@/types"
+import { IPagination, IScamForm } from "@/types"
 import { onRequest } from "@/utils/handleReq"
 import { useCallback, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { PageContainer } from "../components/layout/PageContainer"
-
-interface IMedia {
-    id: string
-    fileId: string
-    type: 'photo' | 'video'
-    fileUrl?: string
-}
-
-interface IScamForm {
-    id: string
-    description: string
-    media: IMedia[]
-    scammerUsername?: string
-    scammerTelegramId?: string
-    createdAt: string
-    status: 'pending' | 'reviewed' | 'resolved'
-}
 
 export const ScamForms: React.FC = () => {
     const { id } = useParams<{ id: string }>()
@@ -39,11 +22,9 @@ export const ScamForms: React.FC = () => {
         totalCount: 0,
         maxPage: 1,
         currentPage: 1,
-        limit: 10
+        limit: 5
     })
-    // Получаем start_param из Telegram WebApp
     const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    // Используем id из URL, если есть, иначе start_param, иначе пустую строку
     const initialSearch = id || startParam || "";
     const [search, setSearch] = useState<string>(initialSearch);
 
@@ -97,7 +78,6 @@ export const ScamForms: React.FC = () => {
     }
 
     useEffect(() => {
-        // Если search пустой, пробуем взять start_param (например, если пользователь пришёл по ссылке из Telegram)
         if (!id && startParam && !search) {
             setSearch(startParam);
             getScamForms(pagination.currentPage, startParam);
@@ -109,7 +89,7 @@ export const ScamForms: React.FC = () => {
     return (
         <PageContainer title="Жалобы" className="gap-2 max-w-2xl mx-auto" itemsStart returnPage>
             <Input
-                placeholder="Поиск по username"
+                placeholder="Поиск по username или telegram id"
                 name="search"
                 value={search}
                 onChange={handleSearchChange}
@@ -124,7 +104,6 @@ export const ScamForms: React.FC = () => {
             <ScamFormList
                 scamForms={scamForms}
                 onViewForm={handleViewForm}
-                // showHeader={search ? false : true}
             />
 
             <ScamFormModal

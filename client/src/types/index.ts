@@ -36,10 +36,44 @@ export type userIdParam = number | string
 
 
 
+export interface IMedia {
+    id: string
+    fileId: string
+    type: 'photo' | 'video'
+    fileUrl?: string
+}
+
+
+export interface IScamForm {
+    id: string
+    description: string
+    media: IMedia[]
+
+    scammer:{
+        id: string,
+        telegramId: string,
+        username: string
+
+    }
+   
+    createdAt: string
+    status: 'pending' | 'reviewed' | 'resolved'
+    likes: number
+    dislikes: number
+}
+
+
+
 
 export interface ApiRoute {
     instance: AxiosInstance,
     baseUrl: Object
+}
+
+export enum voteType {
+    Like = 'LIKE',
+    Dislike = 'DISLIKE'
+
 }
 
 

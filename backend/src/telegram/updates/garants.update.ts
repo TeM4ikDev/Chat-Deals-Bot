@@ -3,32 +3,26 @@ import { DatabaseService } from "@/database/database.service";
 import { UseGuards } from "@nestjs/common";
 import { Command, Ctx, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
+import { Language } from "../decorators/language.decorator";
+import { LocalizationService } from "../services/localization.service";
 
 @UseGuards(UserCheckMiddleware)
 @Update()
 export class GarantsUpdate {
     constructor(
-        private readonly database: DatabaseService
+        private readonly database: DatabaseService,
+        private readonly localizationService: LocalizationService
     ) { }
 
     @Command('garants')
-    async showGarants(@Ctx() ctx: Context) {
+    async showGarants(@Ctx() ctx: Context, @Language() lang: string) {
         const garants = await this.database.garants.findMany()
-        
+
         if (garants.length === 0) {
-            ctx.reply(
-            `
-            ❌ Список гарантов пуст.
-                
-В данный момент нет доступных гарантов.
-            `)
+            ctx.reply(this.localizationService.getT('garant.notFound', lang))
             return
         }
-        
-        ctx.reply(`
-            ✅ Список надежных гарантов:
 
-${garants.map((g) => `• @${g.username}`).join('\n')}
-        `)
+        ctx.reply(this.localizationService.getT('garant.show', lang).replace('{garants}', garants.map((g) => `• @${g.username}`).join('\n')))
     }
 }

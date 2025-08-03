@@ -1,0 +1,138 @@
+{
+    "mainMenu": {
+      "welcome": "✋🏻 Welcome!",
+      "description": "💎 This is the best anti-scam project in the TG market\n\nℹ️ What you can do in the bot's private chat:\n╟ Submit @username\n╟ Forward a user's message\n╟ Click on “Select user” button\n\n💪 What the bot will respond with:\n╟ User ID\n╟ Presence in scam database\n╟ Presence in verified executors database\n╟ Presence in top guarantors database\n\n💬 Add the bot to a chat:\n╟ Eliminate bad actors\n╟ Block scammers 🔥\n\n❓ Got a complaint about a scammer?\n👉 Click on “Submit complaint” now",
+      "buttons": {
+        "changeLang": "🌐 Language",
+        "submitComplaint": "⛏️ Submit Complaint",
+        "submitAppeal": "🔥 Submit Appeal",
+        "addToGroup": "➕ Add to Chat",
+        "allProjects": "📦 Our Projects",
+        "launchApp": "🚀 Launch App",
+        "selectUser": "👤 Select User",
+        "catalog": "📚 Catalog",
+        "tags": "🏷️ Tags",
+        "back": "🔙 Back",
+        "fillform": "📁 Fill the Form"
+      }
+    },
+    "language": {
+      "select": "🌐 <b>Select language:</b>",
+      "buttons": {
+        "ru": "🇷🇺 Russian",
+        "en": "🇬🇧 English",
+        "back": "⬅️ Back to Menu"
+      },
+      "changed": {
+        "ru": "✅ Language set to Russian",
+        "en": "✅ Language set to English"
+      }
+    },
+    "common": {
+      "buttons": {
+        "back": "⬅️ Back to Menu",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "cancelled": "Operation cancelled."
+      }
+    },
+    "complaint": {
+      "instructions": "📝 To submit a complaint about a scammer:\n\n1️⃣ Send the user’s @username\n2️⃣ Or forward that user's message\n3️⃣ Or click the \"Select user\" button below",
+      "selectUser": "👤 Select a user to check:\n\nSend @username or forward a message from the user you want to check.",
+      "fullInstructions": "⚡️ <b>Fast complaint submission.</b>\n\nℹ️ To file a scam complaint, you must first gather the following data:\n\n<code>1. Scammer’s username or Telegram ID.\n2. Description of the situation [ max 500 characters ]\n3. Photos/videos proving the scam [ 2 to 10 media ]</code>\n\n‼️ <b>Submitting an invalid or malicious complaint</b> intended to harm or delay the complaint service <u>will result in a ban</u>, being blocked in the bot, or being flagged in the suspicious participants database.\n\n<em>🔸 By clicking “Fill the form”, you automatically agree to these rules.</em>",
+      "form": {
+        "step1": "⚡️ Fast complaint submission.\n\n1 – Send the scammer’s username or forward their message",
+        "step2": "⚡️ Fast complaint submission.\n\n2 – Send a description of the scam (max 500 characters)",
+        "step3": "⚡️ Fast complaint submission.\n\n3 – Send photo/video evidence of the scam.\n\n🖼 Received media: {count} / 10\n\n💡 You can send media as a group or individually.",
+        "step1SelectUser": "⚡️ Fast complaint submission.\n\n1 – Send the scammer’s Telegram ID as numbers, forward a message from the scammer, or choose a user via the button",
+        "userSelected": "✅ User selected:\n\nID: {userId}\n\n⚡️ Fast complaint submission.\n\n2 – Submit the situation description (max 500 characters)",
+        "userSelectedFromForward": "✅ User selected via forwarded message:\n\nID: {userId}\nUsername: @{username}\n\n⚡️ Fast complaint submission.\n\n2 – Submit the situation description (max 500 characters)",
+        "confirmation": "💎 **@{botName}**\n\n**Scam Evidence**\n\nComplaint about:\n{userInfo}\n\n**Description of the incident:** {description}\n\n✅ This complaint will be sent for moderation. If everything looks correct, don't forget to press the \"Confirm submission\" button.",
+        "channelMessage": "💎 **@{botName}**\n\n📢 **Scam Evidence**\n\n⚠️ Complaint about:\n{scammerInfo}\n\n📝 **Description of the incident:**\n{description}\n\n👤 **Sender:**\n{userInfo}",
+        "success": "✅ Complaint submitted successfully! Thank you for your vigilance.",
+        "cancelled": "❌ Complaint cancelled.",
+        "fillFormAgain": "📁 Fill the form again",
+        "confirmSubmission": "✅ Confirm submission",
+        "restartForm": "🔴 Restart complaint",
+        "buttons": {
+          "noUsername": "👤 No Username",
+          "cancel": "🔴 Cancel Complaint",
+          "selectUser": "👉 Select Scammer",
+          "done": "✅ I'm done",
+          "resend": "🔄 Resend",
+          "confirmSubmission": "✅ Confirm submission",
+          "restartForm": "🔴 Restart complaint"
+        }
+      },
+      "errors": {
+        "invalidInput": "❗️ Please send a valid username or forward a message from the scammer.",
+        "descriptionTooLong": "❗️ Description too long. Maximum 500 characters.",
+        "tooManyMedia": "❗️ You can send up to 10 media files.",
+        "minMedia": "❗️ You need to send at least 2 media files.",
+        "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID."
+      },
+      "userInfo": {
+        "withUsernameAndId": "@{username}\n[ID: {telegramId}]",
+        "withUsernameOnly": "@{username}\n[ID: not provided]",
+        "withIdOnly": "Username not provided\n[ID: {telegramId}]",
+        "noInfo": "No information provided"
+      }
+    },
+    "appeal": {
+      "fullInstructions": "⚡️ <b>Fast appeal submission.</b>\n\nℹ️ To file an appeal, please gather the following:\n\n<code>1. User’s username or Telegram ID.\n2. Description of the situation [ max 500 characters ]\n3. Photos/videos proving the incident [ 2 to 10 media ]</code>\n\n‼️ <b>Invalid or harmful appeals</b> submitted to disrupt the service will result in a ban, being blocked in the bot, or flagged as suspicious.\n\n<em>🔸 By clicking “Fill the form”, you agree to these rules.</em>",
+      "form": {
+        "step1": "⚡️ Fast appeal submission.\n\n1 – Send the user’s username or forward their message",
+        "step2": "⚡️ Fast appeal submission.\n\n2 – Send the description (max 500 characters)",
+        "step3": "⚡️ Fast appeal submission.\n\n3 – Send photo/video evidence.\n\n🖼 Received media: {count} / 10\n\n💡 You can send as a media group or individually.",
+        "step1SelectUser": "⚡️ Fast appeal submission.\n\n1 – Send the user’s Telegram ID as numbers, forward their message, or select a user via button",
+        "userSelected": "✅ User selected:\n\nID: {userId}\n\n⚡️ Fast appeal submission.\n\n2 – Submit the description (max 500 characters)",
+        "userSelectedFromForward": "✅ User selected via forwarded message:\n\nID: {userId}\nUsername: @{username}\n\n⚡️ Fast appeal submission.\n\n2 – Submit the description (max 500 characters)",
+        "confirmation": "💎 **@{botName}**\n\n**Appeal Evidence**\n\nAppeal against:\n{userInfo}\n\n**Description:**\n{description}\n\n✅ Your appeal will be sent for moderation. If everything is okay, press “Confirm submission”.",
+        "channelMessage": "💎 **@{botName}**\n\n📢 **Appeal Evidence**\n\n⚠️ Appeal against user:\n{appealUserInfo}\n\n📝 **Description:**\n{description}\n\n👤 **Sender:**\n{userInfo}",
+        "success": "✅ Appeal submitted successfully! Thank you for staying alert.",
+        "cancelled": "❌ Appeal cancelled.",
+        "fillFormAgain": "📁 Fill the form again",
+        "confirmSubmission": "✅ Confirm submission",
+        "restartForm": "🔴 Restart appeal",
+        "buttons": {
+          "noUsername": "👤 No Username",
+          "cancel": "🔴 Cancel Appeal",
+          "selectUser": "👉 Select User",
+          "done": "✅ I am done",
+          "resend": "🔄 Resend",
+          "confirmSubmission": "✅ Confirm submission",
+          "restartForm": "🔴 Restart appeal"
+        }
+      },
+      "errors": {
+        "invalidInput": "❗️ Please send a valid username or forward a message from the user.",
+        "descriptionTooLong": "❗️ Description too long. Maximum 500 characters.",
+        "tooManyMedia": "❗️ You can send up to 10 media files.",
+        "minMedia": "❗️ At least 2 media files are required.",
+        "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID."
+      },
+      "userInfo": {
+        "withUsernameAndId": "@{username}\n[ID: {telegramId}]",
+        "withUsernameOnly": "@{username}\n[ID: not provided]",
+        "withIdOnly": "Username not provided\n[ID: {telegramId}]",
+        "noInfo": "No information provided"
+      }
+    },
+    "admin": {
+      "accessDenied": "⛔️ Access denied. Super‑admin only.",
+      "findCommand": "❗️Specify telegramId or username: /find <telegramId|username>",
+      "userNotFound": "User not found.",
+      "userInfo": "User: @{username}\nID: {telegramId}\nRole: {role}",
+      "giveAdmin": "Grant admin",
+      "removeAdmin": "Revoke admin",
+      "adminGranted": "User @{username} is now admin.",
+      "adminRemoved": "User @{username} is now a regular user.",
+      "userNotFoundError": "Could not determine user."
+    },
+    "garant": {
+      "notFound": "❌ No guarantors found currently.\n\nThere are no available guarantors at the moment.",
+      "show": "✅ Reliable guarantors list:\n\n{garants}"
+    }
+  }
+  

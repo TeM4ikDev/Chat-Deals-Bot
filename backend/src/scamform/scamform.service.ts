@@ -1,18 +1,24 @@
 import { DatabaseService } from '@/database/database.service';
+import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
 import { UsersService } from '@/users/users.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { VoteType } from '@prisma/client';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
   description: string;
   media: Array<{ type: string; file_id: string }>;
-
   userTelegramId: string
-
 }
 
+interface CreateAppealFormData {
+  userData: IAppealUserData;
+  description: string;
+  media: Array<{ type: string; file_id: string }>;
+  userTelegramId: string
+}
 
 @Injectable()
 export class ScamformService {
@@ -23,19 +29,120 @@ export class ScamformService {
   ) { }
 
   async create(data: CreateScamFormData) {
-
     if (!data.scammerData.username && !data.scammerData.telegramId) {
       throw new Error('Необходимо указать либо username, либо telegramId мошенника');
+    }
+  
+    const user = await this.usersService.findUserByTelegramId(data.userTelegramId);
+  
+    let scammerWithTelegramId: any = null;
+    let scammerWithoutTelegramId: any = null;
+  
+    if (data.scammerData.telegramId) {
+      // Ищем скаммера по telegramId (уникально)
+      scammerWithTelegramId = await this.database.scammer.findUnique({
+        where: { telegramId: data.scammerData.telegramId },
+      });
+    }
+  
+    if (data.scammerData.username) {
+      // Ищем скаммера с таким username, но без telegramId
+      scammerWithoutTelegramId = await this.database.scammer.findFirst({
+        where: {
+          username: data.scammerData.username,
+          telegramId: null,
+        },
+      });
+    }
+  
+    // Если есть скаммер с telegramId
+    if (scammerWithTelegramId) {
+      // Если есть скаммер без telegramId с таким же username
+      if (scammerWithoutTelegramId) {
+        // Переносим все жалобы с скаммера без telegramId на скаммера с telegramId
+        await this.database.scamForm.updateMany({
+          where: {
+            scammerId: scammerWithoutTelegramId.id,
+          },
+          data: {
+            scammerId: scammerWithTelegramId.id,
+          },
+        });
+  
+        // Удаляем скаммера без telegramId
+        await this.database.scammer.delete({
+          where: { id: scammerWithoutTelegramId.id },
+        });
+      }
+  
+      // Обновляем username, если отличается и если пришёл новый username
+      if (
+        data.scammerData.username &&
+        data.scammerData.username !== scammerWithTelegramId.username
+      ) {
+        scammerWithTelegramId = await this.database.scammer.update({
+          where: { id: scammerWithTelegramId.id },
+          data: { username: data.scammerData.username },
+        });
+      }
+    }
+  
+    // Если скаммер с telegramId не найден — ищем или создаём скаммера с username (без telegramId)
+    let scammerToUse = scammerWithTelegramId;
+  
+    if (!scammerToUse) {
+      if (data.scammerData.username) {
+        scammerToUse = await this.database.scammer.findFirst({
+          where: { username: data.scammerData.username },
+        });
+      }
+  
+      if (!scammerToUse) {
+        // Создаём нового скаммера
+        scammerToUse = await this.database.scammer.create({
+          data: {
+            username: data.scammerData.username,
+            telegramId: data.scammerData.telegramId,
+          },
+        });
+      }
+    }
+  
+    const scamForm = await this.database.scamForm.create({
+      data: {
+        description: data.description,
+        userId: user?.id || null,
+        scammerId: scammerToUse.id,
+        media: {
+          create: data.media.map((media) => ({
+            type: media.type,
+            fileId: media.file_id,
+          })),
+        },
+      },
+      include: {
+        media: true,
+        user: true,
+      },
+    });
+  
+    return scamForm;
+  }
+  
+  
+
+  async createAppeal(data: CreateAppealFormData) {
+
+    if (!data.userData.username && !data.userData.telegramId) {
+      throw new Error('Необходимо указать либо username, либо telegramId пользователя');
     }
 
     const user = await this.usersService.findUserByTelegramId(data.userTelegramId)
 
-
-    const scamForm = await this.database.scamForm.create({
+    const appealForm = await this.database.appealForm.create({
       data: {
-        scammerUsername: data.scammerData.username,
-        scammerTelegramId: data.scammerData.telegramId,
-
+        appealUsername: data.userData.username,
+        appealTelegramId: data.userData.telegramId,
         description: data.description,
         userId: user.id,
         media: {
@@ -51,20 +158,23 @@ export class ScamformService {
       }
     });
 
-    return scamForm;
+    return appealForm;
   }
 
   async findAll(page: number = 1, limit: number = 10, search: string = '') {
     const skip = (page - 1) * limit;
+  
     const where = search
       ? {
-        OR: [
-          { scammerUsername: { contains: search } },
-          { scammerTelegramId: { contains: search } },
-        ]
-      }
-      : undefined;
-
+          scammer: {
+            OR: [
+              { username: { contains: search } },
+              { telegramId: { contains: search } }
+            ]
+          }
+        }
+      : {};
+  
     const [scamForms, totalCount] = await Promise.all([
       this.database.scamForm.findMany({
         where,
@@ -72,79 +182,36 @@ export class ScamformService {
         take: limit,
         include: {
           media: true,
-          user: true
+          user: true,
+          scammer: true
         },
         orderBy: {
           createdAt: 'desc'
-        },
-
+        }
       }),
-      this.database.scamForm.count({ where }),
+      this.database.scamForm.count({ where })
     ]);
-
+  
     const maxPage = Math.ceil(totalCount / limit);
+  
     return {
       scamForms,
       pagination: {
         totalCount,
         maxPage,
         currentPage: page,
-        limit,
-      },
+        limit
+      }
     };
   }
-
-  // async findAllUserScamForms(page: number = 1, limit: number = 10, userData: string) {
-  //   const skip = (page - 1) * limit;
-   
-  //   const [scamForms, totalCount] = await Promise.all([
-  //     this.database.scamForm.findMany({
-  //       where,
-  //       skip,
-  //       take: limit,
-  //       include: {
-  //         media: true,
-  //         user: true
-  //       },
-  //       orderBy: {
-  //         createdAt: 'desc'
-  //       },
-
-  //     }),
-  //     this.database.scamForm.count({ where }),
-  //   ]);
-
-  //   const maxPage = Math.ceil(totalCount / limit);
-  //   return {
-  //     scamForms,
-  //     pagination: {
-  //       totalCount,
-  //       maxPage,
-  //       currentPage: page,
-  //       limit,
-  //     },
-  //   };
-  // }
   
-
-
 
   async findById(id: string) {
     return this.database.scamForm.findUnique({
       where: { id },
       include: {
         media: true,
-        user: {
-          select: {
-            id: true,
-            telegramId: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            createdAt: true
-          }
-        }
+        scammer: true
       }
     });
   }
@@ -152,42 +219,27 @@ export class ScamformService {
   async getScammers(search: string = '') {
     const where = search
       ? {
-        OR: [
-          { scammerUsername: { contains: search } },
-          { scammerTelegramId: { contains: search } }
-        ]
-      }
-      : undefined;
-
-    const scamForms = await this.database.scamForm.findMany({
+          OR: [
+            { username: { contains: search } },
+            { telegramId: { contains: search } }
+          ]
+        }
+      : {};
+  
+    const scammers = await this.database.scammer.findMany({
       where,
-
-      select: {
-        scammerUsername: true,
-        scammerTelegramId: true,
+      include: {
+        scamForms: true
       }
     });
-
-    const scammersMap = new Map<string, any>();
-
-    scamForms.forEach(form => {
-      const key = form.scammerUsername || form.scammerTelegramId || 'unknown';
-
-      if (!scammersMap.has(key)) {
-        scammersMap.set(key, {
-          username: form.scammerUsername,
-          telegramId: form.scammerTelegramId,
-          count: 0
-        });
-      }
-
-      scammersMap.get(key).count++;
-    });
-
-    const scammers = Array.from(scammersMap.values());
-
-    return scammers;
+  
+    return scammers.map(scammer => ({
+      username: scammer.username,
+      telegramId: scammer.telegramId,
+      count: scammer.scamForms.length
+    }));
   }
+  
 
   async getFileUrl(fileId: string): Promise<string | null> {
     try {
@@ -212,5 +264,46 @@ export class ScamformService {
     }
   }
 
+  async voteUser(userTelegramId: string, scamFormId: string, voteType: VoteType) {
+    const user = await this.usersService.findUserByTelegramId(userTelegramId);
+  
+    const existingVote = await this.database.userVote.findFirst({
+      where: {
+        userId: user.id,
+        scamFormId: scamFormId,
+      },
+    });
+  
+    if (existingVote) {
+      return {
+        message: '❗️ Вы уже голосовали за эту жалобу',
+        isSuccess: false,
+      };
+    }
+  
+    await this.database.userVote.create({
+      data: {
+        userId: user.id,
+        scamFormId: scamFormId,
+        voteType: voteType,
+      },
+    });
+  
+    const updatedScamForm = await this.database.scamForm.update({
+      where: { id: scamFormId },
+      data: {
+        likes: voteType === VoteType.LIKE ? { increment: 1 } : undefined,
+        dislikes: voteType === VoteType.DISLIKE ? { increment: 1 } : undefined,
+      },
+    });
+  
+    return {
+      message: '✅ Ваш голос учтён',
+      isSuccess: true,
+      likes: updatedScamForm.likes,
+      dislikes: updatedScamForm.dislikes,
+    };
+  }
+  
 
 }

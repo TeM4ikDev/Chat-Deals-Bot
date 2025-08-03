@@ -45,7 +45,7 @@ export class AppModule implements OnModuleInit {
 
   async cleanDatabase() {
     await this.databaseService.scamForm.deleteMany();
-    await this.databaseService.scamFormMedia.deleteMany();
+    await this.databaseService.media.deleteMany();
     await this.databaseService.usersConfig.deleteMany();
     await this.databaseService.user.deleteMany();
   }

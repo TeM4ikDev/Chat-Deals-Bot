@@ -10,7 +10,9 @@ import { LocalizationService } from './services/localization.service';
 import { TelegramService } from './telegram.service';
 
 import { ScamformModule } from '@/scamform/scamform.module';
+import { AppealForm } from './scenes/appeal_form.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
+import { TelegramUpdate } from './telegram.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
@@ -35,12 +37,15 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     }),
   ],
   providers: [
-    TelegramService,
     LanguageUpdate,
     MainMenuUpdate,
     GarantsUpdate,
     LocalizationService,
-    ScammerFrom
+    ScammerFrom,
+    AppealForm,
+    TelegramService,
+    TelegramUpdate,
+
   ],
   exports: [TelegramService, LocalizationService]
 })

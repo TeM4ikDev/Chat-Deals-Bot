@@ -13,16 +13,14 @@ import { MainMenuUpdate } from './main-menu.update';
 
 @UseGuards(UserCheckMiddleware)
 @Update()
-export class LanguageUpdate extends TelegramUpdate {
+export class LanguageUpdate {
     constructor(
         protected readonly telegramService: TelegramService,
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly mainMenuUpdate: MainMenuUpdate,
         private readonly localizationService: LocalizationService,
-    ) {
-        super(telegramService, configService, userService);
-    }
+    ) { }
 
     @Action('change_lang')
     async onChangeLang(@Ctx() ctx: Context, @Language() language: string) {

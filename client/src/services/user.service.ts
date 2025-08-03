@@ -1,6 +1,8 @@
 import { ApiRoute } from "@/types";
 import { apiConfig } from "@/types/pagesConfig";
 
+const mediaCache = new Map<string, string>();
+
 export class userService implements ApiRoute {
     instance;
     baseUrl;
@@ -15,24 +17,36 @@ export class userService implements ApiRoute {
         return data
     }
 
-
-
     async getUserDeals() {
         const { data } = await this.instance.get(this.baseUrl.deals)
         return data
     }
 
+    async getMediaData(fileId: string) {
+        if (mediaCache.has(fileId)) {
+            const cachedBlob = mediaCache.get(fileId);
+            if (cachedBlob) {
+                return cachedBlob;
+            }
+        }
 
-    async getMediaData(fileId: string){
-        return this.instance.get(`scamform/file/${fileId}`)
+        const { data } = await apiConfig.scamform.baseInstance.get(`file/${fileId}`, {
+            responseType: 'blob'
+        })
+
+        mediaCache.set(fileId, data);
+
+        return data
     }
 
+  
+    clearMediaCache() {
+        mediaCache.clear();
+    }
 
-
-
-
-
-
+    removeFromCache(fileId: string) {
+        mediaCache.delete(fileId);
+    }
 }
 
 

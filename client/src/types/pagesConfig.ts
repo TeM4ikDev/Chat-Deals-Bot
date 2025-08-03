@@ -9,39 +9,33 @@ import { useMemo } from "react";
 class ApiConfig {
     auth = {
         baseInstance: createAxiosInstance('auth/'),
-
         profile: "profile",
         login: "login",
     }
 
     admin = {
         baseInstance: createAxiosInstance('admin/'),
-
         garants: {
             main: '/garants'
         },
-
         users: {
             main: "users",
             updateRole: "users/update-role",
             updateBanned: "users/update-banned",
-        },
-     
+        }
     }
 
     scamform={
         baseInstance: createAxiosInstance('scamform/'),
+        users: 'users',
+        vote: 'vote'
 
-        users: 'users'
     }
 
     users = {
         baseInstance: createAxiosInstance('users/'),
-
         updateConfig: 'updateProfitConfig',
-
-        deals: 'deals'
-
+        deals: 'deals',
     }
 }
 
