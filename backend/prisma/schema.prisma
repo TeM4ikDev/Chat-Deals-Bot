@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DIRECT_URL")
+// }
+
+enum UserRoles {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserLanguage {
+  RU
+  EN
+}
+
+enum VoteType {
+  LIKE
+  DISLIKE
+}
+
+model User {
+  id         String    @id @default(uuid())
+  telegramId String    @unique
+  username   String?
+  lastName   String?
+  firstName  String?
+  role       UserRoles @default(USER)
+
+  UsersConfig UsersConfig?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ScamForms   ScamForm[]
+  AppealForms AppealForm[]
+  UserVote    UserVote[]
+}
+
+model UsersConfig {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  tonWallet String?
+  card      String?
+  language  UserLanguage @default(RU)
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Garants {
+  id String @id @default(uuid())
+
+  username String @unique
+}
+
+model Scammer {
+  id         String  @id @default(uuid())
+  username   String?
+  telegramId String? @unique
+
+  scamForms ScamForm[]
+}
+
+model ScamForm {
+  id          String @id @default(uuid())
+  description String
+  status      String @default("PENDING")
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  scammer   Scammer @relation(fields: [scammerId], references: [id])
+  scammerId String
+
+  likes    Int @default(0)
+  dislikes Int @default(0)
+
+  userVotes UserVote[]
+  media     Media[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppealForm {
+  id          String @id @default(uuid())
+  description String
+  status      String @default("PENDING")
+
+  appealUsername   String?
+  appealTelegramId String?
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String?
+
+  media Media[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Media {
+  id     String @id @default(uuid())
+  type   String
+  fileId String
+
+  scamFormId   String?
+  appealFormId String?
+
+  scamForm   ScamForm?   @relation(fields: [scamFormId], references: [id], onDelete: Cascade)
+  appealForm AppealForm? @relation(fields: [appealFormId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model UserVote {
+  id String @id @default(uuid())
+
+  voteType VoteType
+
+  userId     String
+  scamFormId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ScamForm ScamForm @relation(fields: [scamFormId], references: [id])
+}
