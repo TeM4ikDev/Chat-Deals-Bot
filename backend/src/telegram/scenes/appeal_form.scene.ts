@@ -123,8 +123,7 @@ export class AppealForm {
         await ctx.replyWithMediaGroup(mediaGroup);
 
         const { username, telegramId } = form.userData
-
-        const userInfo = this.formatUserInfo(username, telegramId);
+        const userInfo = this.telegramService.formatUserInfo(username, telegramId, this.language);
 
         await ctx.reply(
             this.localizationService.getT('appeal.form.confirmation', this.language)
@@ -441,30 +440,15 @@ export class AppealForm {
         ctx.session.appealForm = undefined;
     }
 
-    private formatUserInfo(username?: string, telegramId?: string): string {
-        if (username && telegramId) {
-            return this.localizationService.getT('appeal.userInfo.withUsernameAndId', this.language)
-                .replace('{username}', username)
-                .replace('{telegramId}', telegramId);
-        } else if (username) {
-            return this.localizationService.getT('appeal.userInfo.withUsernameOnly', this.language)
-                .replace('{username}', username);
-        } else if (telegramId) {
-            return this.localizationService.getT('appeal.userInfo.withIdOnly', this.language)
-                .replace('{telegramId}', telegramId);
-        } else {
-            return this.localizationService.getT('appeal.userInfo.noInfo', this.language);
-        }
-    }
 
     private async sendMessageToChannel(ctx: AppealFormSession) {
         const channelId = '@giftsstate';
         const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
 
-        const appealUserInfo = this.formatUserInfo(
+        const appealUserInfo = this.telegramService.formatUserInfo(
             ctx.session.appealForm.userData.username,
             ctx.session.appealForm.userData.telegramId
-        );
+        );  
 
         const channelMessage = this.localizationService.getT('appeal.form.channelMessage', this.language)
             .replace('{botName}', BOT_NAME)

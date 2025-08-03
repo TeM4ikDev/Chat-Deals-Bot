@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Action, Ctx, InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
+import { LocalizationService } from './services/localization.service';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -16,7 +17,9 @@ export class TelegramService implements OnModuleInit {
     private readonly usersService: UsersService,
     private readonly database: DatabaseService,
     private readonly configService: ConfigService,
-    private readonly scamformService: ScamformService
+    private readonly scamformService: ScamformService,
+    private readonly localizationService: LocalizationService
+
   ) { }
 
   getPhotoStream(filePath: string): InputFile {
@@ -44,7 +47,6 @@ export class TelegramService implements OnModuleInit {
   }
 
   onModuleInit() {
-    // Регистрируем обработчик inline-запросов
     this.bot.on('inline_query', async (ctx) => {
       await this.handleInlineQuery(ctx);
     });
@@ -108,6 +110,23 @@ export class TelegramService implements OnModuleInit {
 
     await ctx.answerInlineQuery(results);
   }
+
+
+  formatUserInfo(username?: string, telegramId?: string, language: string = 'ru'): string {
+    if (username && telegramId) {
+        return this.localizationService.getT('userInfo.withUsernameAndId', language)
+            .replace('{username}', username)
+            .replace('{telegramId}', telegramId);
+    } else if (username) {
+        return this.localizationService.getT('userInfo.withUsernameOnly', language)
+            .replace('{username}', username);
+    } else if (telegramId) {
+        return this.localizationService.getT('userInfo.withIdOnly', language)
+            .replace('{telegramId}', telegramId);
+    } else {
+        return this.localizationService.getT('userInfo.noInfo', language);
+    }
+}
 
 
 

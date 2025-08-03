@@ -43,7 +43,6 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
 
     const headerTitle = useMemo(() => {
         if (!showHeader) return ''
-        // return ''
         return `Жалоба на ${form.scammer.username ? `@${form.scammer.username.replace('@', '')}` : form.scammer.telegramId || 'Неизвестный пользователь'}`
     }, [showHeader, form.scammer?.username, form?.scammer.telegramId])
 

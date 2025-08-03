@@ -1,6 +1,11 @@
 import * as path from 'path';
 
-export const IMAGE_PATH = path.join(__dirname, '../../../public/main3.png');
+export const IMAGE_PATHS = {
+  SCAMMER: path.join(__dirname, '../../../public/scammer.jpg'),
+  NO_INFO: path.join(__dirname, '../../../public/noinfo.png'),
+  GARANT: path.join(__dirname, '../../../public/garant.jpg'),
+  SUSPICIOUS: path.join(__dirname, '../../../public/suspicious.jpg')
+};
 
 export enum SCENES {
  SCAMMER_FORM = 'SCAMMERFORM',

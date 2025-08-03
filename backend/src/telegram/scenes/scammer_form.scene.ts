@@ -129,7 +129,7 @@ export class ScammerFrom {
 
         const { username, telegramId } = form.scammerData
 
-        const userInfo = this.formatUserInfo(username, telegramId);
+        const userInfo = this.telegramService.formatUserInfo(username, telegramId, this.language);
 
         await ctx.reply(
             this.localizationService.getT('complaint.form.confirmation', this.language)
@@ -446,32 +446,18 @@ export class ScammerFrom {
         ctx.session.scamForm = undefined;
     }
 
-    private formatUserInfo(username?: string, telegramId?: string): string {
-        if (username && telegramId) {
-            return this.localizationService.getT('complaint.userInfo.withUsernameAndId', this.language)
-                .replace('{username}', username)
-                .replace('{telegramId}', telegramId);
-        } else if (username) {
-            return this.localizationService.getT('complaint.userInfo.withUsernameOnly', this.language)
-                .replace('{username}', username);
-        } else if (telegramId) {
-            return this.localizationService.getT('complaint.userInfo.withIdOnly', this.language)
-                .replace('{telegramId}', telegramId);
-        } else {
-            return this.localizationService.getT('complaint.userInfo.noInfo', this.language);
-        }
-    }
+   
 
     private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
         const channelId = '@qyqly';
         const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
 
-        const scammerInfo = this.formatUserInfo(
+        const scammerInfo = this.telegramService.formatUserInfo(
             ctx.session.scamForm.scammerData.username,
-            ctx.session.scamForm.scammerData.telegramId
+            ctx.session.scamForm.scammerData.telegramId,
         );
 
-        const channelMessage = this.localizationService.getT('complaint.form.channelMessage', this.language)
+        const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
             .replace('{botName}', BOT_NAME)
             .replace('{scammerInfo}', scammerInfo)
             .replace('{description}', ctx.session.scamForm.description || '')

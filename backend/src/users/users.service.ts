@@ -117,6 +117,10 @@ export class UsersService {
     });
   }
 
+  async findGarants() {
+    return await this.database.garants.findMany()
+  }
+
 
   async updateUserRights(telegramId: string) {
     const user = await this.findUserByTelegramId(telegramId);
@@ -131,25 +135,6 @@ export class UsersService {
     });
 
     return updatedUser;
-  }
-
-
-  async saveUserTonWallet(telegramId: string, wallet: string) {
-    const user = await this.findUserByTelegramId(telegramId);
-    if (!user) throw new Error('Пользователь не найден');
-    return this.database.usersConfig.update({
-      where: { userId: user.id },
-      data: { tonWallet: wallet },
-    });
-  }
-
-  async saveUserCard(telegramId: string, card: string) {
-    const user = await this.findUserByTelegramId(telegramId);
-    if (!user) throw new Error('Пользователь не найден');
-    return this.database.usersConfig.update({
-      where: { userId: user.id },
-      data: { card },
-    });
   }
 
   async setUserLanguage(telegramId: string, language: UserLanguage) {

@@ -32,19 +32,19 @@ export class ScamformService {
     if (!data.scammerData.username && !data.scammerData.telegramId) {
       throw new Error('Необходимо указать либо username, либо telegramId мошенника');
     }
-  
+
     const user = await this.usersService.findUserByTelegramId(data.userTelegramId);
-  
+
     let scammerWithTelegramId: any = null;
     let scammerWithoutTelegramId: any = null;
-  
+
     if (data.scammerData.telegramId) {
       // Ищем скаммера по telegramId (уникально)
       scammerWithTelegramId = await this.database.scammer.findUnique({
         where: { telegramId: data.scammerData.telegramId },
       });
     }
-  
+
     if (data.scammerData.username) {
       // Ищем скаммера с таким username, но без telegramId
       scammerWithoutTelegramId = await this.database.scammer.findFirst({
@@ -54,7 +54,7 @@ export class ScamformService {
         },
       });
     }
-  
+
     // Если есть скаммер с telegramId
     if (scammerWithTelegramId) {
       // Если есть скаммер без telegramId с таким же username
@@ -68,13 +68,13 @@ export class ScamformService {
             scammerId: scammerWithTelegramId.id,
           },
         });
-  
+
         // Удаляем скаммера без telegramId
         await this.database.scammer.delete({
           where: { id: scammerWithoutTelegramId.id },
         });
       }
-  
+
       // Обновляем username, если отличается и если пришёл новый username
       if (
         data.scammerData.username &&
@@ -86,17 +86,17 @@ export class ScamformService {
         });
       }
     }
-  
+
     // Если скаммер с telegramId не найден — ищем или создаём скаммера с username (без telegramId)
     let scammerToUse = scammerWithTelegramId;
-  
+
     if (!scammerToUse) {
       if (data.scammerData.username) {
         scammerToUse = await this.database.scammer.findFirst({
           where: { username: data.scammerData.username },
         });
       }
-  
+
       if (!scammerToUse) {
         // Создаём нового скаммера
         scammerToUse = await this.database.scammer.create({
@@ -107,7 +107,7 @@ export class ScamformService {
         });
       }
     }
-  
+
     const scamForm = await this.database.scamForm.create({
       data: {
         description: data.description,
@@ -125,11 +125,11 @@ export class ScamformService {
         user: true,
       },
     });
-  
+
     return scamForm;
   }
-  
-  
+
+
 
   async createAppeal(data: CreateAppealFormData) {
 
@@ -163,18 +163,34 @@ export class ScamformService {
 
   async findAll(page: number = 1, limit: number = 10, search: string = '') {
     const skip = (page - 1) * limit;
-  
-    const where = search
-      ? {
-          scammer: {
+
+    const garants = await this.database.garants.findMany();
+    const garantsUsernames = garants.map(g => g.username);
+
+    const where = {
+      scammer: {
+        AND: [
+          {
             OR: [
-              { username: { contains: search } },
-              { telegramId: { contains: search } }
+              { username: { notIn: garantsUsernames } },
+              { username: null }
             ]
-          }
-        }
-      : {};
-  
+          },
+          ...(search
+            ? [
+                {
+                  OR: [
+                    { username: { contains: search } },
+                    { telegramId: { contains: search } }
+                  ]
+                }
+              ]
+            : [])
+        ]
+      }
+    };
+    
+
     const [scamForms, totalCount] = await Promise.all([
       this.database.scamForm.findMany({
         where,
@@ -191,9 +207,9 @@ export class ScamformService {
       }),
       this.database.scamForm.count({ where })
     ]);
-  
+
     const maxPage = Math.ceil(totalCount / limit);
-  
+
     return {
       scamForms,
       pagination: {
@@ -204,7 +220,7 @@ export class ScamformService {
       }
     };
   }
-  
+
 
   async findById(id: string) {
     return this.database.scamForm.findUnique({
@@ -219,27 +235,36 @@ export class ScamformService {
   async getScammers(search: string = '') {
     const where = search
       ? {
-          OR: [
-            { username: { contains: search } },
-            { telegramId: { contains: search } }
-          ]
-        }
+        OR: [
+          { username: { contains: search } },
+          { telegramId: { contains: search } }
+        ]
+      }
       : {};
-  
+
     const scammers = await this.database.scammer.findMany({
       where,
       include: {
         scamForms: true
       }
     });
-  
-    return scammers.map(scammer => ({
+
+    // Получаем список гарантов для фильтрации
+    const garants = await this.database.garants.findMany();
+    const garantsUsernames = garants.map(g => g.username);
+
+    // Фильтруем гарантов из результатов
+    const filteredScammers = scammers.filter(scammer =>
+      !garantsUsernames.includes(scammer.username)
+    );
+
+    return filteredScammers.map(scammer => ({
       username: scammer.username,
       telegramId: scammer.telegramId,
       count: scammer.scamForms.length
     }));
   }
-  
+
 
   async getFileUrl(fileId: string): Promise<string | null> {
     try {
@@ -266,21 +291,21 @@ export class ScamformService {
 
   async voteUser(userTelegramId: string, scamFormId: string, voteType: VoteType) {
     const user = await this.usersService.findUserByTelegramId(userTelegramId);
-  
+
     const existingVote = await this.database.userVote.findFirst({
       where: {
         userId: user.id,
         scamFormId: scamFormId,
       },
     });
-  
+
     if (existingVote) {
       return {
         message: '❗️ Вы уже голосовали за эту жалобу',
         isSuccess: false,
       };
     }
-  
+
     await this.database.userVote.create({
       data: {
         userId: user.id,
@@ -288,7 +313,7 @@ export class ScamformService {
         voteType: voteType,
       },
     });
-  
+
     const updatedScamForm = await this.database.scamForm.update({
       where: { id: scamFormId },
       data: {
@@ -296,7 +321,7 @@ export class ScamformService {
         dislikes: voteType === VoteType.DISLIKE ? { increment: 1 } : undefined,
       },
     });
-  
+
     return {
       message: '✅ Ваш голос учтён',
       isSuccess: true,
@@ -304,6 +329,6 @@ export class ScamformService {
       dislikes: updatedScamForm.dislikes,
     };
   }
-  
+
 
 }
