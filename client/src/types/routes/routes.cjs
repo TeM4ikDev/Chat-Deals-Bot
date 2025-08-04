@@ -74,27 +74,16 @@ exports.RoutesConfigMain = [
     {
         key: 'SCAMFORMS',
         path: '/scamforms',
-        showInHeader: false,
+        showInHeader: true,
         label: 'Жалобы',
         icon: 'NotebookPen',
-        // subRoutes:{
-        //     USERS: {
-        //         key: 'USERS',
-        //         path: '/users',
-        //         disabled: true,
-        //         label: 'Пользователи',
-        //         showInHeader: false,
-        //         icon: 'UserIcon',
-        //         subRoutes: {
-        //             USER_DETAIL: {
-        //                 key: 'ID',
-        //                 path: '/:id',
-        //                 label: 'Детали пользователя',
-        //                 showInHeader: false,
-        //             },
-        //         }
-        //     },
-        // }
+    },
+    {
+        key: 'SCAMMERS',
+        path: '/scammers',
+        showInHeader: false,
+        label: 'База данных',
+        icon: 'DatabaseZap',
     },
     {
         key: 'NO_RIGHTS',

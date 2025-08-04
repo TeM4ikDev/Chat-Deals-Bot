@@ -3,7 +3,7 @@ import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Action, Ctx, InjectBot } from 'nestjs-telegraf';
+import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from './services/localization.service';
@@ -71,7 +71,7 @@ export class TelegramService implements OnModuleInit {
       return;
     }
 
-    const scammers = await this.scamformService.getScammers(query);
+    const {scammers} = await this.scamformService.getScammers(1, 10, query);
 
     const results: InlineQueryResult[] = [];
     if (scammers.length === 0) {
@@ -97,13 +97,13 @@ export class TelegramService implements OnModuleInit {
 `
 ├ Username: ${scammer.username ? `@${scammer.username}` : 'не указан'}
 ├ Telegram ID: ${scammer.telegramId || 'не указан'}
-└ Кол-во жалоб: ${scammer.count}
-[Просмотреть жалобы](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})
+└ Кол-во жалоб: ${scammer.scamForms}
+[Просмотреть жалобы](https://svdscambasebot.ru/scamforms?startapp=${scammer.username || scammer.telegramId})
             `.trim(),
             parse_mode: 'Markdown',
 
           },
-          description: `${displayName} • ${scammer.count} жалоб`,
+          description: `${displayName} • ${scammer.scamForms} жалоб`,
         });
       })
     }

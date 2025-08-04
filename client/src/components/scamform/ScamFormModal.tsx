@@ -1,22 +1,22 @@
+import { ScamformsService } from "@/services/scamforms.service"
 import { UserService } from "@/services/user.service"
-import { Image, ThumbsDown, ThumbsUp, Video, X } from "lucide-react"
+import { useStore } from "@/store/root.store"
+import { IMedia, IScamForm, IVoteResponse, ScammerStatus, voteType } from "@/types"
+import { UserRoles } from "@/types/auth"
+import { onRequest } from "@/utils/handleReq"
+import { AlertTriangle, Image, Shield, ThumbsDown, ThumbsUp, Video, X, XCircle } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import { Link } from "react-router-dom"
+import { toast } from "react-toastify"
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 import { Navigation, Pagination } from 'swiper/modules'
 import { Swiper as SwiperReact, SwiperSlide } from 'swiper/react'
 import { Block } from "../ui/Block"
+import { Button } from "../ui/Button"
 import { Modal } from "../ui/Modal"
-import { IMedia, IScamForm, voteType } from "@/types"
-import { toast } from "react-toastify"
-import { onRequest } from "@/utils/handleReq"
-import { ScamformsService } from "@/services/scamforms.service"
-
-
-
 
 interface ScamFormModalProps {
     selectedForm: IScamForm | null
@@ -36,6 +36,9 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
     const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null)
     const [localLikes, setLocalLikes] = useState(selectedForm?.likes || 0)
     const [localDislikes, setLocalDislikes] = useState(selectedForm?.dislikes || 0)
+    const [isProcessing, setIsProcessing] = useState(false)
+
+    const { userStore: { userRole } } = useStore()
 
     const handleMediaClick = useCallback((media: IMedia) => {
         setFullscreenMedia(media)
@@ -45,13 +48,14 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
         setFullscreenMedia(null)
     }, [])
 
-
     const handleVote = async (voteT: voteType) => {
         if (!selectedForm) return
-        const data: { message: string, isSuccess: boolean, likes: number, dislikes: number, } = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
+        const data: IVoteResponse = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
         if (data) {
             if (data.isSuccess) {
-                voteT == voteType.Like ? setLocalLikes(prev => prev + 1) : setLocalDislikes(prev => prev + 1)
+                setLocalLikes(data.likes)
+                setLocalDislikes(data.dislikes)
+                setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
                 toast.success(data.message)
             }
             else {
@@ -60,6 +64,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
         }
     }
 
+   
     const getMediaUrl = useCallback((fileId: string) => {
         return mediaUrls[fileId] || ''
     }, [mediaUrls])
@@ -97,12 +102,11 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
 
     useEffect(() => {
         if (selectedForm) {
-          setLocalLikes(selectedForm.likes);
-          setLocalDislikes(selectedForm.dislikes);
-          setUserVote(null); // если есть инфо о голосе пользователя, можно сюда поставить
+            setLocalLikes(selectedForm.likes);
+            setLocalDislikes(selectedForm.dislikes);
+            setUserVote(null);
         }
-      }, [selectedForm]);
-      
+    }, [selectedForm]);
 
     useEffect(() => {
         if (selectedForm && showModal) {
@@ -248,7 +252,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => handleVote(voteType.Like)}
-                                        className={`flex items-center gap-2 transition-colors p-2 rounded ${userVote === 'like'
+                                        className={`flex items-center gap-2 transition-colors p-0 rounded ${userVote === 'like'
                                             ? 'text-green-300 bg-green-900/20'
                                             : 'text-green-400 hover:text-green-300'
                                             }`}
@@ -258,7 +262,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                                     </button>
                                     <button
                                         onClick={() => handleVote(voteType.Dislike)}
-                                        className={`flex items-center gap-2 transition-colors p-2 rounded ${userVote === 'dislike'
+                                        className={`flex items-center gap-2 transition-colors p-0 rounded ${userVote === 'dislike'
                                             ? 'text-red-300 bg-red-900/20'
                                             : 'text-red-400 hover:text-red-300'
                                             }`}

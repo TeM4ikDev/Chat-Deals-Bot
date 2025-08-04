@@ -12,6 +12,7 @@ import { UsersShow } from './components/subpages/admin/usersShow';
 import { ScamForms } from './pages/ScamformsPage';
 import { useStore } from './store/root.store';
 import { UserRoles } from './types/auth';
+import ScammerPage from './pages/ScammerPage';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -68,9 +69,6 @@ const ProtectedRoutes = observer(() => {
         <Route path="users/:id" element={<UserDetails />} />
 
         <Route path="garants" element={<Garants />} />
-
-
-
       </Route>
 
       <Route index element={<MainPage />} />
@@ -79,9 +77,8 @@ const ProtectedRoutes = observer(() => {
       <Route path={'scamforms/:id'} element={<ScamForms />} />
       <Route path={getPathByKey('SCAMFORMS')} element={<ScamForms />} />
 
-
-
-
+      <Route path={'scammers/:id'} element={<ScammerPage />} />
+      <Route path={getPathByKey('SCAMMERS')} element={<ScammerPage />} />
 
       <Route path='*' element={<NotFoundPage />} />
     </Routes>

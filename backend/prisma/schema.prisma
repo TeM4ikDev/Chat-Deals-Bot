@@ -28,6 +28,12 @@ enum VoteType {
   DISLIKE
 }
 
+enum ScammerStatus {
+  SCAMMER
+  UNKNOWN
+  SUSPICIOUS
+}
+
 model User {
   id         String    @id @default(uuid())
   telegramId String    @unique
@@ -69,6 +75,12 @@ model Scammer {
   telegramId String? @unique
 
   scamForms ScamForm[]
+
+  status ScammerStatus @default(UNKNOWN)
+  marked Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ScamForm {

@@ -1,12 +1,11 @@
+import { ScamformsService } from "@/services/scamforms.service"
+import { IScamForm, IVoteResponse, voteType } from "@/types"
+import { onRequest } from "@/utils/handleReq"
 import { Eye, Image, ThumbsDown, ThumbsUp, User, Video } from "lucide-react"
 import { memo, useCallback, useMemo, useState } from "react"
+import { toast } from "react-toastify"
 import { Block } from "../ui/Block"
 import { Button } from "../ui/Button"
-import { IScamForm, voteType } from "@/types"
-import { onRequest } from "@/utils/handleReq"
-import { UserService } from "@/services/user.service"
-import { ScamformsService } from "@/services/scamforms.service"
-import { toast } from "react-toastify"
 
 interface ScamFormItemProps {
     showHeader: boolean
@@ -29,10 +28,12 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
 
 
     const handleVote = async (voteT: voteType) => {
-        const data: { message: string, isSuccess: boolean, likes: number, dislikes: number, } = await onRequest(ScamformsService.userVote(form.id, voteT))
+        const data: IVoteResponse = await onRequest(ScamformsService.userVote(form.id, voteT))
         if (data) {
             if (data.isSuccess) {
-                voteT == voteType.Like ? setLocalLikes(prev => prev + 1) : setLocalDislikes(prev => prev + 1)
+                setLocalLikes(data.likes)
+                setLocalDislikes(data.dislikes)
+                setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
                 toast.success(data.message)
             }
             else {

@@ -4,7 +4,7 @@ import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
 import { UsersService } from '@/users/users.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { VoteType } from '@prisma/client';
+import { ScammerStatus, VoteType } from '@prisma/client';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
@@ -129,8 +129,6 @@ export class ScamformService {
     return scamForm;
   }
 
-
-
   async createAppeal(data: CreateAppealFormData) {
 
     if (!data.userData.username && !data.userData.telegramId) {
@@ -232,7 +230,9 @@ export class ScamformService {
     });
   }
 
-  async getScammers(search: string = '') {
+  async getScammers(page: number = 1, limit: number = 10, search: string = '') {
+    const skip = (page - 1) * limit;
+
     const where = search
       ? {
         OR: [
@@ -249,20 +249,25 @@ export class ScamformService {
       }
     });
 
-    // Получаем список гарантов для фильтрации
     const garants = await this.database.garants.findMany();
     const garantsUsernames = garants.map(g => g.username);
 
-    // Фильтруем гарантов из результатов
     const filteredScammers = scammers.filter(scammer =>
       !garantsUsernames.includes(scammer.username)
     );
 
-    return filteredScammers.map(scammer => ({
-      username: scammer.username,
-      telegramId: scammer.telegramId,
-      count: scammer.scamForms.length
-    }));
+    const totalCount = filteredScammers.length;
+    const maxPage = Math.ceil(totalCount / limit);
+
+    return {
+      scammers,
+      pagination: {
+        currentPage: page,
+        totalPages: maxPage,
+        totalCount,
+        limit
+      }
+    };
   }
 
 
@@ -299,13 +304,55 @@ export class ScamformService {
       },
     });
 
+    // Если пользователь уже голосовал
     if (existingVote) {
-      return {
-        message: '❗️ Вы уже голосовали за эту жалобу',
-        isSuccess: false,
-      };
+      // Если голос такой же - отменяем его
+      if (existingVote.voteType === voteType) {
+        await this.database.userVote.delete({
+          where: { id: existingVote.id },
+        });
+
+        const updatedScamForm = await this.database.scamForm.update({
+          where: { id: scamFormId },
+          data: {
+            likes: voteType === VoteType.LIKE ? { decrement: 1 } : undefined,
+            dislikes: voteType === VoteType.DISLIKE ? { decrement: 1 } : undefined,
+          },
+        });
+
+        return {
+          message: '❌ Ваш голос отменён',
+          isSuccess: true,
+          likes: updatedScamForm.likes,
+          dislikes: updatedScamForm.dislikes,
+          userVote: null,
+        };
+      } else {
+        // Если голос другой - изменяем его
+        await this.database.userVote.update({
+          where: { id: existingVote.id },
+          data: { voteType: voteType },
+        });
+
+        const updatedScamForm = await this.database.scamForm.update({
+          where: { id: scamFormId },
+          data: {
+            likes: voteType === VoteType.LIKE ? { increment: 1 } : { decrement: 1 },
+            dislikes: voteType === VoteType.DISLIKE ? { increment: 1 } : { decrement: 1 },
+          },
+        });
+
+        return {
+          message: '✅ Ваш голос изменён',
+          isSuccess: true,
+          likes: updatedScamForm.likes,
+          dislikes: updatedScamForm.dislikes,
+          userVote: voteType,
+        };
+      }
     }
 
+    // Если пользователь ещё не голосовал - создаём новый голос
     await this.database.userVote.create({
       data: {
         userId: user.id,
@@ -327,8 +374,43 @@ export class ScamformService {
       isSuccess: true,
       likes: updatedScamForm.likes,
       dislikes: updatedScamForm.dislikes,
+      userVote: voteType,
     };
   }
 
+  async updateScammerStatus(scammerId: string, status: ScammerStatus) {
+    try {
+      // Находим скаммера
+      const scammer = await this.database.scammer.findUnique({
+        where: { id: scammerId }
+      });
+
+      if (!scammer) {
+        throw new Error('Scammer not found');
+      }
+
+      // Обновляем статус скаммера
+      const updatedScammer = await this.database.scammer.update({
+        where: { id: scammerId },
+        data: { 
+          status,
+          marked: true
+        }
+      });
+
+      return {
+        message: '✅ Статус успешно обновлен',
+        isSuccess: true,
+        scammer: updatedScammer
+      };
+    } catch (error) {
+      console.error('Error updating scammer status:', error);
+      return {
+        message: '❌ Ошибка при обновлении статуса',
+        isSuccess: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
 
 }

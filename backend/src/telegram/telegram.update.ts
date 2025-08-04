@@ -27,20 +27,20 @@ export class TelegramUpdate {
   async msg(@Ctx() ctx: Context) {
     if (ctx.text.split(' ').length > 1) return
 
-    const scammers = await this.scamformService.getScammers(ctx.text);
+    const { scammers } = await this.scamformService.getScammers(1, 20, ctx.text);
     const garants = await this.userService.findGarants()
 
-    const exactGarantMatch = garants.find(garant => 
+    const exactGarantMatch = garants.find(garant =>
       garant.username === ctx.text.replace('@', '')
     );
 
     if (exactGarantMatch) {
       const photoStream = fs.createReadStream(IMAGE_PATHS.GARANT);
       const garantInfo = this.localizationService.getT('userCheck.garantFound', 'ru').replace('{username}', exactGarantMatch.username);
-      
+
       await ctx.replyWithPhoto(
         { source: photoStream },
-        { 
+        {
           caption: garantInfo,
           parse_mode: 'Markdown'
         }
@@ -52,7 +52,7 @@ export class TelegramUpdate {
       const photoStream = fs.createReadStream(IMAGE_PATHS.NO_INFO);
       await ctx.replyWithPhoto(
         { source: photoStream },
-        { 
+        {
           caption: this.localizationService.getT('userCheck.notFound', 'ru'),
           parse_mode: 'Markdown'
         }
@@ -70,7 +70,7 @@ export class TelegramUpdate {
         return template
           .replace('{username}', username)
           .replace('{telegramId}', s.telegramId)
-          .replace('{count}', s.count.toString())
+          .replace('{count}', s.scamForms.toString())
           .replace('{identifier}', identifier);
       })
       .join('\n');
@@ -78,7 +78,7 @@ export class TelegramUpdate {
     const photoStream = fs.createReadStream(IMAGE_PATHS.SCAMMER);
     await ctx.replyWithPhoto(
       { source: photoStream },
-      { 
+      {
         caption: this.localizationService.getT('userCheck.found', 'ru').replace('{list}', list),
         parse_mode: 'Markdown'
       }
@@ -91,7 +91,7 @@ export class TelegramUpdate {
     const callbackData = (ctx.callbackQuery as any)?.data;
     const scamFormId = callbackData.split(':')[1];
 
-    const { message, isSuccess, likes, dislikes } = await this.scamformService.voteUser(
+    const { message, isSuccess, likes, dislikes, userVote } = await this.scamformService.voteUser(
       user.id.toString(),
       scamFormId,
       VoteType.LIKE
@@ -128,7 +128,7 @@ export class TelegramUpdate {
     const callbackData = (ctx.callbackQuery as any)?.data;
     const scamFormId = callbackData.split(':')[1];
 
-    const { message, isSuccess, likes, dislikes } = await this.scamformService.voteUser(
+    const { message, isSuccess, likes, dislikes, userVote } = await this.scamformService.voteUser(
       user.id.toString(),
       scamFormId,
       VoteType.DISLIKE

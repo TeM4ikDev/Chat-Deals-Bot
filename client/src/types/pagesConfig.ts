@@ -1,5 +1,4 @@
 import { createAxiosInstance } from "@/api/axios.api";
-import { useMemo } from "react";
 
 
 
@@ -28,7 +27,9 @@ class ApiConfig {
     scamform={
         baseInstance: createAxiosInstance('scamform/'),
         users: 'users',
-        vote: 'vote'
+        vote: 'vote',
+        confirm: 'confirm',
+        scammers: 'scammers'
 
     }
 

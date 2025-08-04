@@ -16,7 +16,7 @@
         isSubRoute?: boolean;
     };
 
-    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, NotebookPen } from 'lucide-react';
+    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, NotebookPen, DatabaseZap } from 'lucide-react';
 
 
    
@@ -76,9 +76,17 @@
   {
     "key": "SCAMFORMS",
     "path": "/scamforms",
-    "showInHeader": false,
+    "showInHeader": true,
     "label": "Жалобы",
     "icon": NotebookPen,
+    "isSubRoute": false
+  },
+  {
+    "key": "SCAMMERS",
+    "path": "/scammers",
+    "showInHeader": false,
+    "label": "База данных",
+    "icon": DatabaseZap,
     "isSubRoute": false
   },
   {

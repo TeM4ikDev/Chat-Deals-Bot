@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Put, Query, Res, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
-import { ScamformService } from './scamform.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { UserId } from '@/decorators/userid.decorator';
-import { VoteType } from '@prisma/client';
 import { UsersService } from '@/users/users.service';
+import { Body, Controller, Get, Param, Patch, Query, Res, UseGuards } from '@nestjs/common';
+import { ScammerStatus, VoteType } from '@prisma/client';
+import { Response } from 'express';
+import { ScamformService } from './scamform.service';
 
 @Controller('scamform')
 export class ScamformController {
@@ -24,6 +24,27 @@ export class ScamformController {
 
         return await this.scamformService.findAll(pageNum, limitNum, search)
     }
+
+
+    @Get('scammers')
+    async getScammers(
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '10',
+        @Query('search') search: string = ''
+    ) {
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+
+        return await this.scamformService.getScammers(pageNum, limitNum, search)
+    }
+
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('confirm')
+    async updateScammer(@Body() body: { scammerId: string, status: ScammerStatus }) {
+        return await this.scamformService.updateScammerStatus(body.scammerId, body.status);
+    }
+
 
     @UseGuards(JwtAuthGuard)
     @Patch('vote/:voteType/:id')

@@ -4,7 +4,7 @@ import { Block } from "@/components/ui/Block";
 import { Button } from "@/components/ui/Button";
 import { AdminService } from "@/services/admin.service";
 import { onRequest } from "@/utils/handleReq";
-import { AlertTriangle, Bot, CheckCircle, Crown, MessageCircle, Shield, Star, UserCheck } from "lucide-react";
+import { AlertTriangle, Bot, CheckCircle, Crown, Database, MessageCircle, Shield, Star, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -86,6 +86,23 @@ const MainPage: React.FC = () => {
                             routeKey="SCAMFORMS"
                             icon={<MessageCircle className="w-5 h-5" />}
                             color="blue"
+                            className="w-full"
+                        />
+                    </div>
+                </Block>
+
+                <Block
+                    title="База данных скамеров"
+                    icons={[<Database className="w-6 h-6 text-red-400" />]}
+                    variant="lighter"
+                    subtitle='Просмотр базы данных скамеров и подозрительных пользователей'
+                >
+                    <div className="flex flex-col gap-2 p-1">
+                        <Button
+                            text="Перейти к базе данных"
+                            routeKey="SCAMMERS"
+                            icon={<Database className="w-5 h-5" />}
+                            color="red"
                             className="w-full"
                         />
                     </div>

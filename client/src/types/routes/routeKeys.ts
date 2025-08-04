@@ -5,6 +5,7 @@ export type RootRouteKey =
   | 'PROFILE'
   | 'ADMIN'
   | 'SCAMFORMS'
+  | 'SCAMMERS'
   | 'NO_RIGHTS'
   | 'NOT_FOUND';
 
@@ -20,6 +21,7 @@ export const rootRouteKeys = [
   "PROFILE",
   "ADMIN",
   "SCAMFORMS",
+  "SCAMMERS",
   "NO_RIGHTS",
   "NOT_FOUND"
 ] as const;

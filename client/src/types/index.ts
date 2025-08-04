@@ -20,6 +20,9 @@ declare global {
         };
     }
 }
+export const appName = "SVD BASE BOT"
+export const TelegramBot: string = "tem4ik_ru_bot"
+export type userIdParam = number | string
 
 export interface IPagination {
     totalCount: number
@@ -28,13 +31,15 @@ export interface IPagination {
     limit: number
   }
 
-export const appName = "SVD BASE BOT"
-
-export const TelegramBot: string = "tem4ik_ru_bot"
-
-export type userIdParam = number | string
-
-
+export interface IScammer {
+    id: string
+    telegramId: string
+    username?: string
+    status: ScammerStatus
+    scamForms: number
+    marked: boolean
+    createdAt: string
+}
 
 export interface IMedia {
     id: string
@@ -43,27 +48,23 @@ export interface IMedia {
     fileUrl?: string
 }
 
-
 export interface IScamForm {
     id: string
     description: string
     media: IMedia[]
-
-    scammer:{
-        id: string,
-        telegramId: string,
-        username: string
-
-    }
-   
+    scammer: IScammer
     createdAt: string
-    status: 'pending' | 'reviewed' | 'resolved'
     likes: number
     dislikes: number
 }
 
-
-
+export interface IVoteResponse {
+    message: string
+    isSuccess: boolean
+    likes: number
+    dislikes: number
+    userVote: 'LIKE' | 'DISLIKE' | null
+}
 
 export interface ApiRoute {
     instance: AxiosInstance,
@@ -73,7 +74,12 @@ export interface ApiRoute {
 export enum voteType {
     Like = 'LIKE',
     Dislike = 'DISLIKE'
+}
 
+export enum ScammerStatus {
+    SCAMMER = 'SCAMMER',
+    UNKNOWN = 'UNKNOWN',
+    SUSPICIOUS = 'SUSPICIOUS'
 }
 
 
