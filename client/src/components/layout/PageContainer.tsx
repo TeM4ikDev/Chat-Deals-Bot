@@ -57,7 +57,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({ title, children, c
             )}
         >
             {title && (
-                <div className="relative w-full flex justify-center items-center p-2 pt-2">
+                <div className="relative w-full flex justify-center items-center p-0">
                     <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 text-center">
                         {title}
                     </h1>

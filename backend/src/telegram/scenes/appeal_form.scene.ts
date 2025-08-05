@@ -311,7 +311,7 @@ export class AppealForm {
             return;
         }
     }
-    
+
     @On('message')
     async onMessage(@Ctx() ctx: AppealFormSession) {
         const form = ctx.session.appealForm;
@@ -445,15 +445,17 @@ export class AppealForm {
         const channelId = '@giftsstate';
         const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
 
-        const appealUserInfo = this.telegramService.formatUserInfo(
-            ctx.session.appealForm.userData.username,
-            ctx.session.appealForm.userData.telegramId
-        );  
+        const { username, telegramId } = ctx.session.appealForm.userData
+        const appealUserInfo = this.telegramService.formatUserInfo(username, telegramId);
+
+        const encoded = this.telegramService.encodeParams({ id: telegramId })
+
 
         const channelMessage = this.localizationService.getT('appeal.form.channelMessage', this.language)
             .replace('{botName}', BOT_NAME)
             .replace('{appealUserInfo}', appealUserInfo)
             .replace('{description}', ctx.session.appealForm.description || '')
+            .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 
         try {
@@ -466,7 +468,7 @@ export class AppealForm {
 
                 await this.telegramService.sendMediaGroupToChannel(channelId, mediaGroup);
             } else {
-                await this.telegramService.sendMessageToChannel(channelId, channelMessage, {
+                await this.telegramService.sendMessageToChannelLayer(channelId, channelMessage, {
                     parse_mode: 'Markdown'
                 });
             }

@@ -1,22 +1,19 @@
 import { IScammer, ScammerStatus } from "@/types"
-import { AlertTriangle, Calendar, Shield, User, XCircle } from "lucide-react"
+import { AlertTriangle, Calendar, CheckCircle, Shield, User, XCircle } from "lucide-react"
 import { Block } from "../ui/Block"
 import { Button } from "../ui/Button"
+import { Link } from "react-router-dom"
 
 interface ScammerItemProps {
     scammer: IScammer
-    onConfirmAsScammer?: () => void
-    onConfirmAsSuspicious?: () => void
-    onRejectConfirmation?: () => void
+    onUpdateScammerStatus?: (scammerId: string, status: ScammerStatus) => void
     isProcessing?: boolean
     showConfirmButtons?: boolean
 }
 
 export const ScammerItem: React.FC<ScammerItemProps> = ({
     scammer,
-    onConfirmAsScammer,
-    onConfirmAsSuspicious,
-    onRejectConfirmation,
+    onUpdateScammerStatus,
     isProcessing = false,
     showConfirmButtons = false
 }) => {
@@ -71,7 +68,7 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
 
     const getStatusButtonProps = (status: ScammerStatus) => {
         const isCurrentStatus = scammer.status === status
-        
+
         switch (status) {
             case ScammerStatus.SCAMMER:
                 return {
@@ -79,15 +76,15 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                     color: (isCurrentStatus ? "red" : "transparent") as "red" | "transparent",
                     icon: <Shield className="w-4 h-4" />,
                     className: isCurrentStatus ? "opacity-100" : "opacity-60 hover:opacity-80",
-                    FC: onConfirmAsScammer
+                    FC: () => onUpdateScammerStatus?.(scammer.id, status)
                 }
             case ScammerStatus.SUSPICIOUS:
                 return {
-                    text: "Подозрительный",
+                    text: "50/50",
                     color: (isCurrentStatus ? "green" : "transparent") as "green" | "transparent",
                     icon: <AlertTriangle className="w-4 h-4" />,
                     className: isCurrentStatus ? "opacity-100" : "opacity-60 hover:opacity-80",
-                    FC: onConfirmAsSuspicious
+                    FC: () => onUpdateScammerStatus?.(scammer.id, status)
                 }
             default:
                 return {
@@ -96,27 +93,40 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                     icon: <XCircle className="w-4 h-4" />,
                     className: "opacity-60 hover:opacity-80",
                     disabled: isProcessing,
-                    FC: onRejectConfirmation
+                    FC: () => onUpdateScammerStatus?.(scammer.id, status)
                 }
         }
     }
 
     return (
-        <Block className="flex !flex-row justify-between">
-            <div className="flex flex-1 flex-col">
-                <div className="flex items-center gap-3">
+        <Block className="flex p-0.5 !flex-row justify-between">
+            <div className="flex flex-1 flex-col gap-2 justify-between">
+                <div className="flex items-center gap-3 ">
                     {getStatusIcon()}
-                    <div>
-                        <h3 className="text-white font-medium">
-                            {scammer.username ? `@${scammer.username}` : `ID: ${scammer.telegramId}`}
-                        </h3>
-                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor()}`}>
+                    <div className="flex flex-col">
+                        <div className="flex flex-row gap-2 items-baseline">
+                            <Link className="text-blue-300 font-bold" to={`../scamforms/${scammer.username ? (scammer.username).replace('@', '') : scammer.telegramId}`}>
+                                {scammer.username ? `@${scammer.username}` : `${scammer.telegramId}`}
+                            </Link>
+                            <div className="flex items-center gap-2">
+                                {scammer.marked ? (
+                                    <div className="flex items-center gap-1 text-green-500 text-xs">
+                                        <span>Отмечен</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1 text-gray-500 text-xs">
+                                        <span>Не отмечен</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <span className={`text-xs w-min px-2 rounded-full ${getStatusColor()}`}>
                             {getStatusText()}
                         </span>
                     </div>
                 </div>
 
-                <div className="space-y-2 text-sm text-gray-400">
+                <div className="flex flex-col text-sm gap-1 text-gray-400">
                     <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
                         <span>Telegram ID: {scammer.telegramId}</span>
@@ -133,34 +143,32 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                 </div>
             </div>
 
-            {showConfirmButtons && onConfirmAsScammer && onConfirmAsSuspicious && onRejectConfirmation && (
-                <Block className="!gap-1 p-0 justify-end min-w max-w-min" variant='transparent'>
-                    {/* Кнопки статусов */}
+            {showConfirmButtons && onUpdateScammerStatus && (
+                <Block className="!gap-1 !p-0 justify-end min-w max-w-min" variant='transparent'>
                     {[ScammerStatus.SCAMMER, ScammerStatus.SUSPICIOUS].map((status) => {
                         const props = getStatusButtonProps(status)
                         return (
                             <Button
                                 key={status}
                                 text={props.text}
-                                FC={props.FC}
+                                FC={scammer.status != status ? props.FC : () => { }}
                                 color={props.color}
-                                loading={isProcessing}
+                                // loading={i sProcessing}
                                 icon={props.icon}
-                                disabled={props.disabled}
-                                className={`text-xs px-2 py-1 ${props.className}`}
+                                // disabled={props.disabled}
+                                className={`text-xs !px-1 py-1 ${props.className}`}
                             />
                         )
                     })}
-                    
-                    {/* Отдельная кнопка для отклонения */}
+
                     <Button
                         text="Отклонить"
-                        FC={onRejectConfirmation}
+                        FC={() => onUpdateScammerStatus?.(scammer.id, ScammerStatus.UNKNOWN)}
                         color="transparent"
-                        loading={isProcessing}
+                        // loading={isProcessing}
                         icon={<XCircle className="w-4 h-4" />}
-                        disabled={isProcessing}
-                        className="text-xs px-2 py-1 opacity-60 hover:opacity-80"
+                        // disabled={isProcessing}
+                        className="text-xs !px-1 py-1 opacity-60 hover:opacity-80"
                     />
                 </Block>
             )}

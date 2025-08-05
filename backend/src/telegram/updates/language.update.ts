@@ -36,6 +36,7 @@ export class LanguageUpdate {
                 ],
             },
         });
+        ctx.answerCbQuery();
     }
 
     @Action('set_lang_ru')
@@ -46,6 +47,8 @@ export class LanguageUpdate {
         await ctx.answerCbQuery(this.localizationService.getT('language.changed.ru', 'ru'));
         await ctx.deleteMessage();
         await this.mainMenuUpdate.onStart(ctx, 'ru');
+
+        ctx.answerCbQuery();
     }
 
     @Action('set_lang_en')
@@ -56,5 +59,7 @@ export class LanguageUpdate {
         await ctx.answerCbQuery(this.localizationService.getT('language.changed.en', 'en'));
         await ctx.deleteMessage();
         await this.mainMenuUpdate.onStart(ctx, 'en');
+
+        ctx.answerCbQuery();
     }
 }

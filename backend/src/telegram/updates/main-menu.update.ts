@@ -18,7 +18,7 @@ export class MainMenuUpdate {
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
-    ) {}
+    ) { }
 
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
@@ -51,6 +51,12 @@ export class MainMenuUpdate {
                     ],
                 },
             });
+
+        // if ('callback_query' in ctx && ctx.callbackQuery?.id) {
+        //     await ctx.answerCbQuery();
+        // }
+
+
     }
 
     @Command('report')
@@ -84,30 +90,29 @@ export class MainMenuUpdate {
 
     @Action('submit_complaint')
     async onSubmitComplaint(@Ctx() ctx: Context, @Language() language: string) {
-        if ('callback_query' in ctx && ctx.callbackQuery?.id) {
-            await ctx.answerCbQuery();
-        }
-
         await this.reportUser(ctx, language)
+        await ctx.answerCbQuery();
+
     }
 
     @Action('submit_appeal')
     async onSubmitAppealAction(@Ctx() ctx: Context, @Language() language: string) {
-        if ('callback_query' in ctx && ctx.callbackQuery?.id) {
-            await ctx.answerCbQuery();
-        }
-
         await this.onSubmitAppeal(ctx, language)
+        await ctx.answerCbQuery();
+
     }
 
     @Action('fill_scammer_form')
-    fillScammerForm(@Ctx() ctx: Scenes.SceneContext) {
+    async fillScammerForm(@Ctx() ctx: Scenes.SceneContext) {
         ctx.scene.enter(SCENES.SCAMMER_FORM)
+        await ctx.answerCbQuery();
+
     }
 
     @Action('fill_appeal_form')
-    fillAppealForm(@Ctx() ctx: Scenes.SceneContext) {
+    async fillAppealForm(@Ctx() ctx: Scenes.SceneContext) {
         ctx.scene.enter(SCENES.APPEAL_FORM)
+        await ctx.answerCbQuery();
     }
 
     @Action('select_user')
@@ -138,5 +143,5 @@ export class MainMenuUpdate {
         }
 
         await this.onStart(ctx, language)
-    }    
+    }
 }

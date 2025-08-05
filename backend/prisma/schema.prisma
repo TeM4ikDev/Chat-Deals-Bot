@@ -42,6 +42,8 @@ model User {
   firstName  String?
   role       UserRoles @default(USER)
 
+  banned Boolean @default(false)
+
   UsersConfig UsersConfig?
 
   createdAt DateTime @default(now())

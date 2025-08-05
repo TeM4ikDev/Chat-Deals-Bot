@@ -65,80 +65,74 @@ export const Garants: React.FC = () => {
     }, [])
 
     return (
-        <PageContainer title="Управление гарантами" loading={isLoading} itemsStart returnPage>
-            <div className="flex flex-col justify-center items-center gap-6 w-full max-w-4xl">
+        <PageContainer className="gap-2" title="Гаранты" loading={isLoading} itemsStart returnPage>
+            <Button
+                text="Добавить гаранта"
+                FC={() => setShowAddForm(!showAddForm)}
+                icon={<Plus className="w-5 h-5" />}
+                className="w-full md:w-auto"
+            />
 
-
-                <Block variant="transparent">
-                    <Button
-                        text="Добавить гаранта"
-                        FC={() => setShowAddForm(!showAddForm)}
-                        icon={<Plus className="w-5 h-5" />}
-                        className="w-full md:w-auto"
+            {showAddForm && (
+                <Block
+                    title="Добавить нового гаранта"
+                    icons={[<Plus className="w-6 h-6 text-green-400" />]}
+                    variant="lighter"
+                    canCollapse
+                    isCollapsedInitially={false}
+                >
+                    <Form
+                        config={formConfig}
+                        message="Гарант успешно добавлен"
+                        onSubmit={handleAddGarant}
+                        className="w-full"
+                        isCollapsedInitially={false}
+                        canCollapse={false}
                     />
                 </Block>
+            )}
 
-                {showAddForm && (
-                    <Block
-                        title="Добавить нового гаранта"
-                        icons={[<Plus className="w-6 h-6 text-green-400" />]}
-                        variant="lighter"
-                        canCollapse
-                        isCollapsedInitially={false}
-                    >
-                        <Form
-                            config={formConfig}
-                            message="Гарант успешно добавлен"
-                            onSubmit={handleAddGarant}
-                            className="w-full"
-                            isCollapsedInitially={false}
-                            canCollapse={false}
-                        />
-                    </Block>
-                )}
-
-                <Block
-                    title="Список гарантов"
-                    icons={[<Users className="w-6 h-6 text-blue-400" />]}
-                    variant="lighter"
-                >
-                    {!garants || garants.length == 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <Shield className="w-16 h-16 text-gray-500 mb-4" />
-                            <h3 className="text-xl font-semibold text-gray-400 mb-2">Гаранты не найдены</h3>
-                            <p className="text-gray-500">Добавьте первого гаранта, чтобы начать</p>
-                        </div>
-                    ) : (
-                        <div className="grid gap-2">
-                            {garants.map((garant, index) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between p-2 bg-[#18132a] rounded-lg border border-[#28204a] hover:border-[#3a2f5a] transition-colors"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
-                                            <User className="w-5 h-5 text-white" />
-                                        </div>
-                                        <Link to={`https://t.me/${garant.username.replace('@', '')}`}>
-                                            <h4 className="font-semibold text-white">{garant.username}</h4>
-
-                                        </Link>
+            <Block
+                title="Список гарантов"
+                icons={[<Users className="w-6 h-6 text-blue-400" />]}
+                variant="lighter"
+            >
+                {!garants || garants.length == 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Shield className="w-16 h-16 text-gray-500 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-400 mb-2">Гаранты не найдены</h3>
+                        <p className="text-gray-500">Добавьте первого гаранта, чтобы начать</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-2">
+                        {garants.map((garant, index) => (
+                            <div
+                                key={index}
+                                className="flex items-center justify-between p-2 bg-[#18132a] rounded-lg border border-[#28204a] hover:border-[#3a2f5a] transition-colors"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
+                                        <User className="w-5 h-5 text-white" />
                                     </div>
+                                    <Link to={`https://t.me/${garant.username.replace('@', '')}`}>
+                                        <h4 className="font-semibold text-white">{garant.username}</h4>
 
-                                    <Button
-                                        widthMin
-                                        text=""
-                                        FC={() => handleRemoveGarant(garant.username)}
-                                        icon={<Trash2 className="w-4 h-4 text-red-400" />}
-                                        className="p-2 hover:bg-red-500/20 hover:border-red-500/30"
-                                        color="red"
-                                    />
+                                    </Link>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </Block>
-            </div>
+
+                                <Button
+                                    widthMin
+                                    text=""
+                                    FC={() => handleRemoveGarant(garant.username)}
+                                    icon={<Trash2 className="w-4 h-4 text-red-400" />}
+                                    className="p-2 hover:bg-red-500/20 hover:border-red-500/30"
+                                    color="red"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </Block>
         </PageContainer>
     )
 }

@@ -11,8 +11,6 @@ import { Block } from "../../ui/Block"
 import { Input } from "../../ui/Input"
 import { IPagination } from "@/types"
 
-
-
 interface IUsersList {
   users: IUser[]
   pagination: IPagination
@@ -110,9 +108,9 @@ export const UsersShow: React.FC = () => {
         <div className="!h-full rounded-xl shadow-lg border border-[#28204a] bg-[#1a1333]">
           <table className="min-w-[300px] w-full h-min divide-y divide-[#28204a]">
             <thead className="bg-[#221a3a] h-min top-0 z-10 rounded-t-xl">
-              <tr className="grid grid-cols-4 items-center h-12 rounded-t-xl">
+              <tr className="grid grid-cols-3 items-center h-12 rounded-t-xl">
                 <th className="flex items-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Username</th>
-                <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Админ</th>
+                {/* <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Админ</th> */}
                 <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Бан</th>
                 <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Роль</th>
               </tr>
@@ -123,7 +121,6 @@ export const UsersShow: React.FC = () => {
                   key={userData.id}
                   user={user}
                   userProp={userData}
-                  onToggleAdmin={handleToggleAdmin}
                   onToggleBanned={handleToggleBanned}
                 />
               )) : (

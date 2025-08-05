@@ -24,7 +24,7 @@ function App() {
   return (
     <Router>
 
-      <div className="relative min-h-screen flex flex-col bg-gradient-to-br from-[#0a0a23] via-[#1a1333] to-[#09090b]">
+      <div className="relative min-h-screen flex flex-col bg-gradient-to-br bg-[#16102c]">
         <Header />
         <Suspense fallback={<Loader />}>
           <Routes>
@@ -77,7 +77,7 @@ const ProtectedRoutes = observer(() => {
       <Route path={'scamforms/:id'} element={<ScamForms />} />
       <Route path={getPathByKey('SCAMFORMS')} element={<ScamForms />} />
 
-      <Route path={'scammers/:id'} element={<ScammerPage />} />
+      <Route path={'scammers/:id/:formId'} element={<ScammerPage />} />
       <Route path={getPathByKey('SCAMMERS')} element={<ScammerPage />} />
 
       <Route path='*' element={<NotFoundPage />} />

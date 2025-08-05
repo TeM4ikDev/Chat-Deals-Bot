@@ -1,10 +1,12 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
-import { UsersService } from '@/users/users.service';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScammerStatus, VoteType } from '@prisma/client';
+import { IUpdateScamFormDto } from './dto/update-scamform.dto';
+import { TelegramService } from '@/telegram/telegram.service';
+import { UsersService } from '@/users/users.service';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
@@ -25,7 +27,9 @@ export class ScamformService {
   constructor(
     private readonly database: DatabaseService,
     private readonly configService: ConfigService,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    @Inject(forwardRef(() => TelegramService))
+    private readonly telegramService: TelegramService,
   ) { }
 
   async create(data: CreateScamFormData) {
@@ -39,14 +43,12 @@ export class ScamformService {
     let scammerWithoutTelegramId: any = null;
 
     if (data.scammerData.telegramId) {
-      // Ищем скаммера по telegramId (уникально)
       scammerWithTelegramId = await this.database.scammer.findUnique({
         where: { telegramId: data.scammerData.telegramId },
       });
     }
 
     if (data.scammerData.username) {
-      // Ищем скаммера с таким username, но без telegramId
       scammerWithoutTelegramId = await this.database.scammer.findFirst({
         where: {
           username: data.scammerData.username,
@@ -55,11 +57,8 @@ export class ScamformService {
       });
     }
 
-    // Если есть скаммер с telegramId
     if (scammerWithTelegramId) {
-      // Если есть скаммер без telegramId с таким же username
       if (scammerWithoutTelegramId) {
-        // Переносим все жалобы с скаммера без telegramId на скаммера с telegramId
         await this.database.scamForm.updateMany({
           where: {
             scammerId: scammerWithoutTelegramId.id,
@@ -69,13 +68,11 @@ export class ScamformService {
           },
         });
 
-        // Удаляем скаммера без telegramId
         await this.database.scammer.delete({
           where: { id: scammerWithoutTelegramId.id },
         });
       }
 
-      // Обновляем username, если отличается и если пришёл новый username
       if (
         data.scammerData.username &&
         data.scammerData.username !== scammerWithTelegramId.username
@@ -87,7 +84,6 @@ export class ScamformService {
       }
     }
 
-    // Если скаммер с telegramId не найден — ищем или создаём скаммера с username (без telegramId)
     let scammerToUse = scammerWithTelegramId;
 
     if (!scammerToUse) {
@@ -98,7 +94,6 @@ export class ScamformService {
       }
 
       if (!scammerToUse) {
-        // Создаём нового скаммера
         scammerToUse = await this.database.scammer.create({
           data: {
             username: data.scammerData.username,
@@ -159,7 +154,18 @@ export class ScamformService {
     return appealForm;
   }
 
-  async findAll(page: number = 1, limit: number = 10, search: string = '') {
+  async findById(id: string) {
+    return this.database.scamForm.findUnique({
+      where: { id },
+      include: {
+        media: true,
+        scammer: true,
+        user: true
+      }
+    });
+  }
+
+  async findAll(page: number = 1, limit: number = 10, search: string = '', showMarked: boolean = false) {
     const skip = (page - 1) * limit;
 
     const garants = await this.database.garants.findMany();
@@ -176,18 +182,19 @@ export class ScamformService {
           },
           ...(search
             ? [
-                {
-                  OR: [
-                    { username: { contains: search } },
-                    { telegramId: { contains: search } }
-                  ]
-                }
-              ]
-            : [])
+              {
+                OR: [
+                  { username: { contains: search } },
+                  { telegramId: { contains: search } }
+                ]
+              }
+            ]
+            : []),
+          ...(showMarked ? [] : [{ marked: false }])
         ]
       }
     };
-    
+
 
     const [scamForms, totalCount] = await Promise.all([
       this.database.scamForm.findMany({
@@ -219,57 +226,72 @@ export class ScamformService {
     };
   }
 
-
-  async findById(id: string) {
-    return this.database.scamForm.findUnique({
-      where: { id },
-      include: {
-        media: true,
-        scammer: true
-      }
-    });
-  }
-
-  async getScammers(page: number = 1, limit: number = 10, search: string = '') {
+  async getScammers(page: number = 1, limit: number = 10, search: string = '', showMarked: boolean = true) {
     const skip = (page - 1) * limit;
-
-    const where = search
-      ? {
-        OR: [
-          { username: { contains: search } },
-          { telegramId: { contains: search } }
-        ]
-      }
-      : {};
-
-    const scammers = await this.database.scammer.findMany({
-      where,
-      include: {
-        scamForms: true
-      }
-    });
 
     const garants = await this.database.garants.findMany();
     const garantsUsernames = garants.map(g => g.username);
 
-    const filteredScammers = scammers.filter(scammer =>
-      !garantsUsernames.includes(scammer.username)
-    );
+    const where: any = {
+      AND: [
+        {
+          OR: [
+            { username: { notIn: garantsUsernames } },
+            { username: null }
+          ]
+        },
+        ...(search
+          ? [
+            {
+              OR: [
+                { username: { contains: search } },
+                { telegramId: { contains: search } }
+              ]
+            }
+          ]
+          : []),
+        ...(showMarked ? [] : [{ marked: false }])
+      ]
+    };
 
-    const totalCount = filteredScammers.length;
+    const [scammers, totalCount] = await Promise.all([
+      this.database.scammer.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          scamForms: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      this.database.scammer.count({ where })
+    ]);
+
     const maxPage = Math.ceil(totalCount / limit);
 
     return {
       scammers,
       pagination: {
         currentPage: page,
-        totalPages: maxPage,
+        maxPage,
         totalCount,
         limit
       }
     };
   }
 
+  async findScammerById(id: string){
+    return await this.database.scammer.findUnique({
+      where:{
+        id
+      },
+      include:{
+        scamForms: true
+      }
+    })
+  }
 
   async getFileUrl(fileId: string): Promise<string | null> {
     try {
@@ -304,9 +326,7 @@ export class ScamformService {
       },
     });
 
-    // Если пользователь уже голосовал
     if (existingVote) {
-      // Если голос такой же - отменяем его
       if (existingVote.voteType === voteType) {
         await this.database.userVote.delete({
           where: { id: existingVote.id },
@@ -378,9 +398,9 @@ export class ScamformService {
     };
   }
 
-  async updateScammerStatus(scammerId: string, status: ScammerStatus) {
+  async updateScammerStatus(data: IUpdateScamFormDto) {
+    const { status, scammerId } = data
     try {
-      // Находим скаммера
       const scammer = await this.database.scammer.findUnique({
         where: { id: scammerId }
       });
@@ -389,14 +409,23 @@ export class ScamformService {
         throw new Error('Scammer not found');
       }
 
-      // Обновляем статус скаммера
+
+
+
       const updatedScammer = await this.database.scammer.update({
         where: { id: scammerId },
-        data: { 
+        data: {
           status,
           marked: true
         }
       });
+
+      if (data.formId && scammer.marked == false) {
+        const form = await this.findById(data.formId)
+
+        await this.telegramService.complaintOutcome(form, status)
+      }
+
 
       return {
         message: '✅ Статус успешно обновлен',
@@ -412,5 +441,4 @@ export class ScamformService {
       };
     }
   }
-
 }

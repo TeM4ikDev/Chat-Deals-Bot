@@ -7,6 +7,7 @@ import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from './services/localization.service';
+import { Prisma, ScammerStatus } from '@prisma/client';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -22,6 +23,12 @@ export class TelegramService implements OnModuleInit {
 
   ) { }
 
+  onModuleInit() {
+    this.bot.on('inline_query', async (ctx) => {
+      await this.handleInlineQuery(ctx);
+    });
+  }
+
   getPhotoStream(filePath: string): InputFile {
     return Input.fromLocalFile(filePath)
   }
@@ -30,7 +37,7 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMessage(telegramId, message)
   }
 
-  async sendMessageToChannel(channelId: string, message: string, options?: any) {
+  async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
     return await this.bot.telegram.sendMessage(channelId, message, options)
   }
 
@@ -46,10 +53,30 @@ export class TelegramService implements OnModuleInit {
     return arrAccepted.includes(telegramId)
   }
 
-  onModuleInit() {
-    this.bot.on('inline_query', async (ctx) => {
-      await this.handleInlineQuery(ctx);
-    });
+
+  async complaintOutcome(
+    complaint: Prisma.ScamFormGetPayload<{ include: { scammer, user } }>,
+    status: ScammerStatus,
+  ) {
+    const scammerInfo: string = complaint.user.telegramId || complaint.user.username
+    let textReq: string;
+
+    switch (status) {
+      case ScammerStatus.SCAMMER:
+        textReq = `✅ Исход вашей жалобы на ${scammerInfo}. Аккаунт добавлен в базу мошенников`;
+        break;
+
+      case ScammerStatus.SUSPICIOUS:
+        textReq = `☑️ Исход вашей жалобы на #${scammerInfo}. Пользователь добавлен в базу подозрительных аккаунтов.`;
+        break;
+
+      case ScammerStatus.UNKNOWN:
+      default:
+        textReq = `🚫 Ваша жалоба на #${scammerInfo} отклонена.\n\nПричина: Недостаточность / неинформативность / невалидность отправленных вами доказательств. Учтите это, соберите доказательства повторно и отправьте жалобу заново.`;
+        break;
+    }
+
+    await this.sendMessage(complaint.user.telegramId, textReq)
   }
 
   private async handleInlineQuery(ctx: Context) {
@@ -71,7 +98,12 @@ export class TelegramService implements OnModuleInit {
       return;
     }
 
-    const {scammers} = await this.scamformService.getScammers(1, 10, query);
+
+    console.log(query)
+
+    const { scammers } = await this.scamformService.getScammers(undefined, undefined, query);
+
+    console.log(scammers)
 
     const results: InlineQueryResult[] = [];
     if (scammers.length === 0) {
@@ -86,24 +118,24 @@ export class TelegramService implements OnModuleInit {
       });
     } else {
       scammers.forEach((scammer, index) => {
-        const displayName = scammer.username || scammer.telegramId || 'Неизвестный';
-      
+
         results.push({
           type: 'article',
           id: `scammer_${index}`,
           title: scammer.username ? `@${scammer.username}` : `ID: ${scammer.telegramId}`,
           input_message_content: {
-            message_text: 
-`
+            // photo_url: 
+            message_text:
+              `
 ├ Username: ${scammer.username ? `@${scammer.username}` : 'не указан'}
 ├ Telegram ID: ${scammer.telegramId || 'не указан'}
-└ Кол-во жалоб: ${scammer.scamForms}
-[Просмотреть жалобы](https://svdscambasebot.ru/scamforms?startapp=${scammer.username || scammer.telegramId})
+└ Кол-во жалоб: ${scammer.scamForms.length}
+[Просмотреть жалобы](https://svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})
             `.trim(),
             parse_mode: 'Markdown',
 
           },
-          description: `${displayName} • ${scammer.scamForms} жалоб`,
+          description: `${this.getScammerStatusText(scammer)} • ${scammer.scamForms.length} жалоб`,
         });
       })
     }
@@ -114,22 +146,37 @@ export class TelegramService implements OnModuleInit {
 
   formatUserInfo(username?: string, telegramId?: string, language: string = 'ru'): string {
     if (username && telegramId) {
-        return this.localizationService.getT('userInfo.withUsernameAndId', language)
-            .replace('{username}', username)
-            .replace('{telegramId}', telegramId);
+      return this.localizationService.getT('userInfo.withUsernameAndId', language)
+        .replace('{username}', username)
+        .replace('{telegramId}', telegramId);
     } else if (username) {
-        return this.localizationService.getT('userInfo.withUsernameOnly', language)
-            .replace('{username}', username);
+      return this.localizationService.getT('userInfo.withUsernameOnly', language)
+        .replace('{username}', username);
     } else if (telegramId) {
-        return this.localizationService.getT('userInfo.withIdOnly', language)
-            .replace('{telegramId}', telegramId);
+      return this.localizationService.getT('userInfo.withIdOnly', language)
+        .replace('{telegramId}', telegramId);
     } else {
-        return this.localizationService.getT('userInfo.noInfo', language);
+      return this.localizationService.getT('userInfo.noInfo', language);
     }
-}
+  }
+
+  encodeParams(payload: {}) {
+    return Buffer.from(JSON.stringify(payload)).toString('base64url');
+  }
+
+  getScammerStatusText(scammer: Prisma.ScammerGetPayload<{}>) {
+    switch (scammer.status) {
+      case ScammerStatus.SCAMMER:
+        return "Скамер"
+      case ScammerStatus.SUSPICIOUS:
+        return "Подозрительный"
+      case ScammerStatus.UNKNOWN:
+        return "Неизвестный"
+      default:
+        return "Неизвестный"
+    }
+  }
 
 
 
-
- 
 }

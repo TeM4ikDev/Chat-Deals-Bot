@@ -1,10 +1,9 @@
 import { ScamformsService } from "@/services/scamforms.service"
 import { UserService } from "@/services/user.service"
 import { useStore } from "@/store/root.store"
-import { IMedia, IScamForm, IVoteResponse, ScammerStatus, voteType } from "@/types"
-import { UserRoles } from "@/types/auth"
+import { IMedia, IScamForm, IVoteResponse, voteType } from "@/types"
 import { onRequest } from "@/utils/handleReq"
-import { AlertTriangle, Image, Shield, ThumbsDown, ThumbsUp, Video, X, XCircle } from "lucide-react"
+import { Image, ThumbsDown, ThumbsUp, Video, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import { Link } from "react-router-dom"
@@ -15,7 +14,6 @@ import 'swiper/css/pagination'
 import { Navigation, Pagination } from 'swiper/modules'
 import { Swiper as SwiperReact, SwiperSlide } from 'swiper/react'
 import { Block } from "../ui/Block"
-import { Button } from "../ui/Button"
 import { Modal } from "../ui/Modal"
 
 interface ScamFormModalProps {
@@ -29,16 +27,18 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
     showModal,
     setShowModal
 }) => {
+    const { scamformsStore } = useStore()
     const [fullscreenMedia, setFullscreenMedia] = useState<IMedia | null>(null)
     const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({})
     const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({})
     const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({})
     const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null)
-    const [localLikes, setLocalLikes] = useState(selectedForm?.likes || 0)
-    const [localDislikes, setLocalDislikes] = useState(selectedForm?.dislikes || 0)
     const [isProcessing, setIsProcessing] = useState(false)
 
     const { userStore: { userRole } } = useStore()
+
+    // Получаем актуальные данные из store
+    const currentForm = selectedForm ? scamformsStore.getFormById(selectedForm.id) || selectedForm : null
 
     const handleMediaClick = useCallback((media: IMedia) => {
         setFullscreenMedia(media)
@@ -49,22 +49,33 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
     }, [])
 
     const handleVote = async (voteT: voteType) => {
-        if (!selectedForm) return
-        const data: IVoteResponse = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
-        if (data) {
-            if (data.isSuccess) {
-                setLocalLikes(data.likes)
-                setLocalDislikes(data.dislikes)
-                setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
-                toast.success(data.message)
+        if (!selectedForm || isProcessing) return
+        setIsProcessing(true)
+
+        try {
+            const data: IVoteResponse = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
+            if (data) {
+                if (data.isSuccess) {
+                    // Обновляем глобальное состояние
+                    scamformsStore.updateFormVotes(
+                        selectedForm.id, 
+                        data.likes, 
+                        data.dislikes, 
+                        data.userVote
+                    )
+                    setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
+                    toast.success(data.message)
+                } else {
+                    toast.error(data.message)
+                }
             }
-            else {
-                toast.error(data.message)
-            }
+        } catch (error) {
+            toast.error('Ошибка при голосовании')
+        } finally {
+            setIsProcessing(false)
         }
     }
 
-   
     const getMediaUrl = useCallback((fileId: string) => {
         return mediaUrls[fileId] || ''
     }, [mediaUrls])
@@ -102,8 +113,6 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
 
     useEffect(() => {
         if (selectedForm) {
-            setLocalLikes(selectedForm.likes);
-            setLocalDislikes(selectedForm.dislikes);
             setUserVote(null);
         }
     }, [selectedForm]);
@@ -223,7 +232,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                 isOpen={showModal}
                 setIsOpen={setShowModal}
             >
-                {selectedForm && (
+                {selectedForm && currentForm && (
                     <div className="space-y-2">
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                             <span>Создано: {createdAt}</span>
@@ -252,23 +261,25 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={() => handleVote(voteType.Like)}
+                                        disabled={isProcessing}
                                         className={`flex items-center gap-2 transition-colors p-0 rounded ${userVote === 'like'
                                             ? 'text-green-300 bg-green-900/20'
                                             : 'text-green-400 hover:text-green-300'
                                             }`}
                                     >
                                         <ThumbsUp className="w-5 h-5" />
-                                        <span className="text-white">{localLikes} согласны</span>
+                                        <span className="text-white">{currentForm.likes} согласны</span>
                                     </button>
                                     <button
                                         onClick={() => handleVote(voteType.Dislike)}
+                                        disabled={isProcessing}
                                         className={`flex items-center gap-2 transition-colors p-0 rounded ${userVote === 'dislike'
                                             ? 'text-red-300 bg-red-900/20'
                                             : 'text-red-400 hover:text-red-300'
                                             }`}
                                     >
                                         <ThumbsDown className="w-5 h-5" />
-                                        <span className="text-white">{localDislikes} не согласны</span>
+                                        <span className="text-white">{currentForm.dislikes} не согласны</span>
                                     </button>
                                 </div>
                             </div>

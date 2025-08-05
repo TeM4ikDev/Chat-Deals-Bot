@@ -79,16 +79,16 @@ export const Block = ({
 
                     <div className="flex flex-col items-start gap-2 w-full h-min">
                         <div className="flex w-full h-min gap-2">
-                            <div className={cn("flex h-full w-full", titleCenter && '!justify-center text-center')}>
-                                <div className={cn("flex items-center justify-center gap-x-2", Icons && Icons.length > 0 && 'mx-2')}>
+                            <div className={cn("flex h-full w-full items-center", titleCenter && '!justify-center text-center')}>
+                                <div className={cn("flex items-center justify-center", Icons && Icons.length > 0 && 'mr-2')}>
                                     {Icons && Icons.map((Icon, index) => (
-                                        <div key={index} className="w-7 h-7 flex items-center justify-center">{Icon}</div>
+                                        <div key={index} className="flex items-center justify-center">{Icon}</div>
                                     ))}
                                 </div>
 
                                 {title && (
                                     typeof title === 'string'
-                                        ? <h3 className={cn("text-lg items-center h-min font-bold text-cyan-300", hugeTitle && '!text-3xl lg:!text-4xl', mediumTitle && '!text-2xl lg:!text-3xl')}>{title}</h3>
+                                        ? <h3 className={cn("text-lg items-center  h-min font-bold text-cyan-300", hugeTitle && '!text-3xl lg:!text-4xl', mediumTitle && '!text-2xl lg:!text-3xl')}>{title}</h3>
                                         : title
                                 )}
                             </div>

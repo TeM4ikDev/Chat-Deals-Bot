@@ -5,6 +5,7 @@ import { Body, Controller, Get, Param, Patch, Query, Res, UseGuards } from '@nes
 import { ScammerStatus, VoteType } from '@prisma/client';
 import { Response } from 'express';
 import { ScamformService } from './scamform.service';
+import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 
 @Controller('scamform')
 export class ScamformController {
@@ -17,12 +18,15 @@ export class ScamformController {
     async findAllScamforms(
         @Query('page') page: string = '1',
         @Query('limit') limit: string = '10',
-        @Query('search') search: string = ''
+        @Query('search') search: string = '',
+        @Query('showMarked') showMarked: string
     ) {
         const pageNum = parseInt(page, 10) || 1;
         const limitNum = parseInt(limit, 10) || 10;
 
-        return await this.scamformService.findAll(pageNum, limitNum, search)
+        console.log((/true/).test(showMarked))
+
+        return await this.scamformService.findAll(pageNum, limitNum, search, (/true/).test(showMarked))
     }
 
 
@@ -30,19 +34,22 @@ export class ScamformController {
     async getScammers(
         @Query('page') page: string = '1',
         @Query('limit') limit: string = '10',
-        @Query('search') search: string = ''
+        @Query('search') search: string = '',
+        @Query('showMarked') showMarked: string
     ) {
         const pageNum = parseInt(page, 10) || 1;
         const limitNum = parseInt(limit, 10) || 10;
 
-        return await this.scamformService.getScammers(pageNum, limitNum, search)
+        return await this.scamformService.getScammers(pageNum, limitNum, search, (/true/).test(showMarked))
     }
 
 
     @UseGuards(JwtAuthGuard)
     @Patch('confirm')
-    async updateScammer(@Body() body: { scammerId: string, status: ScammerStatus }) {
-        return await this.scamformService.updateScammerStatus(body.scammerId, body.status);
+    async updateScammer(@Body() body: IUpdateScamFormDto) {
+
+        console.log(body)
+        return await this.scamformService.updateScammerStatus(body);
     }
 
 

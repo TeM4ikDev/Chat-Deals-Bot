@@ -1,19 +1,24 @@
 import { ScamFormList, ScamFormModal } from "@/components/scamform"
+import { Block } from "@/components/ui/Block"
+import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Pagination as ListPagination } from "@/components/ui/Pagination"
 import { ScamformsService } from "@/services/scamforms.service"
 import { useStore } from "@/store/root.store"
 import { IPagination, IScamForm } from "@/types"
 import { onRequest } from "@/utils/handleReq"
+import { Filter } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { PageContainer } from "../components/layout/PageContainer"
 
 export const ScamForms: React.FC = () => {
+    const navigate = useNavigate();
     const { id } = useParams<{ id: string }>()
-    const { userStore: { user } } = useStore()
-    const [scamForms, setScamForms] = useState<IScamForm[]>([])
+    const { scamformsStore: { forms, setForms } } = useStore()
+
+
     const [isLoading, setIsLoading] = useState(false)
     const [selectedForm, setSelectedForm] = useState<IScamForm | null>(null)
     const [showModal, setShowModal] = useState(false)
@@ -22,11 +27,13 @@ export const ScamForms: React.FC = () => {
         totalCount: 0,
         maxPage: 1,
         currentPage: 1,
-        limit: 5
+        limit: 10
     })
     const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
     const initialSearch = id || startParam || "";
     const [search, setSearch] = useState<string>(initialSearch);
+
+    const [showMarked, setShowMarked] = useState(true)
 
     const debouncedSearch = useCallback(
         (() => {
@@ -34,7 +41,7 @@ export const ScamForms: React.FC = () => {
             return (searchValue: string) => {
                 clearTimeout(timeoutId);
                 timeoutId = setTimeout(() => {
-                    getScamForms(pagination.currentPage, searchValue);
+                    getScamForms(pagination.currentPage, searchValue, showMarked);
                 }, 300);
             };
         })(),
@@ -54,12 +61,12 @@ export const ScamForms: React.FC = () => {
         debouncedSearch(value);
     }
 
-    const getScamForms = async (page: number, searchValue = search) => {
+    const getScamForms = async (page: number, searchValue = search, showMarked: boolean) => {
         setIsLoading(true)
-        const data = await onRequest(ScamformsService.getAllScamForms({ page, limit: pagination.limit, search: searchValue }))
+        const data = await onRequest(ScamformsService.getAllScamForms({ page, limit: pagination.limit, search: searchValue, showMarked }))
         console.log(data)
         if (data) {
-            setScamForms(data.scamForms)
+            setForms(data.scamForms)
             setPagination(data.pagination)
         }
         setIsLoading(false)
@@ -72,7 +79,8 @@ export const ScamForms: React.FC = () => {
 
     const handleDeleteForm = async (formId: string) => {
         if (window.confirm('Вы уверены, что хотите удалить эту жалобу?')) {
-            setScamForms(prev => prev.filter(form => form.id !== formId))
+            const updatedForms = forms.filter(form => form.id !== formId)
+            setForms(updatedForms)
             toast.success('Жалоба удалена')
         }
     }
@@ -80,11 +88,18 @@ export const ScamForms: React.FC = () => {
     useEffect(() => {
         if (!id && startParam && !search) {
             setSearch(startParam);
-            getScamForms(pagination.currentPage, startParam);
+            getScamForms(pagination.currentPage, startParam, showMarked);
         } else {
-            getScamForms(pagination.currentPage, search)
+            getScamForms(pagination.currentPage, search, showMarked)
         }
-    }, [pagination.currentPage])
+    }, [pagination.currentPage, showMarked])
+
+
+    useEffect(() => {
+        if (id) {
+            navigate('/scamforms', { replace: true });
+        }
+    }, []);
 
     return (
         <PageContainer title="Жалобы" className="gap-2 max-w-2xl mx-auto" itemsStart returnPage>
@@ -93,6 +108,11 @@ export const ScamForms: React.FC = () => {
                 name="search"
                 value={search}
                 onChange={handleSearchChange}
+
+                onClear={() => {
+                    setSearch('');
+                    setPagination(prev => ({ ...prev, currentPage: 1 }));
+                }}
             />
 
             <ListPagination
@@ -101,8 +121,19 @@ export const ScamForms: React.FC = () => {
                 onPageChange={handlePageChange}
             />
 
+            <Block className="flex justify-between items-center">
+                <Button
+                    widthMin
+                    text={!showMarked ? "Только не отмеченные" : "Показаны все"}
+                    FC={() => setShowMarked(prev => !prev)}
+                    color="transparent"
+                    icon={[<Filter className="w-4 h-4" />]}
+                    className="text-sm"
+                />
+            </Block>
+
             <ScamFormList
-                scamForms={scamForms}
+                scamForms={forms}
                 onViewForm={handleViewForm}
             />
 
@@ -111,6 +142,6 @@ export const ScamForms: React.FC = () => {
                 showModal={showModal}
                 setShowModal={setShowModal}
             />
-        </PageContainer>
+        </PageContainer >
     )
 }

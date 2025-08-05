@@ -10,6 +10,11 @@ interface PaginationProps {
 }
 
 export const Pagination: React.FC<PaginationProps> = ({ currentPage, maxPage, onPageChange, className }) => {
+
+
+    // if(!maxPage || maxPage == 0) return 
+
+
     return (
         <div className={cn("flex w-full justify-center items-center gap-4", className)}>
             <Button

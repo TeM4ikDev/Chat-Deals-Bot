@@ -2,7 +2,7 @@ import { useStore } from "@/store/root.store";
 import type { RouteKey } from "@/types/routes/routeKeys";
 import { cn } from "@/utils/cn";
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
 interface Props {
@@ -45,17 +45,18 @@ export const Button = ({ text, FC, routeKey, icon, widthMin = false, href, class
                 className={cn(
                     buttonWidth,
                     (disabled || loading) ? "bg-gradient-to-r from-gray-700/50 to-gray-600/50 cursor-not-allowed text-gray-500 border border-gray-600/30" : !(icon && !text) ? buttonColor : '',
-                    "flex flex-row h-min mx-auto justify-center items-center text-nowrap transition-all duration-200 font-bold gap-3 py-2 px-4 rounded-lg shadow-sm",
+                    "flex text-sm flex-row h-min mx-auto justify-center items-center text-nowrap transition-all duration-200 font-bold gap-3 py-1.5 px-4 rounded-lg shadow-sm",
                     className
                 )}
                 disabled={disabled || loading}
             >
                 {loading ? (
                     <motion.span
-                        // className="mx-5"
+                        className={className + '!w-full !min-w-max'}
                         style={{
-                            width: 24,
-                            height: 24,
+                            // width: 24,
+                            // height: 24,
+                            width: '100%',
                             border: '2px solid #fff',
                             borderTop: '2px solid transparent',
                             borderRadius: '50%',
@@ -65,7 +66,9 @@ export const Button = ({ text, FC, routeKey, icon, widthMin = false, href, class
                         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                     />
                 ) : <>
-                    {icon}
+                    {Array.isArray(icon)
+                        ? icon.map((el, idx) => el && React.cloneElement(el as React.ReactElement, { key: el.key ?? idx }))
+                        : icon}
                     {text}
                 </>}
             </button>

@@ -1,10 +1,12 @@
 import React, { createContext, useContext } from 'react';
-import userStore from './user.store';
 import { routesStore } from './routes.store';
+import scamformsStore from './scamforms.store';
+import userStore from './user.store';
 
 const store = {
     userStore,
     routesStore,
+    scamformsStore,
 };
 
 const StoreContext = createContext(store);

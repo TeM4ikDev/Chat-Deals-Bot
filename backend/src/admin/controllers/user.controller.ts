@@ -36,6 +36,14 @@ export class UserManagementController {
         console.log(body)
         return await this.usersService.updateUserRights(String(body.telegramId))
     }
+
+
+    @Patch('update-banned')
+    async updateUserBanned(@Body() body: { userId: string, banned: boolean }) {
+        console.log(body)
+        return await this.usersService.updateUserBanned(body.userId, body.banned)
+    }
+    
    
 
 }

@@ -11,12 +11,11 @@ export class scamformsService implements ApiRoute {
     }
 
     getAllScamForms = async (params: any) => {
-        const { page = 1, limit = 10, search = '' } = params;
-        const query = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+        const { page = 1, limit = 10, search = '', showMarked = false } = params;
+        const query = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}&showMarked=${showMarked}`;
         const { data } = await this.instance.get(`?${query}`)
         return data
     }
-
 
     userVote = async (formId: string, voteType: voteType) => {
         const { data } = await this.instance.patch(`${this.baseUrl.vote}/${voteType}/${formId}`)
@@ -24,22 +23,22 @@ export class scamformsService implements ApiRoute {
     }
 
     getScammers = async (params: any) => {
-        const { page = 1, limit = 10, search = '', markedOnly = false } = params;
-        const query = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}${markedOnly ? '&markedOnly=true' : ''}`;
+        const { page = 1, limit = 10, search = '', showMarked = false } = params;
+        console.log(showMarked)
+        const query = `page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}&showMarked=${showMarked}`;
 
         const { data } = await this.instance.get(`${this.baseUrl.scammers}?${query}`)
         return data
-
     }
 
-    confirmScammerStatus = async (scammerId: string, status: ScammerStatus) => {
+    confirmScammerStatus = async (scammerId: string, status: ScammerStatus, formId: string | undefined) => {
         const { data } = await this.instance.patch(`${this.baseUrl.confirm}`, {
             scammerId,
-            status
+            status,
+            formId
         })
         return data
     }
-
 }
 
 export const ScamformsService = new scamformsService()

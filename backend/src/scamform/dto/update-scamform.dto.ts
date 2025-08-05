@@ -1,4 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateScamformDto } from './create-scamform.dto';
+import { ScammerStatus } from "@prisma/client";
 
-export class UpdateScamformDto extends PartialType(CreateScamformDto) {}
+export interface IUpdateScamFormDto {
+    scammerId: string,
+    status: ScammerStatus,
+    formId: string | undefined
+}

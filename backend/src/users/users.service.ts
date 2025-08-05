@@ -137,6 +137,13 @@ export class UsersService {
     return updatedUser;
   }
 
+  async updateUserBanned(userId: string, banned: boolean) {
+    return await this.database.user.update({
+      where: { id: userId },
+      data: { banned },
+    })
+  }
+
   async setUserLanguage(telegramId: string, language: UserLanguage) {
     const user = await this.findUserByTelegramId(telegramId);
     if (!user) throw new Error('Пользователь не найден');

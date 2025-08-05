@@ -6,6 +6,7 @@ import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
 import { BOT_NAME, SCENES } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
+import { ConfigService } from "@nestjs/config";
 
 export interface IScammerData {
     username?: string
@@ -47,7 +48,8 @@ export class ScammerFrom {
             text: ScammerFrom.SELECT_USER_TEXT,
             request_user: {
                 request_id: 1,
-                user_is_bot: false
+                user_is_bot: false,
+
             }
         } as any],
         DONE: [{ text: ScammerFrom.DONE_TEXT }],
@@ -57,7 +59,9 @@ export class ScammerFrom {
     constructor(
         private readonly scamformService: ScamformService,
         private readonly telegramService: TelegramService,
-        private readonly localizationService: LocalizationService
+        private readonly localizationService: LocalizationService,
+        private readonly configService: ConfigService,
+
     ) { }
 
     @SceneEnter()
@@ -327,6 +331,15 @@ export class ScammerFrom {
             const text = (ctx.message as any)?.text;
             const userSharedId = (ctx.message as any)?.user_shared?.user_id;
 
+
+            // console.log((ctx.message as any)?.user_shared)
+
+            // const user = await ctx.telegram.getChat(userSharedId);
+
+            // console.log(user)
+
+
+
             if (userSharedId) {
                 form.scammerData.telegramId = userSharedId.toString();
             } else {
@@ -446,21 +459,21 @@ export class ScammerFrom {
         ctx.session.scamForm = undefined;
     }
 
-   
+
 
     private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
         const channelId = '@qyqly';
         const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
 
-        const scammerInfo = this.telegramService.formatUserInfo(
-            ctx.session.scamForm.scammerData.username,
-            ctx.session.scamForm.scammerData.telegramId,
-        );
+        const { username, telegramId } = ctx.session.scamForm.scammerData
+        const scammerInfo = this.telegramService.formatUserInfo(username, telegramId);
+        const encoded = this.telegramService.encodeParams({ id: telegramId, formId: scamFormId })
 
         const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
             .replace('{botName}', BOT_NAME)
             .replace('{scammerInfo}', scammerInfo)
             .replace('{description}', ctx.session.scamForm.description || '')
+            .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 
         const reply_markup = {
@@ -470,7 +483,8 @@ export class ScammerFrom {
                     { text: '👎 0', callback_data: `dislike_complaint:${scamFormId}` }
                 ]
             ]
-        };
+        }
+        
 
         try {
             let replyToMessageId: number | undefined;
@@ -490,11 +504,16 @@ export class ScammerFrom {
                 }
             }
 
-            await this.telegramService.sendMessageToChannel(channelId, channelMessage, {
+
+            await this.telegramService.sendMessageToChannelLayer(channelId, channelMessage, {
                 parse_mode: 'Markdown',
                 reply_markup,
-                reply_to_message_id: replyToMessageId
+                reply_to_message_id: replyToMessageId,
+                link_preview_options: {
+                    is_disabled: true,
+                  },
             });
+
         } catch (error) {
             console.error('Error sending to channel:', error);
         }

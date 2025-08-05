@@ -2,7 +2,7 @@ import * as path from 'path';
 
 export const IMAGE_PATHS = {
   SCAMMER: path.join(__dirname, '../../../public/scammer.jpg'),
-  NO_INFO: path.join(__dirname, '../../../public/noinfo.png'),
+  UNKNOWN: path.join(__dirname, '../../../public/noinfo.png'),
   GARANT: path.join(__dirname, '../../../public/garant.jpg'),
   SUSPICIOUS: path.join(__dirname, '../../../public/suspicious.jpg')
 };
