@@ -1,8 +1,10 @@
 // backend/src/telegram/middlewares/user-check.middleware.ts
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Context } from 'telegraf';
-import { UsersService } from '@/users/users.service';
 import { DatabaseService } from '@/database/database.service';
+import { UsersService } from '@/users/users.service';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
+import { Context } from 'telegraf';
 
 
 @Injectable()
@@ -12,33 +14,24 @@ export class UserCheckMiddleware implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const ctx = context.switchToHttp().getRequest<Context>();
 
-        if (ctx.callbackQuery && 'data' in ctx.callbackQuery &&
-            typeof ctx.callbackQuery.data === 'string' &&
-            ctx.callbackQuery.data.includes('get_access')
-        ) {
-            return true;
-        }
+        console.log('canActivate')
 
         const user = await this.usersService.findOrCreateUser(ctx.from);
 
-        // if (!user.hasAccess) {
-        //     await ctx.reply('У вас нет доступа к этому боту.', {
-        //         reply_markup: {
-        //             inline_keyboard: [
-        //                 [{ text: 'Запросить доступ', callback_data: 'get_access' }]
-        //             ]
-        //         }
-        //     });
+        if (user.user.banned) {
+            const cucumberPath = path.join(__dirname, '../../../public/ogurec.png');
+            const photoStream = fs.createReadStream(cucumberPath);
+            
+            await ctx.replyWithPhoto(
+                { source: photoStream },
+                {
+                    caption: 'У вас нет доступа к этому боту. Вы были забанены. Не расстраивайтесь, вот Дикий огурец',
+                    parse_mode: 'Markdown',
+                }
+            );
 
-
-
-        //     return false;
-        // }
-
-        
-
-        // console.log('check user', user)
-
+            return false;
+        }
         return true;
     }
 }

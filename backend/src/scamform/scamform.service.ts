@@ -1,12 +1,12 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ScammerStatus, VoteType } from '@prisma/client';
-import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 import { TelegramService } from '@/telegram/telegram.service';
 import { UsersService } from '@/users/users.service';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { VoteType } from '@prisma/client';
+import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
@@ -165,6 +165,18 @@ export class ScamformService {
     });
   }
 
+  async deleteForm(id: string) {
+    const exsForm = await this.findById(id)
+    if (!exsForm) throw new NotFoundException('Form not found')
+
+
+    return await this.database.scamForm.delete({
+      where: {
+        id
+      }
+    })
+  }
+
   async findAll(page: number = 1, limit: number = 10, search: string = '', showMarked: boolean = false) {
     const skip = (page - 1) * limit;
 
@@ -282,12 +294,30 @@ export class ScamformService {
     };
   }
 
-  async findScammerById(id: string){
+  async getScammerByQuery(query: string) {
+    return await this.database.scammer.findFirst({
+      where: {
+        OR: [
+          {
+            username: query
+          },
+          {
+            telegramId: query
+          }
+        ]
+      },
+      include: {
+        scamForms: true
+      }
+    });
+  }
+
+  async findScammerById(id: string) {
     return await this.database.scammer.findUnique({
-      where:{
+      where: {
         id
       },
-      include:{
+      include: {
         scamForms: true
       }
     })
@@ -316,10 +346,10 @@ export class ScamformService {
     }
   }
 
-  async voteUser(userTelegramId: string, scamFormId: string, voteType: VoteType) {
+  async voteFormUser(userTelegramId: string, scamFormId: string, voteType: VoteType) {
     const user = await this.usersService.findUserByTelegramId(userTelegramId);
 
-    const existingVote = await this.database.userVote.findFirst({
+    const existingVote = await this.database.userFormVote.findFirst({
       where: {
         userId: user.id,
         scamFormId: scamFormId,
@@ -328,7 +358,7 @@ export class ScamformService {
 
     if (existingVote) {
       if (existingVote.voteType === voteType) {
-        await this.database.userVote.delete({
+        await this.database.userFormVote.delete({
           where: { id: existingVote.id },
         });
 
@@ -349,7 +379,7 @@ export class ScamformService {
         };
       } else {
         // Если голос другой - изменяем его
-        await this.database.userVote.update({
+        await this.database.userFormVote.update({
           where: { id: existingVote.id },
           data: { voteType: voteType },
         });
@@ -373,7 +403,7 @@ export class ScamformService {
     }
 
     // Если пользователь ещё не голосовал - создаём новый голос
-    await this.database.userVote.create({
+    await this.database.userFormVote.create({
       data: {
         userId: user.id,
         scamFormId: scamFormId,
@@ -394,6 +424,88 @@ export class ScamformService {
       isSuccess: true,
       likes: updatedScamForm.likes,
       dislikes: updatedScamForm.dislikes,
+      userVote: voteType,
+    };
+  }
+
+  async voteScammerUser(userTelegramId: string, scammerId: string, voteType: VoteType) {
+    const user = await this.usersService.findUserByTelegramId(userTelegramId);
+
+    const existingVote = await this.database.userScammerVote.findFirst({
+      where: {
+        userId: user.id,
+        scammerId: scammerId,
+      },
+    });
+
+    if (existingVote) {
+      if (existingVote.voteType === voteType) {
+        await this.database.userScammerVote.delete({
+          where: { id: existingVote.id },
+        });
+
+        const updatedScammer = await this.database.scammer.update({
+          where: { id: scammerId },
+          data: {
+            likes: voteType === VoteType.LIKE ? { decrement: 1 } : undefined,
+            dislikes: voteType === VoteType.DISLIKE ? { decrement: 1 } : undefined,
+          },
+        });
+
+        return {
+          message: '❌ Ваш голос отменён',
+          isSuccess: true,
+          likes: updatedScammer.likes,
+          dislikes: updatedScammer.dislikes,
+          userVote: null,
+        };
+      } else {
+        // Если голос другой - изменяем его
+        await this.database.userScammerVote.update({
+          where: { id: existingVote.id },
+          data: { voteType: voteType },
+        });
+
+        const updatedScammer = await this.database.scammer.update({
+          where: { id: scammerId },
+          data: {
+            likes: voteType === VoteType.LIKE ? { increment: 1 } : { decrement: 1 },
+            dislikes: voteType === VoteType.DISLIKE ? { increment: 1 } : { decrement: 1 },
+          },
+        });
+
+        return {
+          message: '✅ Ваш голос изменён',
+          isSuccess: true,
+          likes: updatedScammer.likes,
+          dislikes: updatedScammer.dislikes,
+          userVote: voteType,
+        };
+      }
+    }
+
+    // Если пользователь ещё не голосовал - создаём новый голос
+    await this.database.userScammerVote.create({
+      data: {
+        userId: user.id,
+        scammerId: scammerId,
+        voteType: voteType,
+      },
+    });
+
+    const updatedScammer = await this.database.scammer.update({
+      where: { id: scammerId },
+      data: {
+        likes: voteType === VoteType.LIKE ? { increment: 1 } : undefined,
+        dislikes: voteType === VoteType.DISLIKE ? { increment: 1 } : undefined,
+      },
+    });
+
+    return {
+      message: '✅ Ваш голос учтён',
+      isSuccess: true,
+      likes: updatedScammer.likes,
+      dislikes: updatedScammer.dislikes,
       userVote: voteType,
     };
   }

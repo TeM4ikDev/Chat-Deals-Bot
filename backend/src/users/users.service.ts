@@ -118,7 +118,11 @@ export class UsersService {
   }
 
   async findGarants() {
-    return await this.database.garants.findMany()
+    return await this.database.garants.findMany({
+      orderBy: {
+        username: 'asc'
+      }
+    })
   }
 
 

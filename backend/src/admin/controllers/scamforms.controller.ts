@@ -19,23 +19,18 @@ export class ScamformController {
         private readonly scamformService: ScamformService
     ) { }
 
-   
-    // @Post()
-    // async addGarant(@Body() body: { username: string }) {
-    //     console.log(body)
 
-    //     const exGarant = await this.database.garants.findUnique({
-    //         where: {
-    //             username: body.username
-    //         }
-    //     })
 
-    //     if (exGarant) throw new BadRequestException('Такой гарант уже есть')
 
-    //     return await this.database.garants.create({
-    //         data: body
-    //     })
-    // }
+    @Roles(UserRoles.SUPER_ADMIN)
+    @Delete(':id')
+    async onDeleteForm(@Param('id') formId: string) {
+        console.log(formId)
+
+        return await this.scamformService.deleteForm(formId)
+
+
+    }
 
 
 

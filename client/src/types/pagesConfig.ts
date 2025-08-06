@@ -14,6 +14,11 @@ class ApiConfig {
 
     admin = {
         baseInstance: createAxiosInstance('admin/'),
+
+        scamforms:{
+            main: '/scamforms'
+        },
+
         garants: {
             main: '/garants'
         },

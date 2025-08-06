@@ -15,6 +15,9 @@ import { Navigation, Pagination } from 'swiper/modules'
 import { Swiper as SwiperReact, SwiperSlide } from 'swiper/react'
 import { Block } from "../ui/Block"
 import { Modal } from "../ui/Modal"
+import { AdminService } from "@/services/admin.service"
+import { Button } from "../ui/Button"
+import { UserRoles } from "@/types/auth"
 
 interface ScamFormModalProps {
     selectedForm: IScamForm | null
@@ -27,7 +30,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
     showModal,
     setShowModal
 }) => {
-    const { scamformsStore } = useStore()
+    const { scamformsStore: { getFormById, updateFormVotes } } = useStore()
     const [fullscreenMedia, setFullscreenMedia] = useState<IMedia | null>(null)
     const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({})
     const [loadingMedia, setLoadingMedia] = useState<Record<string, boolean>>({})
@@ -38,7 +41,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
     const { userStore: { userRole } } = useStore()
 
     // Получаем актуальные данные из store
-    const currentForm = selectedForm ? scamformsStore.getFormById(selectedForm.id) || selectedForm : null
+    const currentForm = selectedForm ? getFormById(selectedForm.id) || selectedForm : null
 
     const handleMediaClick = useCallback((media: IMedia) => {
         setFullscreenMedia(media)
@@ -52,28 +55,34 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
         if (!selectedForm || isProcessing) return
         setIsProcessing(true)
 
-        try {
-            const data: IVoteResponse = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
-            if (data) {
-                if (data.isSuccess) {
-                    // Обновляем глобальное состояние
-                    scamformsStore.updateFormVotes(
-                        selectedForm.id, 
-                        data.likes, 
-                        data.dislikes, 
-                        data.userVote
-                    )
-                    setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
-                    toast.success(data.message)
-                } else {
-                    toast.error(data.message)
-                }
+        const data: IVoteResponse = await onRequest(ScamformsService.userVote(selectedForm.id, voteT))
+        if (data) {
+            if (data.isSuccess) {
+                // Обновляем глобальное состояние
+                updateFormVotes(
+                    selectedForm.id,
+                    data.likes,
+                    data.dislikes,
+                    data.userVote
+                )
+                setUserVote(data.userVote === 'LIKE' ? 'like' : data.userVote === 'DISLIKE' ? 'dislike' : null)
+                toast.success(data.message)
+            } else {
+                toast.error(data.message)
             }
-        } catch (error) {
-            toast.error('Ошибка при голосовании')
-        } finally {
-            setIsProcessing(false)
         }
+
+        setIsProcessing(false)
+    }
+
+    const handleDelete = async () => {
+        if (!selectedForm) return
+
+        const data = await onRequest(AdminService.deleteScamForm(selectedForm.id))
+        if (data) {
+            toast.success('Форма удалена')
+        }
+
     }
 
     const getMediaUrl = useCallback((fileId: string) => {
@@ -162,8 +171,8 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
 
         return selectedForm.media.map((media, index) => (
             <SwiperSlide key={media.id} className="h-full">
-                <Block className="h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
+                <Block className="h-full !gap-0 flex flex-col">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             {media.type === 'photo' ? (
                                 <Image className="w-4 h-4 text-blue-400" />
@@ -177,7 +186,7 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                     </div>
 
                     <div
-                        className="flex justify-center items-center relative py-5 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                        className="flex justify-center items-center relative cursor-pointer hover:opacity-80 transition-opacity flex-1"
                         onClick={() => handleMediaClick(media)}
                     >
                         {isMediaLoading(media.fileId) ? (
@@ -237,6 +246,13 @@ export const ScamFormModal: React.FC<ScamFormModalProps> = ({
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                             <span>Создано: {createdAt}</span>
                         </div>
+
+                        {userRole == UserRoles.SuperAdmin &&
+                            <Block isCollapsedInitially canCollapse title='Действия с формой'>
+                                <Button FC={() => (handleDelete(), setShowModal(false))} text="Удалить" color="red" />
+
+                            </Block>
+                        }
 
                         <Block>
                             <div className="space-y-2">

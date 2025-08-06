@@ -3,11 +3,11 @@ import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from './services/localization.service';
-import { Prisma, ScammerStatus } from '@prisma/client';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -87,57 +87,73 @@ export class TelegramService implements OnModuleInit {
         {
           type: 'article',
           id: 'instruction',
-          title: 'Введите @username для поиска мошенников',
+          title: 'Введите @username для поиска',
           input_message_content: {
-            message_text: '🔍 Введите @username мошенника для поиска в базе жалоб',
+            message_text: '🔍 Введите @username для поиска в базе',
           },
-          description: 'Начните вводить username мошенника',
+          description: 'Начните вводить username',
         },
       ];
       await ctx.answerInlineQuery(results);
       return;
     }
 
+    console.log('Inline query:', query);
 
-    console.log(query)
+    // Проверяем, является ли пользователь гарантом
+    const garants = await this.usersService.findGarants();
+    const isGarant = garants.some(garant => 
+      garant.username?.toLowerCase() === query.toLowerCase()
+    );
 
-    const { scammers } = await this.scamformService.getScammers(undefined, undefined, query);
+    if (isGarant) {
+      const results: InlineQueryResult[] = [
+        {
+          type: 'article',
+          id: 'garant_found',
+          title: '✅ Проверенный гарант найден',
+          input_message_content: {
+            message_text: `✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @${query}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.`,
+            parse_mode: 'Markdown',
+          },
+          description: 'Пользователь найден в базе гарантов',
+        },
+      ];
+      await ctx.answerInlineQuery(results);
+      return;
+    }
 
-    console.log(scammers)
+    // Ищем скаммера
+    const scammer = await this.scamformService.getScammerByQuery(query);
 
     const results: InlineQueryResult[] = [];
-    if (scammers.length === 0) {
+    if (!scammer) {
       results.push({
         type: 'article',
         id: 'not_found',
-        title: 'Мошенник не найден',
+        title: 'Пользователь не найден',
         input_message_content: {
-          message_text: `❌ Мошенник с username "${query}" не найден в базе жалоб`,
+          message_text: `🔍 Пользователь не найден в базе.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.`,
+          parse_mode: 'Markdown',
         },
-        description: 'Попробуйте другой username',
+        description: 'Пользователь не найден в базе',
       });
     } else {
-      scammers.forEach((scammer, index) => {
+      const username = scammer.username ? `@${scammer.username}` : 'Без username';
+      const telegramId = scammer.telegramId || '--';
+      const formsCount = scammer.scamForms.length;
+      const status = this.getScammerStatusText(scammer);
 
-        results.push({
-          type: 'article',
-          id: `scammer_${index}`,
-          title: scammer.username ? `@${scammer.username}` : `ID: ${scammer.telegramId}`,
-          input_message_content: {
-            // photo_url: 
-            message_text:
-              `
-├ Username: ${scammer.username ? `@${scammer.username}` : 'не указан'}
-├ Telegram ID: ${scammer.telegramId || 'не указан'}
-└ Кол-во жалоб: ${scammer.scamForms.length}
-[Просмотреть жалобы](https://svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})
-            `.trim(),
-            parse_mode: 'Markdown',
-
-          },
-          description: `${this.getScammerStatusText(scammer)} • ${scammer.scamForms.length} жалоб`,
-        });
-      })
+      results.push({
+        type: 'article',
+        id: 'scammer_found',
+        title: `${status} найден`,
+        input_message_content: {
+          message_text: `*${username}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
+          parse_mode: 'Markdown',
+        },
+        description: `${status} • ${formsCount} жалоб`,
+      });
     }
 
     await ctx.answerInlineQuery(results);

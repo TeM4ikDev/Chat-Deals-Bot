@@ -55,12 +55,11 @@ export const User: React.FC<UserProps> = ({ userProp, user, onToggleAdmin, onTog
                     value={isUserAdmin}
                     onToggle={handleToggleAdmin}
                     disabled={user?.role != UserRoles.SuperAdmin}
-
                 />
             </td> */}
 
             <td className="flex items-center justify-center">
-                {userRole != UserRoles.SuperAdmin ? (
+                {userProp.role  != UserRoles.SuperAdmin ? (
                     <Switch
                         value={isBanned}
                         onToggle={handleToggleBanned}

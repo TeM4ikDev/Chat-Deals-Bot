@@ -44,7 +44,7 @@ export const Button = ({ text, FC, routeKey, icon, widthMin = false, href, class
                 onClick={FC}
                 className={cn(
                     buttonWidth,
-                    (disabled || loading) ? "bg-gradient-to-r from-gray-700/50 to-gray-600/50 cursor-not-allowed text-gray-500 border border-gray-600/30" : !(icon && !text) ? buttonColor : '',
+                    (disabled || loading) ? "bg-gradient-to-r from-gray-700/50 to-gray-600/50 cursor-not-allowed text-gray-500 border border-gray-600/30" : !(icon && !text) ? buttonColor : ' ',
                     "flex text-sm flex-row h-min mx-auto justify-center items-center text-nowrap transition-all duration-200 font-bold gap-3 py-1.5 px-4 rounded-lg shadow-sm",
                     className
                 )}
@@ -52,11 +52,10 @@ export const Button = ({ text, FC, routeKey, icon, widthMin = false, href, class
             >
                 {loading ? (
                     <motion.span
-                        className={className + '!w-full !min-w-max'}
+                        className={className}
                         style={{
-                            // width: 24,
-                            // height: 24,
-                            width: '100%',
+                            width: 18,
+                            height: 18,
                             border: '2px solid #fff',
                             borderTop: '2px solid transparent',
                             borderRadius: '50%',

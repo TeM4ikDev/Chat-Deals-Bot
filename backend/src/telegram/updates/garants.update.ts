@@ -25,6 +25,39 @@ export class GarantsUpdate {
             return
         }
 
-        ctx.reply(this.localizationService.getT('garant.show', lang).replace('{garants}', garants.map((g) => `• @${g.username}`).join('\n')))
+        const garantsList = garants.map((garant, index) => {
+            const number = index + 1
+            const description = garant.description || this.localizationService.getT('garant.defaultDescription', lang)
+            
+            // Экранируем специальные символы Markdown
+            const escapedDescription = description
+                .replace(/\*/g, '\\*')
+                .replace(/_/g, '\\_')
+                .replace(/`/g, '\\`')
+                .replace(/\[/g, '\\[')
+                .replace(/\]/g, '\\]')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')
+                .replace(/#/g, '\\#')
+                .replace(/\+/g, '\\+')
+                .replace(/-/g, '\\-')
+                .replace(/=/g, '\\=')
+                .replace(/\|/g, '\\|')
+                .replace(/\{/g, '\\{')
+                .replace(/\}/g, '\\}')
+                .replace(/\./g, '\\.')
+                .replace(/!/g, '\\!')
+            
+            return `🔸 ${number}. @${garant.username}\n   ${escapedDescription}`
+        }).join('\n\n')
+
+        const totalCount = garants.length
+        const header = this.localizationService.getT('garant.header', lang)
+            .replace('{count}', totalCount.toString())
+        
+
+        const message = `${header}${garantsList}`
+
+        ctx.reply(message)
     }
 }

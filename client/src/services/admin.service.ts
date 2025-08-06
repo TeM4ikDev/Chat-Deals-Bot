@@ -36,6 +36,12 @@ export class adminService implements ApiRoute {
     }
 
 
+    deleteScamForm = async (formId: string) => {
+        const { data } = await this.instance.delete(`${this.baseUrl.scamforms.main}/${formId}`)
+        return data
+    }
+
+
 
 
     getAllGarants = async () => {
@@ -43,8 +49,8 @@ export class adminService implements ApiRoute {
         return data
     }
 
-    addGarant = async (username: string) => {
-        const { data } = await this.instance.post(`${this.baseUrl.garants.main}`, { username })
+    addGarant = async (username: string, description: string) => {
+        const { data } = await this.instance.post(`${this.baseUrl.garants.main}`, { username, description })
         return data
     }
 
@@ -53,7 +59,15 @@ export class adminService implements ApiRoute {
         return data
     }
 
-   
+    updateGarant = async (username: string, description: string) => {
+        const { data } = await this.instance.patch(`${this.baseUrl.garants.main}`, { username, description })
+        return data
+    }
+
+
+
+
+
 
 
 

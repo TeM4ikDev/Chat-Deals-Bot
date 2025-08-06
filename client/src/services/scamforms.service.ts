@@ -39,6 +39,9 @@ export class scamformsService implements ApiRoute {
         })
         return data
     }
+
+
+  
 }
 
 export const ScamformsService = new scamformsService()

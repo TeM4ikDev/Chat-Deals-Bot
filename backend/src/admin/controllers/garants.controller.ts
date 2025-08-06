@@ -24,7 +24,7 @@ export class GarantsController {
 
 
     @Delete(':username')
-    async geleteGarant(@Param('username') username: string) {
+    async deleteGarant(@Param('username') username: string) {
         return await this.database.garants.delete({
             where: {
                 username
@@ -32,9 +32,21 @@ export class GarantsController {
         })
     }
 
+    @Patch()
+    async updateGarant(@Body() body: { username: string, description: string }) {
+
+        return await this.database.garants.update({
+            where: {
+                username: body.username
+            },
+            data: body
+        })
+
+    }
+
 
     @Post()
-    async addGarant(@Body() body: { username: string }) {
+    async addGarant(@Body() body: { username: string, description: string }) {
         console.log(body)
 
         const exGarant = await this.database.garants.findUnique({

@@ -47,8 +47,6 @@ export class ScamformController {
     @UseGuards(JwtAuthGuard)
     @Patch('confirm')
     async updateScammer(@Body() body: IUpdateScamFormDto) {
-
-        console.log(body)
         return await this.scamformService.updateScammerStatus(body);
     }
 
@@ -58,7 +56,7 @@ export class ScamformController {
     async vote(@Param('id') id: string, @Param('voteType') voteType: VoteType, @UserId() userId: string) {
         const user = await this.usersService.findUserById(userId)
 
-        return await this.scamformService.voteUser(user.telegramId, id, voteType)
+        return await this.scamformService.voteFormUser(user.telegramId, id, voteType)
     }
 
     @Get('file/:fileId')
