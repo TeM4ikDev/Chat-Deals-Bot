@@ -127,7 +127,7 @@
   "garant": {
     "notFound": "❌ Guarantors list is empty.\n\nThere are currently no available guarantors.",
     "show": "✅ List of reliable guarantors: \n\n {garants}",
-    "header": "💎 **Project TOP Guarantors**\n\n📊 Total guarantors: {count}\n\n",
+    "header": "💎 Project TOP Guarantors\n\n📊 Total guarantors: {count}\n\n",
     "footer": "💡 **How to work with guarantors:**\n\n• Always verify guarantors via /garants\n• Use only verified guarantors\n• If in doubt, contact administration\n\n🔗 **Useful links:**\n╟ [Catalog](https://t.me/nftcatalog)\n╟ [Tags](https://t.me/svdteg)\n╟ [Add bot to group](https://t.me/svdbasebot?startgroup=true)",
     "defaultDescription": "Verified guarantor with positive reputation"
   },

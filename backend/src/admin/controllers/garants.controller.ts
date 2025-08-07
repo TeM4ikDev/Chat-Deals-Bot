@@ -19,7 +19,7 @@ export class GarantsController {
 
     @Get()
     async findAllGarants() {
-        return await this.database.garants.findMany()
+        return await this.usersService.findGarants()
     }
 
 

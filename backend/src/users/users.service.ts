@@ -120,7 +120,7 @@ export class UsersService {
   async findGarants() {
     return await this.database.garants.findMany({
       orderBy: {
-        username: 'asc'
+        updatedAt: 'desc'
       }
     })
   }
