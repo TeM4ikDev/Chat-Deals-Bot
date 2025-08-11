@@ -1,9 +1,9 @@
-import { UserCheckMiddleware } from '@/auth/strategies/telegram.strategy';
+import { AdminService } from '@/admin/admin.service';
 import { ScamformService } from '@/scamform/scamform.service';
+import { IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
-import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, VoteType } from '@prisma/client';
+import { Prisma, ScammerStatus, UserRoles, VoteType } from '@prisma/client';
 import * as fs from 'fs';
 import { Action, Ctx, On, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
@@ -22,68 +22,126 @@ export class TelegramUpdate {
     private readonly scamformService: ScamformService,
     private readonly localizationService: LocalizationService,
 
+    private readonly adminService: AdminService,
+
   ) { }
 
 
   @On('message')
   async findUser(@Ctx() ctx: Context, @Language() lang: string) {
-    const message = ctx.text?.trim();
+    const message = ctx.text?.trim().toLowerCase();
     if (!message) return;
 
-    // Проверяем ответ на сообщение с командами
+    const words = message.split(' ');
+    const command = words[0].toLowerCase();
+
     if ('reply_to_message' in ctx.message && ctx.message.reply_to_message) {
       const repliedMessage = ctx.message.reply_to_message;
       const user = repliedMessage.from;
       if (!user) return;
 
-      const query = user.username || user.id.toString();
+      // console.log(ctx.message)
 
-      if (message.toLowerCase() === 'чек') {
-        console.log('Проверка пользователя из ответа:', query);
-        await this.checkUserAndSendInfo(ctx, query, lang);
-        return;
-      }
+      const telegramId = user.id.toString();
+      // console.log(user, ctx.from)
 
-      if (message.toLowerCase() === 'сколько см') {
-        console.log('Запрос количества см для пользователя:', query);
-        await this.handleScammerCount(ctx, query, lang);
-        return;
+      const word = message.split(' ')[1];
+
+
+      const { user: repliedUser, isNew } = await this.userService.findOrCreateUser(user);
+
+      // Обработка команд с точным совпадением
+      switch (message) {
+        case 'чек':
+          await this.checkUserAndSendInfo(ctx, telegramId, lang);
+          break;
+
+        case '+адм':
+          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
+          await this.handleAdmin(ctx, repliedUser, true);
+          break;
+
+        case '-адм':
+          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
+          await this.handleAdmin(ctx, repliedUser, false);
+          break;
       }
+      await this.handlePrefixCommands(ctx, message, repliedUser, word);
     }
-
-    const words = message.split(' ');
-    const command = words[0].toLowerCase();
 
     switch (command) {
       case 'чек':
         await this.handleCheckCommand(ctx, words, lang);
         break;
-
-      default:
-        if (ctx.message.chat.type === 'private') {
-          await this.handleDirectSearch(ctx, message, lang);
-        }
-        break;
     }
+  }
+
+
+  private async handlePrefixCommands(ctx: Context, message: string, repliedUser: IUser, word: string) {
+    if (message.startsWith('статус')) {
+      await this.handleStatus(ctx, repliedUser, word);
+      return;
+    }
+
+    // if (message.startsWith('/команда/')) {
+    //   await this.handleCommand(ctx, repliedUser, word);
+    //   return;
+    // }
+
+    // if (message.startsWith('/другая/')) {
+    //   await this.handleAnother(ctx, repliedUser, word);
+    //   return;
+    // }
+  }
+
+  private async guardCommandRoles(roles: UserRoles[], repliedUser: IUser, adminAddCtx: Context) {
+
+    const admin = await this.userService.findUserByTelegramId(adminAddCtx.from.id.toString());
+
+
+    if (!repliedUser) {
+      adminAddCtx.reply('Пользователя нет в боте. Ему нужно сначала зайти в бота.', {
+        reply_markup: {
+          inline_keyboard: [
+            [{
+              text: 'Зайти в бота',
+              url: 'https://t.me/svdbasebot'
+            }]
+          ]
+        }
+      });
+      return false;
+    }
+
+    if (repliedUser.role === UserRoles.SUPER_ADMIN) {
+      adminAddCtx.reply('Пользователь уже супер админ');
+      return false
+    }
+
+    if (roles.includes(admin.role)) {
+      return true;
+    }
+
+    await adminAddCtx.reply('У вас нет доступа к этой команде');
+    return false;
+
+  }
+
+  private async handleAdmin(ctx: Context, user: IUser, isAdd: boolean) {
+    await this.userService.updateUserRole(user.telegramId, isAdd ? UserRoles.ADMIN : UserRoles.USER)
+    ctx.reply(`Пользователь (@${user.username}) ${isAdd ? 'теперь' : 'больше не'} админ`)
   }
 
   private async checkUserAndSendInfo(ctx: Context, query: string, lang: string) {
     const isGarant = await this.checkAndSendGarantInfo(ctx, query, lang);
-    if (isGarant) {
-      return;
-    }
+    if (isGarant) return
 
     const scammer = await this.scamformService.getScammerByQuery(query);
     await this.onScammerDetail(ctx, lang, scammer, query);
   }
 
   private async checkAndSendGarantInfo(ctx: Context, query: string, lang: string): Promise<boolean> {
-    const garants = await this.userService.findGarants();
-    const isGarant = garants.some(garant =>
-      garant.username?.toLowerCase() === query.toLowerCase()
-    );
-
-    if (isGarant) {
+    if (await this.checkIsGarant(query)) {
       const photoStream = fs.createReadStream(IMAGE_PATHS.GARANT);
       await ctx.replyWithPhoto(
         { source: photoStream },
@@ -116,17 +174,53 @@ export class TelegramUpdate {
     await this.checkUserAndSendInfo(ctx, query, lang);
   }
 
-  private async handleScammerCount(ctx: Context, query: string, lang: string) {
-    // const scammer = await this.scamformService.getScammerByQuery(query);
+  private async checkIsGarant(username: string): Promise<boolean> {
+    const garants = await this.userService.findGarants();
+    return garants.some(garant =>
+      garant.username?.toLowerCase() === username.toLowerCase()
+    );
+  }
 
-    // if (!scammer) {
-    //   await ctx.reply(`@${query} - 0 см`);
-    //   return;
-    // }
+  private async handleStatus(ctx: Context, repliedUser: IUser, statusText: string) {
+    let status: ScammerStatus;
+    const user = await this.scamformService.getScammerByTelegramId(repliedUser.telegramId);
 
-    // const formsCount = scammer.scamForms.length;
-    await ctx.reply(`У @${query} - ${Math.floor(-10 + Math.random() * (30 + 10))
-      } см`);
+    if (await this.checkIsGarant(repliedUser.username)) {
+      await ctx.reply('Это гарант. Вы не можете изменить его статус');
+      return;
+    }
+
+    if (!statusText) {
+      await ctx.reply(`${user ? `Статус @${user?.username} ${user.status}` : 'Пользователь не найден'}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр`);
+      return;
+    }
+
+    switch (statusText) {
+      case 'скам':
+        status = ScammerStatus.SCAMMER;
+        break;
+
+      case 'неизв':
+        status = ScammerStatus.UNKNOWN;
+        break;
+
+      case 'подозр':
+        status = ScammerStatus.SUSPICIOUS;
+        break;
+    }
+
+    const result = await this.scamformService.updateScammerStatus({
+      scammerId: repliedUser.id,
+      status,
+      formId: undefined
+    }, repliedUser);
+
+    if (result.isSuccess && result.scammer) {
+      await ctx.reply(`Статус пользователя (@${result.scammer.username || repliedUser.username}) изменен на ${result.scammer.status}`);
+    }
+    else {
+      await ctx.reply(`Ошибка при обновлении статуса: ${result.message}`);
+    }
   }
 
   async onScammerDetail(
@@ -140,7 +234,7 @@ export class TelegramUpdate {
       await ctx.replyWithPhoto(
         { source: photoStream },
         {
-          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', query) ,
+          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', query),
           parse_mode: 'Markdown',
 
         }
@@ -180,8 +274,6 @@ export class TelegramUpdate {
       }
     );
   }
-
-
 
   // ___________
 

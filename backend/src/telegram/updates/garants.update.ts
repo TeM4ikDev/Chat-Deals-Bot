@@ -56,7 +56,7 @@ export class GarantsUpdate {
             .replace('{count}', totalCount.toString())
         
 
-        const message = `${header}${garantsList}`
+        const message = `${header}${garantsList}\n\n @TeM4ik20 - разраб`
 
         ctx.reply(message)
     }

@@ -31,10 +31,10 @@ export class UserManagementController {
         return await this.usersService.findUserById(userId)
     }
 
-    @Patch('update-rights')
-    async updateUserRights(@Body() body: { telegramId: number }) {
+    @Patch('update-role')
+    async updateUserRole(@Body() body: { userId: string, role: UserRoles }) {
         console.log(body)
-        return await this.usersService.updateUserRights(String(body.telegramId))
+        return await this.usersService.updateUserRole(body.userId, body.role)
     }
 
 

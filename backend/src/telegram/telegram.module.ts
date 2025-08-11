@@ -17,12 +17,14 @@ import { TelegramUpdate } from './telegram.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
+import { AdminModule } from '@/admin/admin.module';
 
 @Module({
 
   imports: [
     ConfigModule,
     DatabaseModule,
+    forwardRef(() => AdminModule),
     JwtModule,
     forwardRef(() => ScamformModule),
     forwardRef(() => UsersModule),

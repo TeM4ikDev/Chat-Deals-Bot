@@ -16,7 +16,7 @@
         isSubRoute?: boolean;
     };
 
-    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, NotebookPen, DatabaseZap } from 'lucide-react';
+    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, UserPlus, NotebookPen, DatabaseZap } from 'lucide-react';
 
 
    
@@ -71,6 +71,14 @@
     "showInHeader": false,
     "label": "Гаранты",
     "icon": UserRoundPen,
+    "isSubRoute": false
+  },
+  {
+    "key": "ADMIN_ADD_PERSON",
+    "path": "/admin/add-person",
+    "showInHeader": false,
+    "label": "Добавить человека",
+    "icon": UserPlus,
     "isSubRoute": false
   },
   {

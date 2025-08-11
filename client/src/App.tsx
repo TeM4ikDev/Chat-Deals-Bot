@@ -5,14 +5,15 @@ import { Route, BrowserRouter as Router, Routes, useLocation, useNavigate } from
 import { Footer } from './components/layout/Footer';
 import { Loader } from './components/layout/Loader';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { AddPerson } from './components/subpages/admin/addPerson';
 import { Garants } from './components/subpages/admin/garants';
 import { MainAdmin } from './components/subpages/admin/main';
 import { UserDetails } from './components/subpages/admin/userDetails';
 import { UsersShow } from './components/subpages/admin/usersShow';
 import { ScamForms } from './pages/ScamformsPage';
+import ScammerPage from './pages/ScammerPage';
 import { useStore } from './store/root.store';
 import { UserRoles } from './types/auth';
-import ScammerPage from './pages/ScammerPage';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -67,6 +68,8 @@ const ProtectedRoutes = observer(() => {
         <Route index element={<MainAdmin />} />
         <Route path="users" element={<UsersShow />} />
         <Route path="users/:id" element={<UserDetails />} />
+
+        <Route path="add-person" element={<AddPerson />} />
 
         <Route path="garants" element={<Garants />} />
       </Route>

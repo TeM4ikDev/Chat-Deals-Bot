@@ -58,7 +58,6 @@ export const UsersShow: React.FC = () => {
   
 
   const handleToggleAdmin = async (userId: string, role: UserRoles) => {
-
     const data = await onRequest(AdminService.updateUserRole(userId, role))
 
     if (data) {
@@ -78,7 +77,6 @@ export const UsersShow: React.FC = () => {
     }
   }
 
-
   useEffect(() => {
     fetchUsers(pagination.currentPage, search)
   }, [pagination.currentPage, search ])
@@ -86,7 +84,7 @@ export const UsersShow: React.FC = () => {
   return (
     <PageContainer title="Пользователи" loading={false} itemsStart returnPage>
       <Block className="w-full p-2">
-        <div className="mb-2 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <Input
             placeholder="Поиск по username"
             name="search"
@@ -97,21 +95,19 @@ export const UsersShow: React.FC = () => {
           />
         </div>
 
-
         <Pagination
           currentPage={pagination.currentPage}
           maxPage={pagination.maxPage}
           onPageChange={handlePageChange}
         />
 
-
         <div className="!h-full rounded-xl shadow-lg border border-[#28204a] bg-[#1a1333]">
           <table className="min-w-[300px] w-full h-min divide-y divide-[#28204a]">
             <thead className="bg-[#221a3a] h-min top-0 z-10 rounded-t-xl">
-              <tr className="grid grid-cols-3 items-center h-12 rounded-t-xl">
+              <tr className="grid grid-cols-4 items-center h-12 rounded-t-xl">
                 <th className="flex items-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Username</th>
-                {/* <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Админ</th> */}
                 <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Бан</th>
+                <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Админ</th>
                 <th className="flex items-center justify-center px-4 text-xs font-bold text-[#b6aaff] uppercase tracking-wider">Роль</th>
               </tr>
             </thead>
@@ -122,6 +118,7 @@ export const UsersShow: React.FC = () => {
                   user={user}
                   userProp={userData}
                   onToggleBanned={handleToggleBanned}
+                  onToggleAdmin={handleToggleAdmin}
                 />
               )) : (
                 <tr>

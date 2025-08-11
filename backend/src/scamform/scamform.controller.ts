@@ -1,8 +1,8 @@
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { UserId } from '@/decorators/userid.decorator';
 import { UsersService } from '@/users/users.service';
-import { Body, Controller, Get, Param, Patch, Query, Res, UseGuards } from '@nestjs/common';
-import { ScammerStatus, VoteType } from '@prisma/client';
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Prisma, ScammerStatus, VoteType } from '@prisma/client';
 import { Response } from 'express';
 import { ScamformService } from './scamform.service';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
@@ -42,6 +42,8 @@ export class ScamformController {
 
         return await this.scamformService.getScammers(pageNum, limitNum, search, (/true/).test(showMarked))
     }
+
+   
 
 
     @UseGuards(JwtAuthGuard)

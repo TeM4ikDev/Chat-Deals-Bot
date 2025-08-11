@@ -69,6 +69,13 @@ exports.RoutesConfigMain = [
                 label: 'Гаранты',
                 icon: 'UserRoundPen'
             },
+            ADD_PERSON: {
+                key: 'ADD_PERSON',
+                path: '/add-person',
+                showInHeader: false,
+                label: 'Добавить человека',
+                icon: 'UserPlus'
+            },
         }
     },
     {

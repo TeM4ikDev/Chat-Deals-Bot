@@ -25,7 +25,7 @@ import { ScamformController } from './controllers/scamforms.controller';
     GarantsController,
     ScamformController
   ],
-  providers: [AdminService],
-  exports: [AdminService]
+  providers: [AdminService, UserManagementController],
+  exports: [AdminService, UserManagementController]
 })
 export class AdminModule { }

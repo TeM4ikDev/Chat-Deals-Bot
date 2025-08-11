@@ -141,6 +141,19 @@ export class UsersService {
     return updatedUser;
   }
 
+
+  async updateUserRole(telegramId: string, role: UserRoles) {
+    const user = await this.findUserByTelegramId(telegramId);
+    const userById = await this.findUserById(telegramId);
+
+    if (!user && !userById) throw new Error('Пользователь не найден');
+
+    return await this.database.user.update({
+      where: { id: userById.id || user.id },
+      data: { role: role }
+    });
+  }
+
   async updateUserBanned(userId: string, banned: boolean) {
     return await this.database.user.update({
       where: { id: userId },

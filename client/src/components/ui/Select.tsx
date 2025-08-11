@@ -40,7 +40,7 @@ export const Select = ({
             e.target.blur();
           }}
           required={isRequired}
-          className={cn("w-full px-4 py-3 text-gray-100 rounded-lg bg-gray-700/50 appearance-none", className)}
+          className={cn("w-full px-4 py-1.5 text-gray-100 rounded-lg bg-gray-700/50 appearance-none", className)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         >

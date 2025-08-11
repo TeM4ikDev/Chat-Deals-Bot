@@ -38,7 +38,7 @@ export const User: React.FC<UserProps> = ({ userProp, user, onToggleAdmin, onTog
     }, [userProp])
 
     return (
-        <tr className="grid grid-cols-3 px-2 items-center hover:bg-gray-700/50 transition-colors h-12">
+        <tr className="grid grid-cols-4 px-2 items-center hover:bg-gray-700/50 transition-colors h-12">
             <td className="flex items-center gap-2 max-w-xs overflow-hidden whitespace-nowrap truncate">
                 <Link
                     to={getDynamicPathByKey('ADMIN_USERS_ID', { id: userProp.id })}
@@ -50,16 +50,10 @@ export const User: React.FC<UserProps> = ({ userProp, user, onToggleAdmin, onTog
                 </Link>
             </td>
 
-            {/* <td className="flex items-center justify-center">
-                <Switch
-                    value={isUserAdmin}
-                    onToggle={handleToggleAdmin}
-                    disabled={user?.role != UserRoles.SuperAdmin}
-                />
-            </td> */}
+
 
             <td className="flex items-center justify-center">
-                {userProp.role  != UserRoles.SuperAdmin ? (
+                {userProp.role != UserRoles.SuperAdmin ? (
                     <Switch
                         value={isBanned}
                         onToggle={handleToggleBanned}
@@ -67,6 +61,20 @@ export const User: React.FC<UserProps> = ({ userProp, user, onToggleAdmin, onTog
 
                     />
 
+                ) : (
+                    <span className="text-lg font-medium text-green-400">
+                        <Infinity />
+                    </span>
+                )}
+            </td>
+
+
+            <td className="flex items-center justify-center px-4">
+                {userProp.role != UserRoles.SuperAdmin ? (
+                    <Switch
+                        value={isUserAdmin}
+                        onToggle={handleToggleAdmin}
+                    />
                 ) : (
                     <span className="text-lg font-medium text-green-400">
                         <Infinity />

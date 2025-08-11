@@ -31,6 +31,9 @@ const ScammerPage: React.FC = observer(() => {
         limit: 10,
     });
 
+    const isAdmin = userRole === UserRoles.Admin || userRole === UserRoles.SuperAdmin
+
+
 
     const rawParam = typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.start_param;
     let initialSearch = idParam || ''
@@ -43,8 +46,7 @@ const ScammerPage: React.FC = observer(() => {
 
             initialSearch = id ? id : '';
             initialFormId = formId ? formId : '';
-            
-            // Очищаем start_param после использования
+
             if (window.Telegram?.WebApp?.initDataUnsafe) {
                 window.Telegram.WebApp.initDataUnsafe.start_param = '';
             }
@@ -60,13 +62,11 @@ const ScammerPage: React.FC = observer(() => {
     const [search, setSearch] = useState<string>(initialSearch);
     const [formId, setFormId] = useState<string>(initialFormId);
 
-    // Инициализация поиска при первом рендере
     useEffect(() => {
         if (initialSearch && !search) {
             setSearch(initialSearch);
         }
-        
-        // Дополнительная очистка start_param после инициализации
+
         try {
             if (window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
                 window.Telegram.WebApp.initDataUnsafe.start_param = '';
@@ -84,8 +84,7 @@ const ScammerPage: React.FC = observer(() => {
         if (idParam || formIdParam) {
             navigate('/scammers', { replace: true });
         }
-        
-        // Очистка start_param при переходе
+
         try {
             if (window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
                 window.Telegram.WebApp.initDataUnsafe.start_param = '';
@@ -128,36 +127,29 @@ const ScammerPage: React.FC = observer(() => {
         if (isProcessing) return
         setIsProcessing(true)
 
-        try {
-            const data = await onRequest(ScamformsService.confirmScammerStatus(scammerId, status, formId))
+        const data = await onRequest(ScamformsService.confirmScammerStatus(scammerId, status, formId))
 
-            console.log(data)
-            if (data?.isSuccess && data.scammer) {
-                const statusMessages = {
-                    [ScammerStatus.SCAMMER]: 'Пользователь занесен как скамер',
-                    [ScammerStatus.SUSPICIOUS]: 'Пользователь занесен как подозрительный',
-                    [ScammerStatus.UNKNOWN]: 'В занесении отказано, аккаунт остается в неизвестных'
-                }
-                toast.success(statusMessages[status])
-
-                setScammers(prevScammers =>
-                    prevScammers.map(scammer =>
-                        scammer.id === scammerId
-                            ? { ...scammer, ...data.scammer }
-                            : scammer
-                    )
-                )
-            } else {
-                toast.error(data?.message || 'Ошибка при обновлении статуса')
+        console.log(data)
+        if (data?.isSuccess && data.scammer) {
+            const statusMessages = {
+                [ScammerStatus.SCAMMER]: 'Пользователь занесен как скамер',
+                [ScammerStatus.SUSPICIOUS]: 'Пользователь занесен как подозрительный',
+                [ScammerStatus.UNKNOWN]: 'В занесении отказано, аккаунт остается в неизвестных'
             }
-        } catch (error) {
-            toast.error('Ошибка при обновлении статуса')
-        } finally {
-            setIsProcessing(false)
+            toast.success(statusMessages[status])
+
+            setScammers(prevScammers =>
+                prevScammers.map(scammer =>
+                    scammer.id === scammerId
+                        ? { ...scammer, ...data.scammer }
+                        : scammer
+                )
+            )
         }
+
+        setIsProcessing(false)
     }
 
-    const isAdmin = userRole === UserRoles.Admin || userRole === UserRoles.SuperAdmin
 
     return (
         <PageContainer title="База данных" className="gap-2 max-w-2xl mx-auto" needAuth returnPage itemsStart>

@@ -49,7 +49,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({ title, children, c
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
             className={cn(
-                "flex flex-1 flex-col w-full h-full md:px-4 z-10 p-2 items-center",
+                "flex flex-1 flex-col w-full h-full md:px-4 z-10 p-2 gap-2 items-center",
                 !itemsStart ? "justify-center" : "justify-start",
                 "mt-[64px] md:mt-[64px]",
                 "!min-h-[calc(100vh-64px)] md:!min-h-[calc(100vh-64px)]",
@@ -57,7 +57,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({ title, children, c
             )}
         >
             {title && (
-                <div className="relative w-full flex justify-center items-center p-0">
+                <div className="relative w-full flex justify-center  items-center p-0">
                     <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 text-center">
                         {title}
                     </h1>

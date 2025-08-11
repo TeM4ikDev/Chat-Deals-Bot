@@ -18,7 +18,6 @@ export const ScamForms: React.FC = () => {
     const { id } = useParams<{ id: string }>()
     const { scamformsStore: { forms, setForms } } = useStore()
 
-
     const [isLoading, setIsLoading] = useState(false)
     const [selectedForm, setSelectedForm] = useState<IScamForm | null>(null)
     const [showModal, setShowModal] = useState(false)

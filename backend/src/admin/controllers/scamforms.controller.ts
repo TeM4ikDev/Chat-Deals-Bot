@@ -3,7 +3,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { AdminService } from '../admin.service';
 import { Roles } from '@/decorators/roles.decorator';
-import { UserRoles } from '@prisma/client';
+import { Prisma, UserRoles } from '@prisma/client';
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
 
@@ -19,6 +19,11 @@ export class ScamformController {
         private readonly scamformService: ScamformService
     ) { }
 
+
+    @Post('scammers')
+    async createScammer(@Body() body: Prisma.ScammerCreateInput) {
+        return await this.scamformService.createScammer(body);
+    }
 
 
 

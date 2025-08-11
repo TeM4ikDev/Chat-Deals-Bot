@@ -64,9 +64,9 @@ export const Input = ({
           )}
         />
         <span className={cn(
-          `absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 
+          `absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 
           transition-all duration-200 pointer-events-none`,
-          value ? "-translate-y-7 text-xs text-cyan-400 px-1" : "",
+          value ? "-translate-y-6 text-xs text-cyan-400 px-1" : "",
           "group-hover:text-gray-300"
         )}>
           {placeholder}
