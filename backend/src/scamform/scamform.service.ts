@@ -329,7 +329,7 @@ export class ScamformService {
       include: {
         scamForms: true
       }
-    })  
+    })
   }
 
   async findScammerById(id: string) {
@@ -558,9 +558,8 @@ export class ScamformService {
   async updateScammerStatus(data: IUpdateScamFormDto, createData?: IUser) {
     const { status, scammerId } = data
     try {
-      // Сначала пытаемся найти существующего скамера по telegramId
       let scammer = null;
-      
+
       if (createData?.telegramId) {
         scammer = await this.database.scammer.findUnique({
           where: { telegramId: createData.telegramId }
@@ -568,7 +567,7 @@ export class ScamformService {
       }
 
       if (scammer) {
-        // Если скамер существует - обновляем его статус
+
         scammer = await this.database.scammer.update({
           where: { id: scammer.id },
           data: {
@@ -577,7 +576,7 @@ export class ScamformService {
           }
         });
       } else {
-        // Если скамера нет - создаем нового
+
         scammer = await this.database.scammer.create({
           data: {
             username: createData?.username,
@@ -597,6 +596,48 @@ export class ScamformService {
         message: '✅ Статус успешно обновлен',
         isSuccess: true,
         scammer: scammer
+      };
+    } catch (error) {
+      console.error('Error updating scammer status:', error);
+      return {
+        message: '❌ Ошибка при обновлении статуса',
+        isSuccess: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+
+  async getScammerStatusByUsername(data: IUpdateScamFormDto) {
+
+    const { status, scammerId } = data
+    try {
+      const scammer = await this.database.scammer.findUnique({
+        where: { id: scammerId }
+      });
+
+      if (!scammer) {
+        throw new Error('Scammer not found');
+      }
+
+      const updatedScammer = await this.database.scammer.update({
+        where: { id: scammerId },
+        data: {
+          status,
+          marked: true
+        }
+      });
+
+      if (data.formId && scammer.marked == false) {
+        const form = await this.findById(data.formId)
+
+        await this.telegramService.complaintOutcome(form, status)
+      }
+
+      return {
+        message: '✅ Статус успешно обновлен',
+        isSuccess: true,
+        scammer: updatedScammer
       };
     } catch (error) {
       console.error('Error updating scammer status:', error);

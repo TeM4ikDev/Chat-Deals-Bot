@@ -2,7 +2,7 @@
 
 # === НАСТРОЙКИ ===
 SERVER_USER="root"
-SERVER_IP="178.157.91.152"
+SERVER_IP="45.142.44.34"
 SERVER_PATH="/root/SVDBASESCAM"
 PM2_APP_NAME="basebot"
 
