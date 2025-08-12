@@ -223,6 +223,11 @@ export class TelegramUpdate {
     }
   }
 
+  private escapeMarkdown(text: string): string {
+    if (!text) return text;
+    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+  }
+
   async onScammerDetail(
     @Ctx() ctx: Context,
     lang: string,
@@ -234,7 +239,7 @@ export class TelegramUpdate {
       await ctx.replyWithPhoto(
         { source: photoStream },
         {
-          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', query),
+          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.escapeMarkdown(query)),
           parse_mode: 'Markdown',
 
         }
@@ -248,15 +253,20 @@ export class TelegramUpdate {
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
     const photoStream = fs.createReadStream(IMAGE_PATHS[scammer.status]);
 
+    // Экранируем данные перед подстановкой в шаблон
+    const escapedUsername = this.escapeMarkdown(username);
+    const escapedTelegramId = this.escapeMarkdown(telegramId);
+    const escapedStatus = this.escapeMarkdown(scammer.status);
+    const escapedFormsCount = this.escapeMarkdown(formsCount.toString());
 
     await ctx.replyWithPhoto(
       { source: photoStream },
       {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
-          .replace('{username}', username)
-          .replace('{telegramId}', telegramId)
-          .replace('{status}', scammer.status)
-          .replace('{formsCount}', formsCount.toString())
+          .replace('{username}', escapedUsername)
+          .replace('{telegramId}', escapedTelegramId)
+          .replace('{status}', escapedStatus)
+          .replace('{formsCount}', escapedFormsCount)
           .replace('{link}', link),
         parse_mode: 'Markdown',
         reply_markup: {
