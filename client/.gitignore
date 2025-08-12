@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# TypeScript build info
+tsconfig.tsbuildinfo
