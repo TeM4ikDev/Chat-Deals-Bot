@@ -22,6 +22,7 @@ export class ScamformController {
 
     @Post('scammers')
     async createScammer(@Body() body: Prisma.ScammerCreateInput) {
+        console.log(body)
         return await this.scamformService.createScammer(body);
     }
 

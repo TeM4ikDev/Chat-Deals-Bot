@@ -4,7 +4,7 @@ import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
 import { IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, VoteType } from '@prisma/client';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
@@ -296,16 +296,28 @@ export class ScamformService {
   }
 
   async createScammer(data: Prisma.ScammerCreateInput) {
+
+
+    const exsScammer = await this.getScammerByQuery(data.username)
+
+    if (exsScammer) throw new BadRequestException('User already exists')
+
     return await this.database.scammer.create({
       data: {
         ...data,
+        username: data.username,
         marked: true
       }
     })
   }
 
   async getScammerByQuery(query: string) {
-    return await this.database.scammer.findFirst({
+
+    query = query.replace('@', '')
+
+    console.log('query getScammerByQuery', query)
+
+    let scammer = await this.database.scammer.findFirst({
       where: {
         OR: [
           {
@@ -320,6 +332,38 @@ export class ScamformService {
         scamForms: true
       }
     });
+
+    // // Если не найдено, пробуем поиск без учета регистра
+    // if (!scammer) {
+    //   scammer = await this.database.scammer.findFirst({
+    //     where: {
+    //       OR: [
+    //         {
+    //           username: {
+    //             equals: query.toLowerCase()
+    //           }
+    //         },
+    //         {
+    //           username: {
+    //             equals: query.toUpperCase()
+    //           }
+    //         }
+    //       ]
+    //     },
+    //     include: {
+    //       scamForms: true
+    //     }
+    //   });
+    // }
+
+    return scammer;
+  }
+
+  async updateScammer(id: string, data: Prisma.ScammerUpdateInput) {
+    return await this.database.scammer.update({
+      where: { id },
+      data: { ...data }
+    })
   }
 
 

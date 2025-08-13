@@ -39,6 +39,7 @@ export interface IScammer {
     scamForms: number
     marked: boolean
     createdAt: string
+    description?: string
 }
 
 export interface IMedia {

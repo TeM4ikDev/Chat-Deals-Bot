@@ -26,31 +26,27 @@ export class TelegramUpdate {
 
   ) { }
 
-
   @On('message')
   async findUser(@Ctx() ctx: Context, @Language() lang: string) {
-    const message = ctx.text?.trim().toLowerCase();
+    const message = ctx.text?.trim().toLowerCase().replace('@', '');
     if (!message) return;
 
-    const words = message.split(' ');
-    const command = words[0].toLowerCase();
+    const words = message.split(/\s+/).filter(word => word.length > 0);
+    const command = words[0];
+
+    const commandData = words.slice(2).join(' ');
+
 
     if ('reply_to_message' in ctx.message && ctx.message.reply_to_message) {
       const repliedMessage = ctx.message.reply_to_message;
       const user = repliedMessage.from;
       if (!user) return;
 
-      // console.log(ctx.message)
-
       const telegramId = user.id.toString();
-      // console.log(user, ctx.from)
-
       const word = message.split(' ')[1];
 
+      const { user: repliedUser } = await this.userService.findOrCreateUser(user);
 
-      const { user: repliedUser, isNew } = await this.userService.findOrCreateUser(user);
-
-      // Обработка команд с точным совпадением
       switch (message) {
         case 'чек':
           await this.checkUserAndSendInfo(ctx, telegramId, lang);
@@ -71,27 +67,20 @@ export class TelegramUpdate {
 
     switch (command) {
       case 'чек':
-        await this.handleCheckCommand(ctx, words, lang);
+        await this.handleCheckCommand(ctx, words[1], lang);
+        break;
+
+      case 'инфо':
+        await this.handleDescriptionCommand(ctx, words[1], commandData, lang);
         break;
     }
   }
-
 
   private async handlePrefixCommands(ctx: Context, message: string, repliedUser: IUser, word: string) {
     if (message.startsWith('статус')) {
       await this.handleStatus(ctx, repliedUser, word);
       return;
     }
-
-    // if (message.startsWith('/команда/')) {
-    //   await this.handleCommand(ctx, repliedUser, word);
-    //   return;
-    // }
-
-    // if (message.startsWith('/другая/')) {
-    //   await this.handleAnother(ctx, repliedUser, word);
-    //   return;
-    // }
   }
 
   private async guardCommandRoles(roles: UserRoles[], repliedUser: IUser, adminAddCtx: Context) {
@@ -137,6 +126,8 @@ export class TelegramUpdate {
     if (isGarant) return
 
     const scammer = await this.scamformService.getScammerByQuery(query);
+    console.log(scammer)
+
     await this.onScammerDetail(ctx, lang, scammer, query);
   }
 
@@ -157,12 +148,37 @@ export class TelegramUpdate {
     return false;
   }
 
-  private async handleCheckCommand(ctx: Context, words: string[], lang: string) {
-    if (words.length < 2) {
+  private async handleDescriptionCommand(ctx: Context, query: string, commandData: string, lang: string) {
+
+    const description = commandData
+
+    console.log('description', description)
+    console.log('query', query)
+
+    const scammer = await this.scamformService.getScammerByQuery(query);
+
+    if (!scammer) {
+      await ctx.reply('Пользователь не найден');
       return;
     }
 
-    const query = words.slice(1).join(' ').trim().replace('@', '');
+    if (!description) {
+      await ctx.reply(`📝 **Текущее описание** @${query}:\n\n\`\`\`\n${scammer.description || 'Описание отсутствует'}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${query} новое описание\``, {
+        parse_mode: 'Markdown'
+      })
+      return;
+    }
+
+    await this.scamformService.updateScammer(scammer.id, { description })
+    await ctx.reply(`Описание пользователя (@${scammer.username}) обновлено`)
+  }
+
+  private async handleCheckCommand(ctx: Context, query: string, lang: string) {
+    if (!query) {
+      return;
+    }
+
+    // const query = words.slice(1).join(' ').trim().replace('@', '');
     console.log('Поиск пользователя:', query);
 
     await this.checkUserAndSendInfo(ctx, query, lang);
@@ -253,20 +269,17 @@ export class TelegramUpdate {
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
     const photoStream = fs.createReadStream(IMAGE_PATHS[scammer.status]);
 
-    // Экранируем данные перед подстановкой в шаблон
     const escapedUsername = this.escapeMarkdown(username);
-    const escapedTelegramId = this.escapeMarkdown(telegramId);
-    const escapedStatus = this.escapeMarkdown(scammer.status);
-    const escapedFormsCount = this.escapeMarkdown(formsCount.toString());
 
     await ctx.replyWithPhoto(
       { source: photoStream },
       {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
-          .replace('{username}', escapedUsername)
-          .replace('{telegramId}', escapedTelegramId)
-          .replace('{status}', escapedStatus)
-          .replace('{formsCount}', escapedFormsCount)
+          .replace('{username}', username)
+          .replace('{telegramId}', telegramId)
+          .replace('{status}', scammer.status)
+          .replace('{formsCount}', formsCount.toString())
+          .replace('{description}', scammer.description || 'нет описания')
           .replace('{link}', link),
         parse_mode: 'Markdown',
         reply_markup: {
@@ -284,6 +297,7 @@ export class TelegramUpdate {
       }
     );
   }
+
 
   // ___________
 

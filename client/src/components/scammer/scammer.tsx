@@ -1,8 +1,8 @@
 import { IScammer, ScammerStatus } from "@/types"
-import { AlertTriangle, Calendar, CheckCircle, Shield, User, XCircle } from "lucide-react"
+import { AlertTriangle, Calendar, Shield, User, XCircle } from "lucide-react"
+import { Link } from "react-router-dom"
 import { Block } from "../ui/Block"
 import { Button } from "../ui/Button"
-import { Link } from "react-router-dom"
 
 interface ScammerItemProps {
     scammer: IScammer
@@ -138,6 +138,13 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                     {scammer.scamForms > 0 && (
                         <div className="flex items-center gap-2">
                             <span>Жалоб: {scammer.scamForms}</span>
+                        </div>
+                    )}
+                    {scammer.description && (
+                        <div className="flex items-start gap-2 mt-2">
+                            <span className="text-xs text-gray-400 leading-relaxed">
+                                {scammer.description}
+                            </span>
                         </div>
                     )}
                 </div>

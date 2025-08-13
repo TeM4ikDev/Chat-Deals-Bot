@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { TextArea } from "@/components/ui/TextArea";
 import { FormConfig } from "@/types/form";
 import { cn } from "@/utils/cn";
 import { onRequest } from "@/utils/handleReq";
 import { ImageIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify"; 
+import { toast } from "react-toastify";
 import type { BlockProps } from "./Block";
 import { Block } from "./Block";
 
@@ -26,15 +27,15 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                 if ('defaultValue' in field && field.defaultValue !== undefined) {
                     initial[field.name] = field.defaultValue;
                 } else if (field.type === 'number') {
-                    initial[field.name] = '';
+                    initial[field.name] = undefined;
                 } else {
-                    initial[field.name] = '';
+                    initial[field.name] = undefined;
                 }
             });
         }
         if (config.select) {
             config.select.forEach((field) => {
-                initial[field.name] = '';
+                initial[field.name] = undefined;
             });
         }
         return initial;
@@ -43,8 +44,9 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
     const [values, setValues] = useState<T>(initialValues ?? (getInitialValuesFromConfig(config) as T));
     const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const checked = 'checked' in e.target ? e.target.checked : false;
         setValues((prev) => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value,
@@ -176,6 +178,16 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                 )
                             )}
                         </Block>
+                    ) : field.type === 'textarea' ? (
+                        <TextArea
+                            key={field.name}
+                            name={field.name}
+                            placeholder={field.placeholder || ''}
+                            value={values[field.name]}
+                            onChange={handleChange}
+                            isRequired={field.required !== false}
+                            disabled={false}
+                        />
                     ) : (
                         <Input
                             key={field.name}

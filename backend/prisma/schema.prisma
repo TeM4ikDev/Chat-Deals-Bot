@@ -32,6 +32,8 @@ enum ScammerStatus {
   SCAMMER
   UNKNOWN
   SUSPICIOUS
+
+  TRUSTED 
 }
 
 model User {
@@ -81,6 +83,8 @@ model Scammer {
   id         String  @id @default(uuid())
   username   String?
   telegramId String? @unique
+
+  description String?
 
   scamForms ScamForm[]
 

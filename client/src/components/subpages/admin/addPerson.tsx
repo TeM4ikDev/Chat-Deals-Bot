@@ -18,13 +18,20 @@ export const AddPerson = () => {
                 label: "Telegram ID",
                 type: "number",
                 placeholder: "Введите Telegram ID",
-                required: true
+                required: false
             },
             {
                 name: "username",
                 label: "Username (необязательно)",
                 type: "text",
                 placeholder: "Введите username",
+                required: false
+            },
+            {
+                name: 'description',
+                label: 'Описание',
+                type: 'textarea',
+                placeholder: 'Введите описание',
                 required: false
             }
         ],
@@ -44,6 +51,12 @@ export const AddPerson = () => {
     };
 
     const handleSubmit = async (values: { telegramId: string; username?: string; status: string }) => {
+
+        if(!values.telegramId && !values.username) {
+            toast.error("Необходимо ввести Telegram ID или username")
+            return
+        }
+        values.username = values.username?.toLowerCase().replace('@', '')
         const data = await onRequest(AdminService.addScammer(values));
         if (data) {
             toast.success("Человек успешно занесен в базу");
