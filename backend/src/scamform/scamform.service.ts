@@ -313,6 +313,11 @@ export class ScamformService {
 
   async getScammerByQuery(query: string) {
 
+    if (!query) {
+      console.log('query is undefined or empty');
+      return null;
+    }
+
     query = query.replace('@', '')
 
     console.log('query getScammerByQuery', query)

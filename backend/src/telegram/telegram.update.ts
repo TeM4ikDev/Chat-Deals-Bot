@@ -155,6 +155,11 @@ export class TelegramUpdate {
     console.log('description', description)
     console.log('query', query)
 
+    if (!query) {
+      await ctx.reply('Пожалуйста, укажите имя пользователя. Пример: инфо @username');
+      return;
+    }
+
     const scammer = await this.scamformService.getScammerByQuery(query);
 
     if (!scammer) {
@@ -175,6 +180,7 @@ export class TelegramUpdate {
 
   private async handleCheckCommand(ctx: Context, query: string, lang: string) {
     if (!query) {
+      await ctx.reply('Пожалуйста, укажите имя пользователя. Пример: чек @username');
       return;
     }
 
