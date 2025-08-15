@@ -168,7 +168,7 @@ export class TelegramUpdate {
     }
 
     if (!description) {
-      await ctx.reply(`📝 **Текущее описание** @${this.telegramService.escapeMarkdown(query)}:\n\n\`\`\`\n${this.telegramService.escapeMarkdown(scammer.description || 'Описание отсутствует')}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${this.telegramService.escapeMarkdown(query)} новое описание\``, {
+      await ctx.reply(`📝 **Текущее описание** @${query}:\n\n\`\`\`\n${scammer.description || 'Описание отсутствует'}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${query} новое описание\``, {
         parse_mode: 'Markdown'
       })
       return;
@@ -278,11 +278,11 @@ export class TelegramUpdate {
       { source: photoStream },
       {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
-          .replace('{username}', escapedUsername)
-          .replace('{telegramId}', this.telegramService.escapeMarkdown(telegramId))
-          .replace('{status}', this.telegramService.escapeMarkdown(scammer.status))
+          .replace('{username}', username)
+          .replace('{telegramId}', telegramId)
+          .replace('{status}', scammer.status)
           .replace('{formsCount}', formsCount.toString())
-          .replace('{description}', this.telegramService.escapeMarkdown(scammer.description || 'нет описания'))
+          .replace('{description}', scammer.description || 'нет описания')
           .replace('{link}', link),
         parse_mode: 'Markdown',
         reply_markup: {

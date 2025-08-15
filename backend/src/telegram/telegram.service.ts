@@ -113,7 +113,7 @@ export class TelegramService implements OnModuleInit {
           id: 'garant_found',
           title: '✅ Проверенный гарант найден',
           input_message_content: {
-            message_text: `✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @${this.escapeMarkdown(query)}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.`,
+            message_text: `✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @${query}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.`,
             parse_mode: 'Markdown',
           },
           description: 'Пользователь найден в базе гарантов',
@@ -139,7 +139,7 @@ export class TelegramService implements OnModuleInit {
         description: 'Пользователь не найден в базе',
       });
     } else {
-      const username = scammer.username ? `@${this.escapeMarkdown(scammer.username)}` : 'Без username';
+      const username = scammer.username ? `@${scammer.username}` : 'Без username';
       const telegramId = scammer.telegramId || '--';
       const formsCount = scammer.scamForms.length;
       const status = this.getScammerStatusText(scammer);
@@ -149,7 +149,7 @@ export class TelegramService implements OnModuleInit {
         id: 'scammer_found',
         title: `${status} найден`,
         input_message_content: {
-          message_text: `*${username}*\n\nID: \`${this.escapeMarkdown(telegramId)}\`\nСтатус: *${this.escapeMarkdown(scammer.status)}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
+          message_text: `*${username}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
           parse_mode: 'Markdown',
         },
         description: `${status} • ${formsCount} жалоб`,
@@ -163,14 +163,14 @@ export class TelegramService implements OnModuleInit {
   formatUserInfo(username?: string, telegramId?: string, language: string = 'ru'): string {
     if (username && telegramId) {
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
-        .replace('{username}', this.escapeMarkdown(username))
-        .replace('{telegramId}', this.escapeMarkdown(telegramId));
+        .replace('{username}', username)
+        .replace('{telegramId}', telegramId);
     } else if (username) {
       return this.localizationService.getT('userInfo.withUsernameOnly', language)
-        .replace('{username}', this.escapeMarkdown(username));
+        .replace('{username}', username);
     } else if (telegramId) {
       return this.localizationService.getT('userInfo.withIdOnly', language)
-        .replace('{telegramId}', this.escapeMarkdown(telegramId));
+        .replace('{telegramId}', telegramId);
     } else {
       return this.localizationService.getT('userInfo.noInfo', language);
     }

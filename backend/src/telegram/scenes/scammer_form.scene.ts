@@ -139,7 +139,7 @@ export class ScammerFrom {
             this.localizationService.getT('complaint.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
-                .replace('{description}', this.telegramService.escapeMarkdown(form.description || '')), {
+                .replace('{description}', form.description || ''), {
 
             parse_mode: 'Markdown',
             reply_markup: {
@@ -463,7 +463,7 @@ export class ScammerFrom {
 
     private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
         const channelId = '@qyqly';
-        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${this.telegramService.escapeMarkdown(ctx.from?.id?.toString() || '')}`;
+        const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
 
         const { username, telegramId } = ctx.session.scamForm.scammerData
         const scammerInfo = this.telegramService.formatUserInfo(username, telegramId);
@@ -472,7 +472,7 @@ export class ScammerFrom {
         const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
             .replace('{botName}', BOT_NAME)
             .replace('{scammerInfo}', scammerInfo)
-            .replace('{description}', this.telegramService.escapeMarkdown(ctx.session.scamForm.description || ''))
+            .replace('{description}', ctx.session.scamForm.description || '')
             .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 
