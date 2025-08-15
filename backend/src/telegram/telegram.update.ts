@@ -42,7 +42,7 @@ export class TelegramUpdate {
       const user = repliedMessage.from;
       if (!user) return;
 
-      const telegramId = user.id.toString();
+      const telegramId = user.username || user.id.toString();
       const word = message.split(' ')[1];
 
       const { user: repliedUser } = await this.userService.findOrCreateUser(user);
@@ -179,14 +179,7 @@ export class TelegramUpdate {
   }
 
   private async handleCheckCommand(ctx: Context, query: string, lang: string) {
-    if (!query) {
-      await ctx.reply('Пожалуйста, укажите имя пользователя. Пример: чек @username');
-      return;
-    }
-
-    // const query = words.slice(1).join(' ').trim().replace('@', '');
     console.log('Поиск пользователя:', query);
-
     await this.checkUserAndSendInfo(ctx, query, lang);
   }
 
