@@ -28,7 +28,7 @@ export class TelegramUpdate {
 
   @On('message')
   async findUser(@Ctx() ctx: Context, @Language() lang: string) {
-    const message = ctx.text?.trim().toLowerCase().replace('@', '');
+    const message = ctx.text?.trim().replace('@', '');
     if (!message) return;
 
     const words = message.split(/\s+/).filter(word => word.length > 0);
@@ -42,12 +42,14 @@ export class TelegramUpdate {
       const user = repliedMessage.from;
       if (!user) return;
 
+      const msg = message.toLowerCase().replace('@', '');
+
       const telegramId = user.username || user.id.toString();
-      const word = message.split(' ')[1];
+      const word = msg.split(' ')[1];
 
       const { user: repliedUser } = await this.userService.findOrCreateUser(user);
 
-      switch (message) {
+      switch (msg) {
         case 'чек':
           await this.checkUserAndSendInfo(ctx, telegramId, lang);
           break;
@@ -62,7 +64,7 @@ export class TelegramUpdate {
           await this.handleAdmin(ctx, repliedUser, false);
           break;
       }
-      await this.handlePrefixCommands(ctx, message, repliedUser, word);
+      await this.handlePrefixCommands(ctx, msg, repliedUser, word);
     }
 
     switch (command) {
