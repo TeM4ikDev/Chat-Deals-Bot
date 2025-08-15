@@ -129,7 +129,7 @@ export class AppealForm {
             this.localizationService.getT('appeal.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
-                .replace('{description}', form.description || ''), {
+                .replace('{description}', this.telegramService.escapeMarkdown(form.description || '')), {
 
             parse_mode: 'Markdown',
             reply_markup: {
@@ -443,7 +443,7 @@ export class AppealForm {
 
     private async sendMessageToChannel(ctx: AppealFormSession) {
         const channelId = '@giftsstate';
-        const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
+        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${this.telegramService.escapeMarkdown(ctx.from?.id?.toString() || '')}`;
 
         const { username, telegramId } = ctx.session.appealForm.userData
         const appealUserInfo = this.telegramService.formatUserInfo(username, telegramId);
@@ -454,7 +454,7 @@ export class AppealForm {
         const channelMessage = this.localizationService.getT('appeal.form.channelMessage', this.language)
             .replace('{botName}', BOT_NAME)
             .replace('{appealUserInfo}', appealUserInfo)
-            .replace('{description}', ctx.session.appealForm.description || '')
+            .replace('{description}', this.telegramService.escapeMarkdown(ctx.session.appealForm.description || ''))
             .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 

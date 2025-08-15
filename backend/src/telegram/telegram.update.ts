@@ -168,7 +168,7 @@ export class TelegramUpdate {
     }
 
     if (!description) {
-      await ctx.reply(`📝 **Текущее описание** @${query}:\n\n\`\`\`\n${scammer.description || 'Описание отсутствует'}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${query} новое описание\``, {
+      await ctx.reply(`📝 **Текущее описание** @${this.telegramService.escapeMarkdown(query)}:\n\n\`\`\`\n${this.telegramService.escapeMarkdown(scammer.description || 'Описание отсутствует')}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${this.telegramService.escapeMarkdown(query)} новое описание\``, {
         parse_mode: 'Markdown'
       })
       return;
@@ -245,10 +245,7 @@ export class TelegramUpdate {
     }
   }
 
-  private escapeMarkdown(text: string): string {
-    if (!text) return text;
-    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-  }
+  
 
   async onScammerDetail(
     @Ctx() ctx: Context,
@@ -261,7 +258,7 @@ export class TelegramUpdate {
       await ctx.replyWithPhoto(
         { source: photoStream },
         {
-          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.escapeMarkdown(query)),
+          caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.telegramService.escapeMarkdown(query)),
           parse_mode: 'Markdown',
 
         }
@@ -275,17 +272,17 @@ export class TelegramUpdate {
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
     const photoStream = fs.createReadStream(IMAGE_PATHS[scammer.status]);
 
-    const escapedUsername = this.escapeMarkdown(username);
+    const escapedUsername = this.telegramService.escapeMarkdown(username);
 
     await ctx.replyWithPhoto(
       { source: photoStream },
       {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
-          .replace('{username}', username)
-          .replace('{telegramId}', telegramId)
-          .replace('{status}', scammer.status)
+          .replace('{username}', escapedUsername)
+          .replace('{telegramId}', this.telegramService.escapeMarkdown(telegramId))
+          .replace('{status}', this.telegramService.escapeMarkdown(scammer.status))
           .replace('{formsCount}', formsCount.toString())
-          .replace('{description}', scammer.description || 'нет описания')
+          .replace('{description}', this.telegramService.escapeMarkdown(scammer.description || 'нет описания'))
           .replace('{link}', link),
         parse_mode: 'Markdown',
         reply_markup: {

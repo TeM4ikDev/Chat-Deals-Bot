@@ -2,11 +2,11 @@ import { ScamformService } from "@/scamform/scamform.service";
 import { LocalizationService } from "@/telegram/services/localization.service";
 import { TelegramService } from "@/telegram/telegram.service";
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
 import { BOT_NAME, SCENES } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
-import { ConfigService } from "@nestjs/config";
 
 export interface IScammerData {
     username?: string
@@ -139,7 +139,7 @@ export class ScammerFrom {
             this.localizationService.getT('complaint.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
-                .replace('{description}', form.description || ''), {
+                .replace('{description}', this.telegramService.escapeMarkdown(form.description || '')), {
 
             parse_mode: 'Markdown',
             reply_markup: {
@@ -463,7 +463,7 @@ export class ScammerFrom {
 
     private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
         const channelId = '@qyqly';
-        const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
+        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${this.telegramService.escapeMarkdown(ctx.from?.id?.toString() || '')}`;
 
         const { username, telegramId } = ctx.session.scamForm.scammerData
         const scammerInfo = this.telegramService.formatUserInfo(username, telegramId);
@@ -472,7 +472,7 @@ export class ScammerFrom {
         const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
             .replace('{botName}', BOT_NAME)
             .replace('{scammerInfo}', scammerInfo)
-            .replace('{description}', ctx.session.scamForm.description || '')
+            .replace('{description}', this.telegramService.escapeMarkdown(ctx.session.scamForm.description || ''))
             .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 
