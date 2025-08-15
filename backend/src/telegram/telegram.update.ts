@@ -32,7 +32,7 @@ export class TelegramUpdate {
     if (!message) return;
 
     const words = message.split(/\s+/).filter(word => word.length > 0);
-    const command = words[0];
+    const command = words[0].toLowerCase();
 
     const commandData = words.slice(2).join(' ');
 
