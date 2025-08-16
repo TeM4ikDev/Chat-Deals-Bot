@@ -19,7 +19,8 @@ export class TelegramService implements OnModuleInit {
     private readonly database: DatabaseService,
     private readonly configService: ConfigService,
     private readonly scamformService: ScamformService,
-    private readonly localizationService: LocalizationService
+    private readonly localizationService: LocalizationService,
+    private readonly telegramService: TelegramService
 
   ) { }
 
@@ -161,13 +162,15 @@ export class TelegramService implements OnModuleInit {
 
 
   formatUserInfo(username?: string, telegramId?: string, language: string = 'ru'): string {
+
+    const escapedUsername = this.telegramService.escapeMarkdown(username)
     if (username && telegramId) {
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
-        .replace('{username}', username)
+        .replace('{username}', escapedUsername)
         .replace('{telegramId}', telegramId);
     } else if (username) {
       return this.localizationService.getT('userInfo.withUsernameOnly', language)
-        .replace('{username}', username);
+        .replace('{username}', escapedUsername);
     } else if (telegramId) {
       return this.localizationService.getT('userInfo.withIdOnly', language)
         .replace('{telegramId}', telegramId);
