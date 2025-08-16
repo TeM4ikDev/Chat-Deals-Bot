@@ -463,7 +463,7 @@ export class ScammerFrom {
 
     private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
         const channelId = '@qyqly';
-        const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
+        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${ctx.from?.id}`;
 
         const { username, telegramId } = ctx.session.scamForm.scammerData
         const scammerInfo = this.telegramService.formatUserInfo(username, telegramId);

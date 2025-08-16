@@ -9,6 +9,7 @@ import { session } from 'telegraf';
 import { LocalizationService } from './services/localization.service';
 import { TelegramService } from './telegram.service';
 
+import { AdminModule } from '@/admin/admin.module';
 import { ScamformModule } from '@/scamform/scamform.module';
 import { ScamformService } from '@/scamform/scamform.service';
 import { AppealForm } from './scenes/appeal_form.scene';
@@ -17,7 +18,6 @@ import { TelegramUpdate } from './telegram.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
-import { AdminModule } from '@/admin/admin.module';
 
 @Module({
 

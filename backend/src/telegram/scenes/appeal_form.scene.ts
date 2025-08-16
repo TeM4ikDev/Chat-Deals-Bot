@@ -443,7 +443,7 @@ export class AppealForm {
 
     private async sendMessageToChannel(ctx: AppealFormSession) {
         const channelId = '@giftsstate';
-        const userInfo = ctx.from?.username ? `@${ctx.from.username}` : `ID: ${ctx.from?.id}`;
+        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${ctx.from?.id}`;
 
         const { username, telegramId } = ctx.session.appealForm.userData
         const appealUserInfo = this.telegramService.formatUserInfo(username, telegramId);
