@@ -54,7 +54,7 @@ export class TelegramUpdate {
       switch (msg) {
         case 'чек':
           await this.checkUserAndSendInfo(ctx, telegramId, lang);
-          break;
+          return; // Добавляем return чтобы прервать выполнение
 
         case '+адм':
           if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
@@ -67,6 +67,7 @@ export class TelegramUpdate {
           break;
       }
       await this.handlePrefixCommands(ctx, msg, repliedUser, word);
+      return; // Добавляем return чтобы прервать выполнение для всех reply команд
     }
 
     switch (command) {
