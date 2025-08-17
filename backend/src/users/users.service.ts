@@ -55,6 +55,8 @@ export class UsersService {
   }
 
   async findUserByTelegramId(telegramId: string) {
+
+    
     return await this.database.user.findUnique({
       where: {
         telegramId: telegramId
@@ -63,7 +65,7 @@ export class UsersService {
         UsersConfig: true
       }
 
-    })
+    }) || null
   }
 
   async findUsersByRole(role: UserRoles) {
@@ -144,12 +146,12 @@ export class UsersService {
 
   async updateUserRole(telegramId: string, role: UserRoles) {
     const user = await this.findUserByTelegramId(telegramId);
-    const userById = await this.findUserById(telegramId);
+    // const userById = await this.findUserByTelegramId(telegramId);
 
-    if (!user && !userById) throw new Error('Пользователь не найден');
+    if (!user) throw new Error('Пользователь не найден');
 
     return await this.database.user.update({
-      where: { id: userById.id || user.id },
+      where: { id: user.id },
       data: { role: role }
     });
   }

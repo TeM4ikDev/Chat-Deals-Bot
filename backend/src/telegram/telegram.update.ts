@@ -49,6 +49,8 @@ export class TelegramUpdate {
 
       const { user: repliedUser } = await this.userService.findOrCreateUser(user);
 
+      console.log(repliedUser)
+
       switch (msg) {
         case 'чек':
           await this.checkUserAndSendInfo(ctx, telegramId, lang);
@@ -89,6 +91,8 @@ export class TelegramUpdate {
 
     const admin = await this.userService.findUserByTelegramId(adminAddCtx.from.id.toString());
 
+
+    console.log('admin', admin)
 
     if (!repliedUser) {
       adminAddCtx.reply('Пользователя нет в боте. Ему нужно сначала зайти в бота.', {
