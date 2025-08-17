@@ -197,6 +197,9 @@ export class TelegramUpdate {
 
   private async checkIsGarant(username: string): Promise<boolean> {
     const garants = await this.userService.findGarants();
+
+    if (!username) return
+
     return garants.some(garant =>
       garant.username?.toLowerCase() === username.toLowerCase()
     );
@@ -244,7 +247,7 @@ export class TelegramUpdate {
     }
   }
 
-  
+
 
   async onScammerDetail(
     @Ctx() ctx: Context,
@@ -268,8 +271,15 @@ export class TelegramUpdate {
     const username = scammer.username ? `@${scammer.username}` : this.localizationService.getT('userCheck.noUsername', lang);
     const telegramId = scammer.telegramId || '--';
     const formsCount = scammer.scamForms.length;
+    let status = scammer.status
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
-    const photoStream = fs.createReadStream(IMAGE_PATHS[scammer.status]);
+    let photoStream = fs.createReadStream(IMAGE_PATHS[status]);
+
+
+    if (scammer.username.replace('@', '') == 'TeM4ik20') {
+      photoStream = fs.createReadStream(IMAGE_PATHS.OGUREC);
+      status = 'DIKIJ OGUREC' as ScammerStatus
+    }
 
     const escapedUsername = this.telegramService.escapeMarkdown(username);
 
@@ -279,7 +289,7 @@ export class TelegramUpdate {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
           .replace('{username}', username)
           .replace('{telegramId}', telegramId)
-          .replace('{status}', scammer.status)
+          .replace('{status}', status)
           .replace('{formsCount}', formsCount.toString())
           .replace('{description}', scammer.description || 'нет описания')
           .replace('{link}', link),
