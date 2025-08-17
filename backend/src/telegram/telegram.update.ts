@@ -83,6 +83,8 @@ export class TelegramUpdate {
 
   private async handlePrefixCommands(ctx: Context, message: string, repliedUser: IUser, word: string) {
     if (message.startsWith('статус')) {
+      if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
+
       await this.handleStatus(ctx, repliedUser, word);
       return;
     }
