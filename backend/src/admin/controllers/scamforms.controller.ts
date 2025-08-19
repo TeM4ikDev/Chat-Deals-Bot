@@ -1,11 +1,14 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { DatabaseService } from '@/database/database.service';
+import { Roles } from '@/decorators/roles.decorator';
+import { ScamformService } from '@/scamform/scamform.service';
+import { TelegramService } from '@/telegram/telegram.service';
+import { Body, Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { Prisma, UserRoles } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { AdminService } from '../admin.service';
-import { Roles } from '@/decorators/roles.decorator';
-import { Prisma, UserRoles } from '@prisma/client';
-import { DatabaseService } from '@/database/database.service';
-import { ScamformService } from '@/scamform/scamform.service';
+import { UserId } from '@/decorators/userid.decorator';
 
 
 @Controller('admin/scamforms')
@@ -16,14 +19,40 @@ export class ScamformController {
         private readonly usersService: UsersService,
         private readonly adminService: AdminService,
         private readonly database: DatabaseService,
-        private readonly scamformService: ScamformService
+        private readonly scamformService: ScamformService,
+        private readonly telegramService: TelegramService
     ) { }
 
 
     @Post('scammers')
-    async createScammer(@Body() body: Prisma.ScammerCreateInput) {
-        console.log(body)
-        return await this.scamformService.createScammer(body);
+    @UseInterceptors(AnyFilesInterceptor())
+    async createScammer(@UploadedFiles() files: Express.Multer.File[], @Body() body: Prisma.ScammerCreateInput, @UserId() userId: string) {
+        console.log('Файлы:', files);
+        console.log('Данные формы:', body);
+
+        const user = await this.usersService.findUserById(userId);
+
+
+        const scammer = await this.scamformService.createScammer(body);
+
+
+        const mediaData = await this.telegramService.uploadFilesGroup(files);
+        console.log('mediaData', mediaData)
+
+
+        const scamForm = await this.scamformService.create({
+            scammerData: {
+                username: scammer.username,
+                telegramId: scammer.telegramId
+            },
+            description: body.description,
+            media: mediaData,
+            userTelegramId: user?.telegramId,
+        })
+
+        console.log('scamForm', scamForm)
+
+        return scamForm;
     }
 
 

@@ -1,8 +1,7 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
-import { IScammerData } from '@/telegram/scenes/scammer_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
-import { IUser } from '@/types/types';
+import { IMediaData, IScammerData, IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,14 +11,14 @@ import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 interface CreateScamFormData {
   scammerData: IScammerData;
   description: string;
-  media: Array<{ type: string; file_id: string }>;
+  media: Array<IMediaData>;
   userTelegramId: string
 }
 
 interface CreateAppealFormData {
   userData: IAppealUserData;
   description: string;
-  media: Array<{ type: string; file_id: string }>;
+  media: Array<IMediaData>;
   userTelegramId: string
 }
 

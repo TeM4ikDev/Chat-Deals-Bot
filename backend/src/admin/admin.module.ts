@@ -9,6 +9,8 @@ import { UserManagementController } from './controllers/user.controller';
 import { GarantsController } from './controllers/garants.controller';
 import { ScamformModule } from '@/scamform/scamform.module';
 import { ScamformController } from './controllers/scamforms.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import multer, { diskStorage } from 'multer';
 
 @Module({
   imports: [
@@ -17,6 +19,9 @@ import { ScamformController } from './controllers/scamforms.controller';
     ScamformModule,
     forwardRef(() => UsersModule),
     forwardRef(() => TelegramModule),
+    // MulterModule.register({
+      
+    // }),
   ],
 
   controllers: [

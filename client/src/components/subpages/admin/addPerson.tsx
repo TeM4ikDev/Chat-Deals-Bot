@@ -1,5 +1,4 @@
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/Button";
 import { Form } from "@/components/ui/Form";
 import { AdminService } from "@/services/admin.service";
 import { ScammerStatus } from "@/types";
@@ -33,7 +32,15 @@ export const AddPerson = () => {
                 type: 'textarea',
                 placeholder: 'Введите описание',
                 required: false
-            }
+            },
+            {
+                name: "file",
+                label: "Пруфы",
+                type: "file",
+                multiple: true,
+                required: true
+            },
+
         ],
         select: [
             {
@@ -46,13 +53,16 @@ export const AddPerson = () => {
                     { value: ScammerStatus.SUSPICIOUS, label: "Подозрительный" },
                     { value: ScammerStatus.UNKNOWN, label: "Неизвестно" }
                 ]
-            }
-        ]
+            },
+        ],
+
+
+
     };
 
     const handleSubmit = async (values: { telegramId: string; username?: string; status: string }) => {
 
-        if(!values.telegramId && !values.username) {
+        if (!values.telegramId && !values.username) {
             toast.error("Необходимо ввести Telegram ID или username")
             return
         }

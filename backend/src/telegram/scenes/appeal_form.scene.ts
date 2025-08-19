@@ -38,6 +38,8 @@ export class AppealForm {
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
 
     private language: string = 'ru';
+    private min_media = 2
+    private max_media = 10
 
     private static readonly KEYBOARDS = {
         NO_USERNAME: [{ text: AppealForm.NO_USERNAME_TEXT }],
@@ -100,7 +102,7 @@ export class AppealForm {
         const form = ctx.session.appealForm;
         if (!form || form.step !== 3) return;
 
-        if (form.media.length < 2) {
+        if (form.media.length < this.min_media) {
             await ctx.reply(this.localizationService.getT('appeal.errors.minMedia', this.language));
             return;
         }
@@ -115,7 +117,7 @@ export class AppealForm {
             }
         }
 
-        const mediaGroup = form.media.slice(0, 10).map((media, index) => ({
+        const mediaGroup = form.media.slice(0, this.max_media).map((media, index) => ({
             type: media.type as 'photo' | 'video',
             media: media.file_id
         }));
@@ -129,7 +131,7 @@ export class AppealForm {
             this.localizationService.getT('appeal.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
-                .replace('{description}', form.description || ''), {
+                .replace('{description}', this.telegramService.escapeMarkdown(form.description) || ''), {
 
             parse_mode: 'Markdown',
             reply_markup: {
@@ -367,7 +369,7 @@ export class AppealForm {
                     shouldUpdateMessage = true;
                 }
 
-                if (mediaCount > 10) {
+                if (mediaCount > this.max_media) {
                     await ctx.reply(this.localizationService.getT('appeal.errors.tooManyMedia', this.language));
                     return;
                 }
@@ -447,20 +449,19 @@ export class AppealForm {
 
         const { username, telegramId } = ctx.session.appealForm.userData
         const appealUserInfo = this.telegramService.formatUserInfo(username, telegramId);
-
         const encoded = this.telegramService.encodeParams({ id: telegramId })
-
+        const description = this.telegramService.escapeMarkdown(ctx.session.appealForm.description)
 
         const channelMessage = this.localizationService.getT('appeal.form.channelMessage', this.language)
             .replace('{botName}', BOT_NAME)
             .replace('{appealUserInfo}', appealUserInfo)
-            .replace('{description}', ctx.session.appealForm.description || '')
+            .replace('{description}', description || '')
             .replace('{encoded}', encoded)
             .replace('{userInfo}', userInfo);
 
         try {
             if (ctx.session.appealForm.media.length > 0) {
-                const mediaGroup = ctx.session.appealForm.media.slice(0, 10).map((media, index) => ({
+                const mediaGroup = ctx.session.appealForm.media.slice(0, this.max_media).map((media, index) => ({
                     type: media.type === 'photo' ? 'photo' : 'video',
                     media: media.file_id,
                     ...(index === 0 && { caption: channelMessage, parse_mode: 'Markdown' })

@@ -51,7 +51,7 @@ export class TelegramUpdate {
 
       const { user: repliedUser } = await this.userService.findOrCreateUser(user);
 
-      console.log('repliedUser ___________________', repliedUser)
+      // console.log('repliedUser ___________________', repliedUser)
 
       switch (msg) {
         case 'чек':

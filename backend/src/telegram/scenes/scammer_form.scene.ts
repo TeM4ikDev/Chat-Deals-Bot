@@ -7,11 +7,8 @@ import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
 import { BOT_NAME, SCENES } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
+import { IMessageDataScamForm, IScammerData } from "@/types/types";
 
-export interface IScammerData {
-    username?: string
-    telegramId?: string
-}
 
 interface IScammerFormData {
     step: number;
@@ -39,7 +36,8 @@ export class ScammerFrom {
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
 
     private language: string = 'ru';
-    private need_media = 0
+    private min_media = 2
+    private max_media = 10
 
     private static readonly KEYBOARDS = {
         NO_USERNAME: [{ text: ScammerFrom.NO_USERNAME_TEXT }],
@@ -105,7 +103,7 @@ export class ScammerFrom {
         const form = ctx.session.scamForm;
         if (!form || form.step !== 3) return;
 
-        if (form.media.length < this.need_media) {
+        if (form.media.length < this.min_media) {
             await ctx.reply(this.localizationService.getT('complaint.errors.minMedia', this.language));
             return;
         }
@@ -120,7 +118,7 @@ export class ScammerFrom {
             }
         }
 
-        const mediaGroup = form.media.slice(0, 10).map((media, index) => ({
+        const mediaGroup = form.media.slice(0, this.max_media).map((media, index) => ({
             type: media.type as 'photo' | 'video',
             media: media.file_id
         }));
@@ -139,7 +137,7 @@ export class ScammerFrom {
             this.localizationService.getT('complaint.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
-                .replace('{description}', form.description || ''), {
+                .replace('{description}', this.telegramService.escapeMarkdown(form.description) || ''), {
 
             parse_mode: 'Markdown',
             reply_markup: {
@@ -231,7 +229,15 @@ export class ScammerFrom {
                 userTelegramId: String(ctx.from?.id)
             })
 
-            await this.sendMessageToChannel(ctx, scamForm.id)
+            await this.telegramService.sendScamFormMessageToChannel({
+                fromUser: {
+                    username: ctx.from?.username,
+                    telegramId: String(ctx.from?.id)
+                },
+                scammerData: ctx.session.scamForm.scammerData,
+                media: ctx.session.scamForm.media,
+                scamForm
+            })
 
             await ctx.reply(this.localizationService.getT('complaint.form.success', this.language), {
                 reply_markup: {
@@ -386,7 +392,7 @@ export class ScammerFrom {
                     shouldUpdateMessage = true;
                 }
 
-                if (mediaCount > 10) {
+                if (mediaCount > this.max_media) {
                     await ctx.reply(this.localizationService.getT('complaint.errors.tooManyMedia', this.language));
                     return;
                 }
@@ -459,66 +465,7 @@ export class ScammerFrom {
         ctx.session.scamForm = undefined;
     }
 
-
-
-    private async sendMessageToChannel(ctx: ScammerFormSession, scamFormId: string) {
-        const channelId = '@qyqly';
-        const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${ctx.from?.id}`;
-
-        const { username, telegramId } = ctx.session.scamForm.scammerData
-        const scammerInfo = this.telegramService.formatUserInfo(username, telegramId);
-        const encoded = this.telegramService.encodeParams({ id: telegramId, formId: scamFormId })
-
-        const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
-            .replace('{botName}', BOT_NAME)
-            .replace('{scammerInfo}', scammerInfo)
-            .replace('{description}', ctx.session.scamForm.description || '')
-            .replace('{encoded}', encoded)
-            .replace('{userInfo}', userInfo);
-
-        const reply_markup = {
-            inline_keyboard: [
-                [
-                    { text: '👍 0', callback_data: `like_complaint:${scamFormId}` },
-                    { text: '👎 0', callback_data: `dislike_complaint:${scamFormId}` }
-                ]
-            ]
-        }
-        
-
-        try {
-            let replyToMessageId: number | undefined;
-
-            const media = ctx.session.scamForm.media;
-
-            if (media.length > 0) {
-                const mediaGroup = media.slice(0, 10).map((m) => ({
-                    type: m.type === 'photo' ? 'photo' : 'video',
-                    media: m.file_id
-                }));
-
-                const messages = await this.telegramService.sendMediaGroupToChannel(channelId, mediaGroup);
-
-                if (messages && messages.length > 0) {
-                    replyToMessageId = messages[0].message_id;
-                }
-            }
-
-
-            await this.telegramService.sendMessageToChannelLayer(channelId, channelMessage, {
-                parse_mode: 'Markdown',
-                reply_markup,
-                reply_to_message_id: replyToMessageId,
-                link_preview_options: {
-                    is_disabled: true,
-                  },
-            });
-
-        } catch (error) {
-            console.error('Error sending to channel:', error);
-        }
-    }
-
+   
 
 
 

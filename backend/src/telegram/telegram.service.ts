@@ -6,8 +6,10 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
-import { InlineQueryResult, InputFile } from 'telegraf/typings/core/types/typegram';
+import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from './services/localization.service';
+import { BOT_NAME } from './constants/telegram.constants';
+import { IMessageDataScamForm } from '@/types/types';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -23,10 +25,54 @@ export class TelegramService implements OnModuleInit {
 
   ) { }
 
-  onModuleInit() {
+  async onModuleInit() {
     this.bot.on('inline_query', async (ctx) => {
       await this.handleInlineQuery(ctx);
     });
+
+
+    // const chat = await this.bot.telegram.getChat('@imagesbase');
+    // console.log(chat.id);
+  }
+
+  async uploadFilesGroup(files: Express.Multer.File[]): Promise<Array<{ type: string; file_id: string }>> {
+    const media = files.map((file) => {
+      const isVideo = file.mimetype?.startsWith('video/');
+      
+      if (isVideo) {
+        return {
+          type: 'video' as const,
+          media: Input.fromBuffer(file.buffer, file.originalname || 'video.mp4')
+        } as InputMediaVideo;
+      } else {
+        return {
+          type: 'photo' as const,
+          media: Input.fromBuffer(file.buffer, file.originalname || 'image.jpg')
+        } as InputMediaPhoto;
+      }
+    });
+  
+    const sent = await this.bot.telegram.sendMediaGroup('@imagesbase', media);
+  
+    const fileIds: Array<{ type: string; file_id: string }> = sent.map(
+      (msg) => {
+        if ('photo' in msg && msg.photo && msg.photo.length > 0) {
+          return {
+            type: 'photo',
+            file_id: msg.photo[msg.photo.length - 1].file_id
+          };
+        }
+        if ('video' in msg && msg.video) {
+          return {
+            type: 'video',
+            file_id: msg.video.file_id
+          };
+        }
+        return null;
+      }
+    ).filter((item): item is { type: string; file_id: string } => item !== null);
+  
+    return fileIds;
   }
 
   getPhotoStream(filePath: string): InputFile {
@@ -52,7 +98,6 @@ export class TelegramService implements OnModuleInit {
   isUserHasAccept(telegramId: string, arrAccepted: string[]): boolean {
     return arrAccepted.includes(telegramId)
   }
-
 
   async complaintOutcome(
     complaint: Prisma.ScamFormGetPayload<{ include: { scammer, user } }>,
@@ -102,7 +147,7 @@ export class TelegramService implements OnModuleInit {
 
     // Проверяем, является ли пользователь гарантом
     const garants = await this.usersService.findGarants();
-    const isGarant = garants.some(garant => 
+    const isGarant = garants.some(garant =>
       garant.username?.toLowerCase() === query.toLowerCase()
     );
 
@@ -201,5 +246,59 @@ export class TelegramService implements OnModuleInit {
   }
 
 
+  async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
+    const { fromUser, scamForm, scammerData } = messageData
+    const channelId = '@qyqly';
+    const userInfo = fromUser.username ? `@${this.escapeMarkdown(fromUser.username)}` : `ID: ${fromUser.telegramId}`;
+
+    const { username, telegramId } = scammerData
+    const scammerInfo = this.formatUserInfo(username, telegramId);
+    const encoded = this.encodeParams({ id: telegramId, formId: scamForm.id })
+    const description = this.escapeMarkdown(scamForm.description)
+
+    const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
+        .replace('{botName}', BOT_NAME)
+        .replace('{scammerInfo}', scammerInfo)
+        .replace('{description}', description || '')
+        .replace('{encoded}', encoded)
+        .replace('{userInfo}', userInfo);
+
+    const reply_markup = {
+        inline_keyboard:
+            [[
+                { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
+                { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
+            ]]
+    }
+
+    try {
+        let replyToMessageId: number | undefined;
+        const media = messageData.media;
+
+        if (media.length > 0) {
+            const mediaGroup = media.slice(0, 10).map((m) => ({
+                type: m.type === 'photo' ? 'photo' : 'video',
+                media: m.file_id
+            }));
+
+            const messages = await this.sendMediaGroupToChannel(channelId, mediaGroup);
+
+            if (messages && messages.length > 0) {
+                replyToMessageId = messages[0].message_id;
+            }
+        }
+
+        await this.sendMessageToChannelLayer(channelId, channelMessage, {
+            parse_mode: 'Markdown',
+            reply_markup,
+            reply_to_message_id: replyToMessageId,
+            link_preview_options: {
+                is_disabled: true,
+            },
+        });
+    } catch (error) {
+        console.error('Error sending to channel:', error);
+    }
+}
 
 }

@@ -121,7 +121,7 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                 <input
                                     type="file"
                                     name={field.name}
-                                    accept="image/*"
+                                    accept="image/*, video/*"
                                     multiple={field.multiple}
                                     id={`file-input-${field.name}`}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -154,7 +154,7 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                                 className="w-24 h-24 object-cover rounded border border-gray-600"
                                             />
                                         ) : (
-                                            <span key={idx} className="text-xs bg-gray-100 rounded px-2 py-1 border border-gray-300">{file instanceof File ? file.name : String(file)}</span>
+                                            <span key={idx} className="text-xs bg-gray-100 text-gray-700 rounded px-2 py-1 border border-gray-300">{file instanceof File ? file.name : String(file)}</span>
                                         )
                                     ))}
                                 </div>
@@ -174,7 +174,7 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                         className="w-24 h-24 object-cover rounded border border-gray-600 mt-2"
                                     />
                                 ) : (
-                                    <span className="text-xs bg-gray-100 rounded px-2 py-1 border border-gray-300 mt-2">{values[field.name] instanceof File ? values[field.name].name : String(values[field.name])}</span>
+                                    <span className="text-xs bg-gray-100 text-gray-700 rounded px-2 py-1 border border-gray-300 mt-2">{values[field.name] instanceof File ? values[field.name].name : String(values[field.name])}</span>
                                 )
                             )}
                         </Block>
