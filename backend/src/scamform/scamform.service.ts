@@ -338,29 +338,6 @@ export class ScamformService {
       }
     });
 
-    // // Если не найдено, пробуем поиск без учета регистра
-    // if (!scammer) {
-    //   scammer = await this.database.scammer.findFirst({
-    //     where: {
-    //       OR: [
-    //         {
-    //           username: {
-    //             equals: query.toLowerCase()
-    //           }
-    //         },
-    //         {
-    //           username: {
-    //             equals: query.toUpperCase()
-    //           }
-    //         }
-    //       ]
-    //     },
-    //     include: {
-    //       scamForms: true
-    //     }
-    //   });
-    // }
-
     return scammer;
   }
 
@@ -378,6 +355,15 @@ export class ScamformService {
       include: {
         scamForms: true
       }
+    })
+  }
+
+  async findOrCreateScammer(user: IUser) {
+    const scammer = await this.getScammerByQuery(user.username || user.telegramId)
+    if (scammer) return scammer
+    return await this.createScammer({
+      username: user.username,
+      telegramId: user.telegramId
     })
   }
 

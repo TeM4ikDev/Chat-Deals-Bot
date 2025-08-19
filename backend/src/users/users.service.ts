@@ -127,6 +127,14 @@ export class UsersService {
     })
   }
 
+  async findGarantByUsername(username: string) {
+    return await this.database.garants.findUnique({
+      where: {
+        username
+      }
+    })
+  }
+
 
   async updateUserRights(telegramId: string) {
     const user = await this.findUserByTelegramId(telegramId);

@@ -11,7 +11,6 @@ import { TelegramService } from './telegram.service';
 
 import { AdminModule } from '@/admin/admin.module';
 import { ScamformModule } from '@/scamform/scamform.module';
-import { ScamformService } from '@/scamform/scamform.service';
 import { AppealForm } from './scenes/appeal_form.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
 import { TelegramUpdate } from './telegram.update';
@@ -48,7 +47,6 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     AppealForm,
     TelegramService,
     TelegramUpdate,
-    ScamformService,
   ],
   exports: [TelegramService, LocalizationService]
 })

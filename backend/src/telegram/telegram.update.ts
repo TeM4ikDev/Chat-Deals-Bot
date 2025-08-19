@@ -44,30 +44,32 @@ export class TelegramUpdate {
 
       const msg = message.toLowerCase().replace('@', '');
 
-      const telegramId = user.username || user.id.toString();
-      const word = msg.split(' ')[1];
+      const telegramId = user.username || user.id.toString()
+      const word = msg.split(' ')[1]
+
+      const commandData = words.slice(1).join(' ');
 
       const { user: repliedUser } = await this.userService.findOrCreateUser(user);
 
-      console.log(repliedUser)
+      console.log('repliedUser ___________________', repliedUser)
 
       switch (msg) {
         case 'чек':
           await this.checkUserAndSendInfo(ctx, telegramId, lang);
-          return; // Добавляем return чтобы прервать выполнение
+          break;
 
         case '+адм':
-          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
+          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], ctx, repliedUser)) return
           await this.handleAdmin(ctx, repliedUser, true);
           break;
 
         case '-адм':
-          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], repliedUser, ctx)) return
+          if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], ctx, repliedUser)) return
           await this.handleAdmin(ctx, repliedUser, false);
           break;
       }
-      await this.handlePrefixCommands(ctx, msg, repliedUser, word);
-      return; // Добавляем return чтобы прервать выполнение для всех reply команд
+      await this.handlePrefixCommands(ctx, msg, repliedUser, word, commandData);
+      return;
     }
 
     switch (command) {
@@ -76,45 +78,61 @@ export class TelegramUpdate {
         break;
 
       case 'инфо':
-        await this.handleDescriptionCommand(ctx, words[1], commandData, lang);
+        // if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN, UserRoles.ADMIN], ctx)) return
+        await this.handleDescriptionCommand(ctx, words[1], commandData);
         break;
     }
   }
 
-  private async handlePrefixCommands(ctx: Context, message: string, repliedUser: IUser, word: string) {
+  private async handlePrefixCommands(ctx: Context, message: string, repliedUser: IUser, word: string, commandData?: string) {
     if (message.startsWith('статус')) {
-      if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN, UserRoles.ADMIN], repliedUser, ctx)) return
+      if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN, UserRoles.ADMIN], ctx, repliedUser)) return
 
       await this.handleStatus(ctx, repliedUser, word);
       return;
     }
+
+    if (message.startsWith('инфо')) {
+      // if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN, UserRoles.ADMIN], ctx, repliedUser)) return
+
+      await this.handleDescriptionCommand(ctx, word, commandData, repliedUser);
+      return;
+    }
   }
 
-  private async guardCommandRoles(roles: UserRoles[], repliedUser: IUser, adminAddCtx: Context) {
+  private async guardCommandRoles(roles: UserRoles[], adminAddCtx: Context, userAction?: IUser) {
 
     const admin = await this.userService.findUserByTelegramId(adminAddCtx.from.id.toString());
 
 
     console.log('admin', admin)
 
-    if (!repliedUser) {
-      adminAddCtx.reply('Пользователя нет в боте. Ему нужно сначала зайти в бота.', {
-        reply_markup: {
-          inline_keyboard: [
-            [{
-              text: 'Зайти в бота',
-              url: 'https://t.me/svdbasebot'
-            }]
-          ]
-        }
-      });
-      return false;
-    }
+    // if (!userAction) {
+    //   adminAddCtx.reply('Пользователя нет в боте. Ему нужно сначала зайти в бота.', {
+    //     reply_markup: {
+    //       inline_keyboard: [
+    //         [{
+    //           text: 'Зайти в бота',
+    //           url: 'https://t.me/svdbasebot'
+    //         }]
+    //       ]
+    //     }
+    //   });
+    //   return false;
+    // }
 
-    if (repliedUser.role === UserRoles.SUPER_ADMIN) {
-      adminAddCtx.reply('Пользователь уже супер админ');
+
+    // if (this.checkIsGarant(userAction?.username)) {
+    //   // await adminAddCtx.reply('Это гарант. Вы не можете изменить его статус');
+    //   return false
+    // }
+
+    if (userAction && userAction.role === UserRoles.SUPER_ADMIN) {
+      adminAddCtx.reply('Пользователь супер админ');
       return false
     }
+
+   
 
     if (roles.includes(admin.role)) {
       return true;
@@ -157,19 +175,45 @@ export class TelegramUpdate {
     return false;
   }
 
-  private async handleDescriptionCommand(ctx: Context, query: string, commandData: string, lang: string) {
+  private async handleDescriptionCommand(ctx: Context, query: string, commandData: string, userAction?: IUser) {
+
+    const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
 
     const description = commandData
 
     console.log('description', description)
     console.log('query', query)
 
-    if (!query) {
-      await ctx.reply('Пожалуйста, укажите имя пользователя. Пример: инфо @username');
+    query = userAction?.username || userAction?.telegramId || query
+
+    if (!query && !userAction) {
+      await ctx.reply('Пожалуйста, укажите имя пользователя. Пример: инфо @username или ответьте на сообщение пользователя словом "инфо"');
+      return;
+    }
+
+    if(user.role != UserRoles.SUPER_ADMIN && user.role != UserRoles.ADMIN && commandData) {
+      await ctx.reply('У вас нет доступа к изменению описания');
       return;
     }
 
     const scammer = await this.scamformService.getScammerByQuery(query);
+
+    if (await this.checkIsGarant(query)) {
+      const garant = await this.userService.findGarantByUsername(query)
+      if (garant) {
+        await ctx.reply(this.localizationService.getT('commands.userDescription')
+          .replace('{query}', this.telegramService.escapeMarkdown(query))
+          .replace('{description}', garant.description || 'Описание отсутствует'), {
+          parse_mode: 'Markdown'
+        })
+        return;
+      }
+
+      // await ctx.reply('Это гарант. Вы не можете изменить его описание');
+      return;
+    }
+
+
 
     if (!scammer) {
       await ctx.reply('Пользователь не найден');
@@ -177,7 +221,9 @@ export class TelegramUpdate {
     }
 
     if (!description) {
-      await ctx.reply(`📝 **Текущее описание** @${query}:\n\n\`\`\`\n${scammer.description || 'Описание отсутствует'}\n\`\`\`\n💡 Для изменения используйте:\n\`инфо @${query} новое описание\``, {
+      await ctx.reply(this.localizationService.getT('commands.userDescription')
+        .replace('{query}', this.telegramService.escapeMarkdown(query))
+        .replace('{description}', scammer.description || 'Описание отсутствует'), {
         parse_mode: 'Markdown'
       })
       return;
@@ -188,7 +234,11 @@ export class TelegramUpdate {
   }
 
   private async handleCheckCommand(ctx: Context, query: string, lang: string) {
-    console.log('Поиск пользователя:', query);
+    if (!query) {
+      await ctx.reply('Пожалуйста, укажите имя пользователя.\n\nПример: чек @username или ответьте на сообщение пользователя словом "чек"');
+      return;
+    }
+
     await this.checkUserAndSendInfo(ctx, query, lang);
   }
 
@@ -210,7 +260,10 @@ export class TelegramUpdate {
 
   private async handleStatus(ctx: Context, repliedUser: IUser, statusText: string) {
     let status: ScammerStatus;
-    const user = await this.scamformService.getScammerByTelegramId(repliedUser.telegramId);
+    // const user = await this.scamformService.getScammerByTelegramId(repliedUser.telegramId);
+
+    const user = await this.scamformService.findOrCreateScammer(repliedUser);
+
 
     if (await this.checkIsGarant(repliedUser.username)) {
       await ctx.reply('Это гарант. Вы не можете изменить его статус');
@@ -271,7 +324,7 @@ export class TelegramUpdate {
       return;
     }
 
-    const username = scammer.username ? `@${scammer.username}` : this.localizationService.getT('userCheck.noUsername', lang);
+    const username = scammer.username ? `${scammer.username}` : this.localizationService.getT('userCheck.noUsername', lang);
     const telegramId = scammer.telegramId || '--';
     const formsCount = scammer.scamForms.length;
     let status = scammer.status
@@ -284,13 +337,13 @@ export class TelegramUpdate {
       status = 'DIKIJ OGUREC' as ScammerStatus
     }
 
-    const escapedUsername = this.telegramService.escapeMarkdown(username);
+    const escapedUsername = this.telegramService.escapeMarkdown(scammer.username);
 
     await ctx.replyWithPhoto(
       { source: photoStream },
       {
         caption: this.localizationService.getT('userCheck.userDetails', lang)
-          .replace('{username}', username)
+          .replace('{username}', escapedUsername)
           .replace('{telegramId}', telegramId)
           .replace('{status}', status)
           .replace('{formsCount}', formsCount.toString())

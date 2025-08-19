@@ -72,10 +72,16 @@ export class LocalizationService {
 
       const finalResult = typeof result === 'string' ? result : key;
     //   this.logger.debug(`Translation result: ${finalResult}`);
-      return finalResult;
+      // return this.escapeMarkdown(finalResult);
+      return finalResult
     } catch (error: any) {
       this.logger.error(`Error getting translation: ${error?.message || 'Unknown error'}`, error?.stack);
       return key;
     }
+  }
+
+  escapeMarkdown(text: string): string {
+    if (!text) return text;
+    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
   }
 } 
