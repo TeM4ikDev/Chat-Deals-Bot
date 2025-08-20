@@ -35,7 +35,7 @@ import { MainMenuUpdate } from './updates/main-menu.update';
         token: configService.get<string>('BOT_TOKEN'),
         middlewares: [session()],
         launchOptions: {
-          allowedUpdates: ['message', 'chat_member', 'my_chat_member', 'chat_join_request', 'callback_query', 'business_message' as any],
+          allowedUpdates: ['message', 'chat_member', 'my_chat_member', 'chat_join_request', 'callback_query', 'inline_query', 'business_message' as any],
           dropPendingUpdates: true,
         },
       }),

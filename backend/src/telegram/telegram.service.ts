@@ -30,9 +30,9 @@ export class TelegramService implements OnModuleInit {
 
   async onModuleInit() {
     this.bot.on('inline_query', async (ctx) => {
+      console.log('bot start')
       await this.handleInlineQuery(ctx);
     });
-
 
     // const chat = await this.bot.telegram.getChat('@imagesbase');
     // console.log(chat.id);
@@ -129,6 +129,8 @@ export class TelegramService implements OnModuleInit {
 
   private async handleInlineQuery(ctx: Context) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
+
+    console.log(query)
 
     if (!query) {
       const results: InlineQueryResult[] = [
