@@ -100,7 +100,7 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
     return (
         <Block {...blockProps} className={cn("", className)}>
 
-            <form onSubmit={handleSubmit} className={cn('flex flex-col gap-2 w-full', className)} encType="multipart/form-data">
+            <form onSubmit={handleSubmit} className={cn('flex flex-col gap-4 w-full', className)} encType="multipart/form-data">
 
                 {config.select && config.select.map((field) => (
                     <Select

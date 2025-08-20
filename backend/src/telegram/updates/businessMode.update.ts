@@ -22,12 +22,12 @@ export class BusinessModeUpdate {
     async onBusinessMessage(@Ctx() ctx: Context) {
         const msg = (ctx.update as any).business_message;
 
-        console.log(ctx)
+        // console.log(ctx)
 
         const from = msg.from;
         const chat = msg.chat;
 
-        console.log(chat)
+        // console.log(chat)
 
         if(msg.text != 'инфо') return
 
@@ -41,7 +41,7 @@ Username: @${chat.username || 'нет'}
 💬 Сообщение: ${msg.text}
     `;
 
-        console.log(info);
+        // console.log(info);
 
         await ctx.telegram.callApi('sendMessage', {
             business_connection_id: msg.business_connection_id,

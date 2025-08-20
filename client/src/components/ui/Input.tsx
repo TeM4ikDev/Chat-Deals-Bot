@@ -53,7 +53,7 @@ export const Input = ({
           onChange={onChange}
           required={isRequired}
           className={cn(
-            `w-full px-3 py-1 text-gray-100 rounded-lg bg-gray-700/50 
+            `w-full px-3 py-1.5 text-gray-100 rounded-lg bg-gray-700/50 
             border border-gray-600/50
             focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50
             hover:border-gray-500/50
@@ -66,7 +66,7 @@ export const Input = ({
         <span className={cn(
           `absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 
           transition-all duration-200 pointer-events-none`,
-          value ? "-translate-y-6 text-xs text-cyan-400 px-1" : "",
+          value ? "-translate-y-7 text-xs text-cyan-400 px-1" : "",
           "group-hover:text-gray-300"
         )}>
           {placeholder}
