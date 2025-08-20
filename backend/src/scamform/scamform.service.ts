@@ -5,7 +5,7 @@ import { IMediaData, IScammerData, IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, VoteType } from '@prisma/client';
+import { Prisma, ScammerStatus, VoteType } from '@prisma/client';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 
 interface CreateScamFormData {
@@ -306,6 +306,9 @@ export class ScamformService {
         ...data,
         username: data.username,
         marked: true
+      },
+      include: {
+        scamForms: true
       }
     })
   }
@@ -357,12 +360,12 @@ export class ScamformService {
     })
   }
 
-  async findOrCreateScammer(user: IUser) {
-    const scammer = await this.getScammerByQuery(user.username || user.telegramId)
+  async findOrCreateScammer(user: { username: string, id: string }) {
+    const scammer = await this.getScammerByQuery(user.username || user.id.toString())
     if (scammer) return scammer
     return await this.createScammer({
       username: user.username,
-      telegramId: user.telegramId
+      telegramId: user.id.toString()
     })
   }
 
@@ -589,60 +592,78 @@ export class ScamformService {
     };
   }
 
-  async updateScammerStatus(data: IUpdateScamFormDto, createData?: IUser) {
-    const { status, scammerId } = data
-    try {
-      let scammer = null;
+  // async updateScammerStatus(data: IUpdateScamFormDto, createData?: IUser) {
+  //   const { status, scammerId } = data
+  //   try {
+  //     let scammer = null;
 
-      if (createData?.telegramId) {
-        scammer = await this.database.scammer.findUnique({
-          where: { telegramId: createData.telegramId }
-        });
-      }
+  //     if (createData?.telegramId) {
+  //       scammer = await this.database.scammer.findUnique({
+  //         where: { telegramId: createData.telegramId }
+  //       });
+  //     }
 
-      if (scammer) {
+  //     if (scammer) {
 
-        scammer = await this.database.scammer.update({
-          where: { id: scammer.id },
-          data: {
-            status,
-            marked: true
-          }
-        });
-      } else {
-
-        scammer = await this.database.scammer.create({
-          data: {
-            username: createData?.username,
-            telegramId: createData?.telegramId,
-            status,
-            marked: true
-          }
-        });
-      }
-
-      if (data.formId && !scammer.marked) {
-        const form = await this.findById(data.formId)
-        await this.telegramService.complaintOutcome(form, status)
-      }
-
-      return {
-        message: '✅ Статус успешно обновлен',
-        isSuccess: true,
-        scammer: scammer
-      };
-    } catch (error) {
-      console.error('Error updating scammer status:', error);
-      return {
-        message: '❌ Ошибка при обновлении статуса',
-        isSuccess: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
+  //       scammer = await this.database.scammer.update({
+  //         where: { id: scammer.id },
+  //         data: {
+  //           status,
+  //           marked: true
+  //         }
+  //       });
 
 
-  async getScammerStatusByUsername(data: IUpdateScamFormDto) {
+  //       console.log('Старый статус:', scammer.status)
+  //       console.log('Новый статус:', status)
+  //       console.log('ScammerStatus.SCAMMER:', ScammerStatus.SCAMMER)
+
+  //       if (status == ScammerStatus.SCAMMER) {
+  //         console.log('banScammerFromGroup - баним пользователя')
+  //         this.telegramService.banScammerFromGroup(scammer)
+  //       }
+  //       else {
+  //         console.log('unbanScammerFromGroup - разбаниваем пользователя')
+  //         this.telegramService.unbanScammerFromGroup(scammer)
+  //       }
+  //     } else {
+
+  //       scammer = await this.database.scammer.create({
+  //         data: {
+  //           username: createData?.username,
+  //           telegramId: createData?.telegramId,
+  //           status,
+  //           marked: true
+  //         }
+  //       });
+
+
+  //     }
+
+  //     if (data.formId && !scammer.marked) {
+  //       const form = await this.findById(data.formId)
+  //       await this.telegramService.complaintOutcome(form, status)
+  //     }
+
+
+
+  //     return {
+  //       message: '✅ Статус успешно обновлен',
+  //       isSuccess: true,
+  //       scammer: scammer
+  //     };
+  //   } catch (error) {
+  //     console.error('Error updating scammer status:', error);
+  //     return {
+  //       message: '❌ Ошибка при обновлении статуса',
+  //       isSuccess: false,
+  //       error: error instanceof Error ? error.message : 'Unknown error'
+  //     };
+  //   }
+  // }
+
+
+  async updateScammerStatusByUsername(data: IUpdateScamFormDto) {
 
     const { status, scammerId } = data
     try {
@@ -664,9 +685,19 @@ export class ScamformService {
 
       if (data.formId && scammer.marked == false) {
         const form = await this.findById(data.formId)
-
         await this.telegramService.complaintOutcome(form, status)
       }
+
+      if (scammer.status == ScammerStatus.SCAMMER && updatedScammer.status != ScammerStatus.SCAMMER) {
+        console.log('unbanScammerFromGroup - разбаниваем пользователя')
+        this.telegramService.unbanScammerFromGroup(updatedScammer)
+      }
+      else if (updatedScammer.status == ScammerStatus.SCAMMER) {
+        console.log('banScammerFromGroup - баним пользователя')
+        this.telegramService.banScammerFromGroup(updatedScammer)
+      }
+
+
 
       return {
         message: '✅ Статус успешно обновлен',

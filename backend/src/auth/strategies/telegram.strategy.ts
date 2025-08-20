@@ -14,7 +14,7 @@ export class UserCheckMiddleware implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const ctx = context.switchToHttp().getRequest<Context>();
 
-        console.log('canActivate')
+        // console.log('canActivate')
 
         const user = await this.usersService.findOrCreateUser(ctx.from);
 
@@ -29,6 +29,7 @@ export class UserCheckMiddleware implements CanActivate {
                     parse_mode: 'Markdown',
                 }
             );
+
 
             return false;
         }

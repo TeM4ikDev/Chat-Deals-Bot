@@ -14,6 +14,8 @@ import { ScamformModule } from '@/scamform/scamform.module';
 import { AppealForm } from './scenes/appeal_form.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
 import { TelegramUpdate } from './telegram.update';
+import { BusinessModeUpdate } from './updates/businessMode.update';
+import { ChatCommandsUpdate } from './updates/chatCommands.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
@@ -31,12 +33,15 @@ import { MainMenuUpdate } from './updates/main-menu.update';
       imports: [ConfigModule, forwardRef(() => UsersModule)],
       useFactory: (configService: ConfigService, usersService: UsersService) => ({
         token: configService.get<string>('BOT_TOKEN'),
-        middlewares: [
-          session()
-        ],
+        middlewares: [session()],
+        launchOptions: {
+          allowedUpdates: ['message', 'chat_member', 'my_chat_member', 'chat_join_request', 'callback_query', 'business_message' as any],
+          dropPendingUpdates: true,
+        },
       }),
       inject: [ConfigService, UsersService],
     }),
+    
   ],
   providers: [
     LanguageUpdate,
@@ -47,6 +52,8 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     AppealForm,
     TelegramService,
     TelegramUpdate,
+    ChatCommandsUpdate,
+    BusinessModeUpdate,
   ],
   exports: [TelegramService, LocalizationService]
 })

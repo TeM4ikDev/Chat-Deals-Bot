@@ -157,7 +157,6 @@ export class UsersService {
     // const userById = await this.findUserByTelegramId(telegramId);
 
     if (!user) throw new Error('Пользователь не найден');
-
     return await this.database.user.update({
       where: { id: user.id },
       data: { role: role }

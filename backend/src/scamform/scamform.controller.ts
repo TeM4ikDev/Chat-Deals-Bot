@@ -49,7 +49,7 @@ export class ScamformController {
     @UseGuards(JwtAuthGuard)
     @Patch('confirm')
     async updateScammer(@Body() body: IUpdateScamFormDto) {
-        return await this.scamformService.getScammerStatusByUsername(body);
+        return await this.scamformService.updateScammerStatusByUsername(body);
     }
 
 

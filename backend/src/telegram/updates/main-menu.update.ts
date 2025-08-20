@@ -1,4 +1,5 @@
 import { UserCheckMiddleware } from '@/auth/strategies/telegram.strategy';
+import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -18,8 +19,10 @@ export class MainMenuUpdate {
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
+        private readonly scamformService: ScamformService,
     ) { }
 
+   
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
         const { user, isNew } = await this.userService.findOrCreateUser(ctx.from);
@@ -95,6 +98,8 @@ export class MainMenuUpdate {
 
     }
 
+   
+
     @Action('submit_appeal')
     async onSubmitAppealAction(@Ctx() ctx: Context, @Language() language: string) {
         await this.onSubmitAppeal(ctx, language)
@@ -144,4 +149,7 @@ export class MainMenuUpdate {
 
         await this.onStart(ctx, language)
     }
+
+
+
 }

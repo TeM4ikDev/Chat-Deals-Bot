@@ -1,15 +1,16 @@
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
+import { IMessageDataScamForm } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, ScammerStatus } from '@prisma/client';
+import { Prisma, Scammer, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo } from 'telegraf/typings/core/types/typegram';
-import { LocalizationService } from './services/localization.service';
 import { BOT_NAME } from './constants/telegram.constants';
-import { IMessageDataScamForm } from '@/types/types';
+import { LocalizationService } from './services/localization.service';
+
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -25,6 +26,8 @@ export class TelegramService implements OnModuleInit {
 
   ) { }
 
+  private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
+
   async onModuleInit() {
     this.bot.on('inline_query', async (ctx) => {
       await this.handleInlineQuery(ctx);
@@ -38,7 +41,7 @@ export class TelegramService implements OnModuleInit {
   async uploadFilesGroup(files: Express.Multer.File[]): Promise<Array<{ type: string; file_id: string }>> {
     const media = files.map((file) => {
       const isVideo = file.mimetype?.startsWith('video/');
-      
+
       if (isVideo) {
         return {
           type: 'video' as const,
@@ -51,9 +54,9 @@ export class TelegramService implements OnModuleInit {
         } as InputMediaPhoto;
       }
     });
-  
+
     const sent = await this.bot.telegram.sendMediaGroup('@imagesbase', media);
-  
+
     const fileIds: Array<{ type: string; file_id: string }> = sent.map(
       (msg) => {
         if ('photo' in msg && msg.photo && msg.photo.length > 0) {
@@ -71,7 +74,7 @@ export class TelegramService implements OnModuleInit {
         return null;
       }
     ).filter((item): item is { type: string; file_id: string } => item !== null);
-  
+
     return fileIds;
   }
 
@@ -245,6 +248,62 @@ export class TelegramService implements OnModuleInit {
     return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
   }
 
+  formatUserLink(id: number | string, firstName: string, username?: string): string {
+
+    const escapedUsername = this.escapeMarkdown(username)
+    const userLink = username
+      ? `[${firstName}](https://t.me/${escapedUsername})`
+      : `[${firstName}](tg://user?id=${id})`;
+
+    return `${userLink} (ID: \`${id}\`)`;
+  }
+
+
+  async banScammerFromGroup(scammer: Scammer) {
+    console.log('banScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
+
+    if (!scammer.telegramId || scammer.telegramId === '') {
+      console.log('Invalid telegramId for ban:', scammer.telegramId);
+      return;
+    }
+
+    const telegramId = Number(scammer.telegramId);
+    const userText = this.formatUserLink(
+      telegramId,
+      scammer.username || 'Без имени',
+      scammer.username || undefined,
+    );
+
+    console.log('Отправляем сообщение о бане для:', userText);
+
+    await this.bot.telegram.sendMessage(
+      this.mainGroupName,
+      `${userText} забанен в чате`,
+      {
+        parse_mode: 'Markdown',
+        link_preview_options: {
+          is_disabled: true,
+        },
+      }
+    );
+
+    console.log('Баним пользователя с ID:', telegramId);
+    await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
+  }
+
+
+
+  async unbanScammerFromGroup(scammer: Scammer) {
+    console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
+    
+    if (!scammer.telegramId || scammer.telegramId === '') {
+      console.log('Invalid telegramId for unban:', scammer.telegramId);
+      return;
+    }
+    console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
+    await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
+  }
+
 
   async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
     const { fromUser, scamForm, scammerData } = messageData
@@ -257,48 +316,48 @@ export class TelegramService implements OnModuleInit {
     const description = this.escapeMarkdown(scamForm.description)
 
     const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
-        .replace('{botName}', BOT_NAME)
-        .replace('{scammerInfo}', scammerInfo)
-        .replace('{description}', description || '')
-        .replace('{encoded}', encoded)
-        .replace('{userInfo}', userInfo);
+      .replace('{botName}', BOT_NAME)
+      .replace('{scammerInfo}', scammerInfo)
+      .replace('{description}', description || '')
+      .replace('{encoded}', encoded)
+      .replace('{userInfo}', userInfo);
 
     const reply_markup = {
-        inline_keyboard:
-            [[
-                { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
-                { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
-            ]]
+      inline_keyboard:
+        [[
+          { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
+          { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
+        ]]
     }
 
     try {
-        let replyToMessageId: number | undefined;
-        const media = messageData.media;
+      let replyToMessageId: number | undefined;
+      const media = messageData.media;
 
-        if (media.length > 0) {
-            const mediaGroup = media.slice(0, 10).map((m) => ({
-                type: m.type === 'photo' ? 'photo' : 'video',
-                media: m.file_id
-            }));
+      if (media.length > 0) {
+        const mediaGroup = media.slice(0, 10).map((m) => ({
+          type: m.type === 'photo' ? 'photo' : 'video',
+          media: m.file_id
+        }));
 
-            const messages = await this.sendMediaGroupToChannel(channelId, mediaGroup);
+        const messages = await this.sendMediaGroupToChannel(channelId, mediaGroup);
 
-            if (messages && messages.length > 0) {
-                replyToMessageId = messages[0].message_id;
-            }
+        if (messages && messages.length > 0) {
+          replyToMessageId = messages[0].message_id;
         }
+      }
 
-        await this.sendMessageToChannelLayer(channelId, channelMessage, {
-            parse_mode: 'Markdown',
-            reply_markup,
-            reply_to_message_id: replyToMessageId,
-            link_preview_options: {
-                is_disabled: true,
-            },
-        });
+      await this.sendMessageToChannelLayer(channelId, channelMessage, {
+        parse_mode: 'Markdown',
+        reply_markup,
+        reply_to_message_id: replyToMessageId,
+        link_preview_options: {
+          is_disabled: true,
+        },
+      });
     } catch (error) {
-        console.error('Error sending to channel:', error);
+      console.error('Error sending to channel:', error);
     }
-}
+  }
 
 }

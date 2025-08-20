@@ -7,9 +7,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Prisma, UserRoles } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
-import { AdminService } from '../admin.service';
 import { UserId } from '@/decorators/userid.decorator';
-
 
 @Controller('admin/scamforms')
 @UseGuards(JwtAuthGuard)
@@ -17,28 +15,16 @@ import { UserId } from '@/decorators/userid.decorator';
 export class ScamformController {
     constructor(
         private readonly usersService: UsersService,
-        private readonly adminService: AdminService,
-        private readonly database: DatabaseService,
         private readonly scamformService: ScamformService,
         private readonly telegramService: TelegramService
     ) { }
 
-
     @Post('scammers')
     @UseInterceptors(AnyFilesInterceptor())
     async createScammer(@UploadedFiles() files: Express.Multer.File[], @Body() body: Prisma.ScammerCreateInput, @UserId() userId: string) {
-        console.log('Файлы:', files);
-        console.log('Данные формы:', body);
-
         const user = await this.usersService.findUserById(userId);
-
-
         const scammer = await this.scamformService.createScammer(body);
-
-
         const mediaData = await this.telegramService.uploadFilesGroup(files);
-        console.log('mediaData', mediaData)
-
 
         const scamForm = await this.scamformService.create({
             scammerData: {
@@ -50,24 +36,26 @@ export class ScamformController {
             userTelegramId: user?.telegramId,
         })
 
-        console.log('scamForm', scamForm)
-
+        await this.telegramService.sendScamFormMessageToChannel({
+            fromUser: {
+                username: user?.username,
+                telegramId: user?.telegramId
+            },
+            scamForm,
+            scammerData: {
+                username: scammer.username,
+                telegramId: scammer.telegramId
+            },
+            media: mediaData,
+        })
+        
         return scamForm;
     }
-
-
 
     @Roles(UserRoles.SUPER_ADMIN)
     @Delete(':id')
     async onDeleteForm(@Param('id') formId: string) {
-        console.log(formId)
-
         return await this.scamformService.deleteForm(formId)
-
-
     }
-
-
-
 }
 
