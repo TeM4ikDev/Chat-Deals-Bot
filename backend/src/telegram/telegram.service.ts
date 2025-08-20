@@ -176,6 +176,8 @@ export class TelegramService implements OnModuleInit {
     // Ищем скаммера
     const scammer = await this.scamformService.getScammerByQuery(query);
 
+    console.log(scammer)
+
     const results: InlineQueryResult[] = [];
     if (!scammer) {
       results.push({
@@ -183,13 +185,13 @@ export class TelegramService implements OnModuleInit {
         id: 'not_found',
         title: 'Пользователь не найден',
         input_message_content: {
-          message_text: `🔍 Пользователь не найден в базе\\.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность\\.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта\\.`,
+          message_text: `🔍 Пользователь не найден в базе.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.`,
           parse_mode: 'Markdown',
         },
         description: 'Пользователь не найден в базе',
       });
     } else {
-      const username = scammer.username ? `@${scammer.username}` : 'Без username';
+      const username = scammer.username ? `@${(scammer.username)}` : 'Без username';
       const telegramId = scammer.telegramId || '--';
       const formsCount = scammer.scamForms.length;
       const status = this.getScammerStatusText(scammer);
@@ -199,7 +201,7 @@ export class TelegramService implements OnModuleInit {
         id: 'scammer_found',
         title: `${status} найден`,
         input_message_content: {
-          message_text: `*${this.escapeMarkdown(username)}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
+          message_text: `*${username}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
           parse_mode: 'Markdown',
         },
         description: `${status} • ${formsCount} жалоб`,
