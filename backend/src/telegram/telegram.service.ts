@@ -38,7 +38,7 @@ export class TelegramService implements OnModuleInit {
     // console.log(chat.id);
   }
 
-  async uploadFilesGroup(files: Express.Multer.File[]): Promise<Array<{ type: string; file_id: string }>> {
+  async uploadFilesGroup(files: any[]): Promise<Array<{ type: string; file_id: string }>> {
     const media = files.map((file) => {
       const isVideo = file.mimetype?.startsWith('video/');
 

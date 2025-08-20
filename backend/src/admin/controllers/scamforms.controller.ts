@@ -21,7 +21,7 @@ export class ScamformController {
 
     @Post('scammers')
     @UseInterceptors(AnyFilesInterceptor())
-    async createScammer(@UploadedFiles() files: Express.Multer.File[], @Body() body: Prisma.ScammerCreateInput, @UserId() userId: string) {
+    async createScammer(@UploadedFiles() files: any[], @Body() body: Prisma.ScammerCreateInput, @UserId() userId: string) {
         const user = await this.usersService.findUserById(userId);
         const scammer = await this.scamformService.createScammer(body);
         const mediaData = await this.telegramService.uploadFilesGroup(files);

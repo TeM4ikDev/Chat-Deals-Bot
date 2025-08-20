@@ -47,7 +47,7 @@ export const TextArea = ({
         <span className={cn(
           `absolute left-2 top-2 text-gray-400 
           transition-all duration-200 pointer-events-none`,
-          value ? "-translate-y-4 text-xs text-cyan-400 px-1" : "",
+          value ? "-translate-y-5 text-xs text-cyan-400 px-1" : "",
           "group-hover:text-gray-300"
         )}>
           {placeholder}
