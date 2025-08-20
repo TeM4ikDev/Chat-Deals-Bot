@@ -1,6 +1,6 @@
 import { Prisma, ScamForm } from "@prisma/client";
 
-export const superAdminsTelegramIds = ['2027571609', '1162525174']
+export const superAdminsTelegramIds = ['1162525174']
 
 export type IUser = Prisma.UserGetPayload<{}>
 

@@ -1,7 +1,7 @@
 {
   "mainMenu": {
     "welcome": "✋🏻 Welcome!",
-    "description": "💎 This is the best anti-scam project on the TG market\n\nℹ️ What you can do in private chat with the bot:\n╟ Send @username\n╟ Forward a user's message\n╟ Click on \"Select User\"\n\n💪 What the bot will respond with:\n╟ User ID\n╟ Presence in scam databases\n╟ Presence in verified performers database\n╟ Presence in TOP Guarantors database\n\n💬 Add the bot to your chat:\n╟ Eliminate toxic users\n╟ Block scammers 🔥\n\n❓ Have a complaint about a scammer?\n👉 Quickly click on \"Submit Complaint\"",
+    "description": "💎 This is the best anti-scam project on the TG market\n Programmer: @TeM4ik20\n\nℹ️ What you can do in private chat with the bot:\n╟ Send @username\n╟ Forward a user's message\n╟ Click on \"Select User\"\n\n💪 What the bot will respond with:\n╟ User ID\n╟ Presence in scam databases\n╟ Presence in verified performers database\n╟ Presence in TOP Guarantors database\n\n💬 Add the bot to your chat:\n╟ Eliminate toxic users\n╟ Block scammers 🔥\n\n❓ Have a complaint about a scammer?\n👉 Quickly click on \"Submit Complaint\"",
     "buttons": {
       "changeLang": "🌐 Language / Язык",
       "submitComplaint": "⛏️ Submit Complaint",
@@ -17,8 +17,8 @@
     }
   },
   "userInfo": {
-    "withUsernameAndId": "@\\{username\\}\n[ID: {telegramId}]",
-    "withUsernameOnly": "@\\{username\\}\n[ID: not specified]",
+    "withUsernameAndId": "@{username}\n[ID: {telegramId}]",
+    "withUsernameOnly": "@{username}\n[ID: not specified]",
     "withIdOnly": "username not specified\n[ID: {telegramId}]",
     "noInfo": "Information not specified"
   },

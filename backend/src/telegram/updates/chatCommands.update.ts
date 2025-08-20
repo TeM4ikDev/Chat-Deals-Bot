@@ -9,7 +9,7 @@ import { Prisma, ScammerStatus, UserRoles } from "@prisma/client";
 import * as fs from 'fs';
 import { Ctx, On, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
-import { IMAGE_PATHS } from "../constants/telegram.constants";
+import { IMAGE_PATHS, PROGRAMMER_INFO } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
 import { TelegramService } from "../telegram.service";
@@ -189,6 +189,12 @@ export class ChatCommandsUpdate {
 
         const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
 
+
+        if (user.username.replace('@', '') == 'TeM4ik20') {
+            await this.handleProgrammerInfo(ctx)
+            return
+        }
+
         const description = commandData
 
         console.log('description', description)
@@ -279,6 +285,8 @@ export class ChatCommandsUpdate {
         console.log(statusText)
 
 
+        
+
 
 
         // return
@@ -321,6 +329,12 @@ export class ChatCommandsUpdate {
 
 
         const scammer = await this.scamformService.findOrCreateScammer(queryFind);
+
+
+        if (scammer.username.replace('@', '') == 'TeM4ik20') {
+            await this.handleProgrammerInfo(ctx)
+            return
+        }
 
 
         if (!statusText) {
@@ -393,13 +407,14 @@ export class ChatCommandsUpdate {
         const telegramId = scammer.telegramId || '--';
         const formsCount = scammer.scamForms.length;
         let status = scammer.status
+        let description = this.telegramService.escapeMarkdown(scammer.description || 'нет описания')
         const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
         let photoStream = fs.createReadStream(IMAGE_PATHS[status]);
 
 
         if (scammer.username.replace('@', '') == 'TeM4ik20') {
-            photoStream = fs.createReadStream(IMAGE_PATHS.OGUREC);
-            status = 'DIKIJ OGUREC' as ScammerStatus
+            await this.handleProgrammerInfo(ctx)
+            return
         }
 
         const escapedUsername = this.telegramService.escapeMarkdown(scammer.username);
@@ -412,7 +427,7 @@ export class ChatCommandsUpdate {
                     .replace('{telegramId}', telegramId)
                     .replace('{status}', status)
                     .replace('{formsCount}', formsCount.toString())
-                    .replace('{description}', this.telegramService.escapeMarkdown(scammer.description || 'нет описания'))
+                    .replace('{description}', description)
                     .replace('{link}', link),
                 parse_mode: 'Markdown',
                 reply_markup: {
@@ -427,6 +442,18 @@ export class ChatCommandsUpdate {
                         }]
                     ]
                 }
+            }
+        );
+    }
+
+
+    async handleProgrammerInfo(ctx: Context) {
+        const videoStream = fs.createReadStream(IMAGE_PATHS.PROGRAMMER);
+        await ctx.replyWithVideo(
+            { source: videoStream },
+            {
+                caption: PROGRAMMER_INFO,
+                parse_mode: 'Markdown'
             }
         );
     }
