@@ -13,7 +13,6 @@ import { IMAGE_PATHS } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
 import { TelegramService } from "../telegram.service";
-import e from "express";
 
 
 
@@ -176,7 +175,7 @@ export class ChatCommandsUpdate {
                 { source: photoStream },
                 {
                     caption: this.localizationService.getT('userCheck.garantUser', lang)
-                        .replace('{username}', query),
+                        .replace('{username}', this.telegramService.escapeMarkdown(query)),
                     parse_mode: 'Markdown',
                 }
             );
@@ -214,7 +213,7 @@ export class ChatCommandsUpdate {
             if (garant) {
                 await ctx.reply(this.localizationService.getT('commands.userDescription')
                     .replace('{query}', this.telegramService.escapeMarkdown(query))
-                    .replace('{description}', garant.description || 'Описание отсутствует'), {
+                    .replace('{description}', this.telegramService.escapeMarkdown(garant.description || 'Описание отсутствует')), {
                     parse_mode: 'Markdown'
                 })
                 return;
@@ -234,7 +233,7 @@ export class ChatCommandsUpdate {
         if (!description) {
             await ctx.reply(this.localizationService.getT('commands.userDescription')
                 .replace('{query}', this.telegramService.escapeMarkdown(query))
-                .replace('{description}', scammer.description || 'Описание отсутствует'), {
+                .replace('{description}', this.telegramService.escapeMarkdown(scammer.description || 'Описание отсутствует')), {
                 parse_mode: 'Markdown'
             })
             return;
@@ -413,7 +412,7 @@ export class ChatCommandsUpdate {
                     .replace('{telegramId}', telegramId)
                     .replace('{status}', status)
                     .replace('{formsCount}', formsCount.toString())
-                    .replace('{description}', scammer.description || 'нет описания')
+                    .replace('{description}', this.telegramService.escapeMarkdown(scammer.description || 'нет описания'))
                     .replace('{link}', link),
                 parse_mode: 'Markdown',
                 reply_markup: {
