@@ -1,13 +1,13 @@
 import { ScamformService } from "@/scamform/scamform.service";
 import { LocalizationService } from "@/telegram/services/localization.service";
 import { TelegramService } from "@/telegram/telegram.service";
+import { IScammerData } from "@/types/types";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Ctx, Hears, On, Scene, SceneEnter, SceneLeave } from "nestjs-telegraf";
 import { Scenes } from "telegraf";
 import { BOT_NAME, SCENES } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
-import { IMessageDataScamForm, IScammerData } from "@/types/types";
 
 
 interface IScammerFormData {
@@ -34,6 +34,9 @@ export class ScammerFrom {
     private static readonly SELECT_USER_TEXT = '👉 Выбрать мошенника — Select scammer';
     private static readonly DONE_TEXT = '✅ Я закончил — I am done';
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
+    
+    // Username validation regex: starts with letter, 5-32 chars total, letters/numbers/underscores only
+    private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
 
     private language: string = 'ru';
     private min_media = 2
@@ -287,7 +290,12 @@ export class ScammerFrom {
                 form.scammerData.telegramId = forwardedMessage.id.toString();
                 form.scammerData.username = forwardedMessage.username;
             } else if (text?.startsWith('@')) {
-                form.scammerData.username = text.slice(1);
+                const username = text.slice(1);
+                if (!ScammerFrom.USERNAME_REGEX.test(username)) {
+                    await ctx.reply(this.localizationService.getT('complaint.errors.invalidUsername', this.language));
+                    return;
+                }
+                form.scammerData.username = username;
             } else if (/^\d+$/.test(text)) {
                 form.scammerData.telegramId = text;
             } else {

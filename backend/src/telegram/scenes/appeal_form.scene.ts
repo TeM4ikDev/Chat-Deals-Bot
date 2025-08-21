@@ -36,6 +36,9 @@ export class AppealForm {
     private static readonly SELECT_USER_TEXT = '👉 Выбрать пользователя — Select user';
     private static readonly DONE_TEXT = '✅ Я закончил — I am done';
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
+    
+    // Username validation regex: starts with letter, 5-32 chars total, letters/numbers/underscores only
+    private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
 
     private language: string = 'ru';
     private min_media = 2
@@ -273,7 +276,12 @@ export class AppealForm {
                 form.userData.telegramId = forwardedMessage.id.toString();
                 form.userData.username = forwardedMessage.username;
             } else if (text?.startsWith('@')) {
-                form.userData.username = text.slice(1);
+                const username = text.slice(1);
+                if (!AppealForm.USERNAME_REGEX.test(username)) {
+                    await ctx.reply(this.localizationService.getT('appeal.errors.invalidUsername', this.language));
+                    return;
+                }
+                form.userData.username = username;
             } else if (/^\d+$/.test(text)) {
                 form.userData.telegramId = text;
             } else {
@@ -332,7 +340,12 @@ export class AppealForm {
                 }
 
                 if (text.startsWith('@')) {
-                    form.userData.username = text.slice(1);
+                    const username = text.slice(1);
+                    if (!AppealForm.USERNAME_REGEX.test(username)) {
+                        await ctx.reply(this.localizationService.getT('appeal.errors.invalidUsername', this.language));
+                        return;
+                    }
+                    form.userData.username = username;
                 } else {
                     form.userData.telegramId = text;
                 }

@@ -190,10 +190,7 @@ export class ChatCommandsUpdate {
         const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
 
 
-        if (user.username.replace('@', '') == 'TeM4ik20') {
-            await this.handleProgrammerInfo(ctx)
-            return
-        }
+       
 
         const description = commandData
 
@@ -213,6 +210,11 @@ export class ChatCommandsUpdate {
         }
 
         const scammer = await this.scamformService.getScammerByQuery(query);
+
+        if (scammer.username.replace('@', '') == 'TeM4ik20') {
+            await this.handleProgrammerInfo(ctx)
+            return
+        }
 
         if (await this.checkIsGarant(query)) {
             const garant = await this.userService.findGarantByUsername(query)
@@ -246,7 +248,7 @@ export class ChatCommandsUpdate {
         }
 
         await this.scamformService.updateScammer(scammer.id, { description })
-        await ctx.reply(`Описание пользователя (@${scammer.username}) обновлено`)
+        await ctx.reply(`Описание пользователя (@${scammer.username || scammer.telegramId || 'без username'}) обновлено`)
     }
 
     private async handleCheckCommand(ctx: Context, query: string, lang: string) {
@@ -331,7 +333,7 @@ export class ChatCommandsUpdate {
         const scammer = await this.scamformService.findOrCreateScammer(queryFind);
 
 
-        if (scammer.username.replace('@', '') == 'TeM4ik20') {
+        if (scammer.username && scammer.username.replace('@', '') == 'TeM4ik20') {
             await this.handleProgrammerInfo(ctx)
             return
         }
@@ -412,12 +414,12 @@ export class ChatCommandsUpdate {
         let photoStream = fs.createReadStream(IMAGE_PATHS[status]);
 
 
-        if (scammer.username.replace('@', '') == 'TeM4ik20') {
+        if (scammer.username && scammer.username.replace('@', '') == 'TeM4ik20') {
             await this.handleProgrammerInfo(ctx)
             return
         }
 
-        const escapedUsername = this.telegramService.escapeMarkdown(scammer.username);
+        const escapedUsername = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
 
         await ctx.replyWithPhoto(
             { source: photoStream },

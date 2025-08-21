@@ -76,7 +76,8 @@
       "descriptionTooLong": "❗️ Description is too long. Maximum 500 characters.",
       "tooManyMedia": "❗️ You can't send more than 10 media files.",
       "minMedia": "❗️ You need to send at least 2 media files.",
-      "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID."
+      "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID.",
+      "invalidUsername": "❗️ Invalid username format. Username must start with a letter and contain 5-32 characters (letters, numbers, underscores)."
     }
   },
   "appeal": {
@@ -110,7 +111,8 @@
       "descriptionTooLong": "❗️ Description is too long. Maximum 500 characters.",
       "tooManyMedia": "❗️ You can't send more than 10 media files.",
       "minMedia": "❗️ You need to send at least 2 media files.",
-      "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID."
+      "invalidUsernameOrId": "❗️ Please send a valid username or Telegram ID.",
+      "invalidUsername": "❗️ Invalid username format. Username must start with a letter and contain 5-32 characters (letters, numbers, underscores)."
     }
   },
   "admin": {
