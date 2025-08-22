@@ -26,6 +26,12 @@ class ApiConfig {
             main: "users",
             updateRole: "users/update-role",
             updateBanned: "users/update-banned",
+        },
+
+        chatMessages: {
+            main: "chatMessages",
+            // addMessage: "chatMessages/addMessage"
+
         }
     }
 

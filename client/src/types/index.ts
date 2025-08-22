@@ -72,6 +72,14 @@ export interface ApiRoute {
     baseUrl: Object
 }
 
+export interface IChatMessage {
+    id: string
+    chatUsername: string
+    message: string
+    rulesTelegramLink?: string
+    showNewUserInfo: boolean
+}
+
 export enum voteType {
     Like = 'LIKE',
     Dislike = 'DISLIKE'

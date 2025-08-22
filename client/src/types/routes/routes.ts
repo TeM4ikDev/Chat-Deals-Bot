@@ -70,6 +70,13 @@ export let RoutesConfigMain: Route[] = [
                 icon: 'UserPlus' 
 
             },
+            CHAT_MESSAGES:{
+                key: 'CHAT_MESSAGES',
+                path: '/chat-messages',
+                showInHeader: false,
+                label: 'Сообщения в чате',
+                icon: 'MessageCircle' 
+            },
            
         }
     },

@@ -11,6 +11,7 @@ import { ScamformModule } from '@/scamform/scamform.module';
 import { ScamformController } from './controllers/scamforms.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import multer, { diskStorage } from 'multer';
+import { ChatMessagesController } from './controllers/chatMessages.controller';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import multer, { diskStorage } from 'multer';
     AdminController,
     UserManagementController,
     GarantsController,
-    ScamformController
+    ScamformController,
+    ChatMessagesController
   ],
   providers: [AdminService, UserManagementController],
   exports: [AdminService, UserManagementController]

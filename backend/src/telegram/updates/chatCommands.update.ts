@@ -186,12 +186,7 @@ export class ChatCommandsUpdate {
     }
 
     private async handleDescriptionCommand(ctx: Context, query: string, commandData: string, userAction?: IUser) {
-
         const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
-
-
-       
-
         const description = commandData
 
         console.log('description', description)

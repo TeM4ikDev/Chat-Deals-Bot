@@ -27,21 +27,13 @@ export class TelegramUpdate {
   ) { }
 
 
-  @On('new_chat_members')
-  async handleNewChatMembers(@Ctx() ctx: Context) {
-    const m: User | undefined = (ctx.message as any)?.new_chat_members?.[0];
-    if (!m || m.is_bot) return;
+  // @On('new_chat_members')
+  // async handleNewChatMembers(@Ctx() ctx: Context) {
+  //   const user: User | undefined = (ctx.message as any)?.new_chat_members?.[0];
+  //   if (!user || user.is_bot) return;
 
-    const userLink = m.username
-      ? `[${m.first_name}](https://t.me/${m.username})`
-      : `[${m.first_name}](tg://user?id=${m.id})`;
-
-    await ctx.reply(
-      `Привет, ${userLink}! Добро пожаловать в чат 🎉\n\n` +
-      `Пожалуйста, ознакомься с [правилами чата](https://t.me/giftthread/54171)`,
-      { parse_mode: 'Markdown', link_preview_options: { is_disabled: true } },
-    );
-  }
+  //   await this.sendNewUserMessage(ctx, user)
+  // }
 
   @On('chat_member')
   async onChatMember(@Ctx() ctx: Context) {
@@ -51,39 +43,44 @@ export class TelegramUpdate {
     const oldStatus = chatMember.old_chat_member.status;
     const newStatus = chatMember.new_chat_member.status;
 
-    const scammer = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
-    if (oldStatus === 'left' && newStatus === 'member') {
-      const userLink = newMember.username
-        ? `[${newMember.first_name}](https://t.me/${newMember.username})`
-        : `[${newMember.first_name}](tg://user?id=${newMember.id})`;
-
-        await ctx.reply(
-          `👋 Привет, ${userLink}!\n` +
-          `🎉 Добро пожаловать в чат!\n\n` +
-          `• Статус: \`${scammer.status}\`\n` +
-          `• Количество жалоб: \`${scammer.scamForms.length || 0}\`\n\n` +
-          `📖 Пожалуйста, ознакомься с [правилами чата](https://t.me/giftthread/54171)`,
-          {
-            parse_mode: 'Markdown',
-            link_preview_options: { is_disabled: true },
-          },
-        );
-        
+    if (oldStatus === 'left' && newStatus === 'member' && !newMember.is_bot) {
+      await this.sendNewUserMessage(ctx, newMember)
     }
-
-    // if(scammer.status == ScammerStatus.SCAMMER){
-    //   await this.telegramService.banScammerFromGroup(scammer)
-    // }
   }
 
 
-  // ____________________
+  private async sendNewUserMessage(ctx: Context, newMember: User) {
+    console.log('sendNewUserMessage', ctx.chat)
+    const chatUsername = (ctx as any).chat.username
 
+    const message = await this.adminService.findMessageByChatUsername(chatUsername)
+    console.log('message', message)
+    const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
+    const userLink = newMember.username
+      ? `[${newMember.first_name}](https://t.me/${newMember.username})`
+      : `[${newMember.first_name}](tg://user?id=${newMember.id})`;
 
+    const userInfo = message.showNewUserInfo ?
+      `• Статус: \`${newUser.status}\`\n` +
+      `• Количество жалоб: \`${newUser.scamForms.length || 0}\`\n\n` : ''
 
+    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})` : ''
 
+    await ctx.reply(
+      `👋 Привет, ${userLink}!\n` +
+      `🎉 Добро пожаловать в @${chatUsername}!\n\n` +
+      `${message.message}\n\n` +
+      userInfo +
+      userRulesLink
+      ,
+      {
+        parse_mode: 'Markdown',
+        link_preview_options: { is_disabled: true }
+      }
+    );
+  }
 
   // ___________
 

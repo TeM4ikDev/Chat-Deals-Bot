@@ -32,7 +32,6 @@ enum ScammerStatus {
   SCAMMER
   UNKNOWN
   SUSPICIOUS
-
   TRUSTED 
 }
 
@@ -176,4 +175,19 @@ model UserScammerVote {
   Scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
 
   @@unique([userId, scammerId])
+}
+
+
+
+model NewMemberChatMessage{
+  id String @id @default(uuid())
+  chatUsername String @unique
+
+  message String
+
+  rulesTelegramLink String?
+  showNewUserInfo Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

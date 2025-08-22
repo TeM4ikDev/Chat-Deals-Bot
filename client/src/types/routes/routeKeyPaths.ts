@@ -16,7 +16,7 @@
         isSubRoute?: boolean;
     };
 
-    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, UserPlus, NotebookPen, DatabaseZap } from 'lucide-react';
+    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, UserPlus, MessageCircle, NotebookPen, DatabaseZap } from 'lucide-react';
 
 
    
@@ -79,6 +79,14 @@
     "showInHeader": false,
     "label": "Добавить человека",
     "icon": UserPlus,
+    "isSubRoute": false
+  },
+  {
+    "key": "ADMIN_CHAT_MESSAGES",
+    "path": "/admin/chat-messages",
+    "showInHeader": false,
+    "label": "Сообщения в чате",
+    "icon": MessageCircle,
     "isSubRoute": false
   },
   {

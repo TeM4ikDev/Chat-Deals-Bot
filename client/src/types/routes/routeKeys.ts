@@ -13,7 +13,8 @@ export type SubRouteKey =
   | 'ADMIN_USERS'
   | 'ADMIN_USERS_ID'
   | 'ADMIN_GARANTS'
-  | 'ADMIN_ADD_PERSON';
+  | 'ADMIN_ADD_PERSON'
+  | 'ADMIN_CHAT_MESSAGES';
 
 export type RouteKey = RootRouteKey | SubRouteKey;
 
@@ -31,5 +32,6 @@ export const subRouteKeys = [
   "ADMIN_USERS",
   "ADMIN_USERS_ID",
   "ADMIN_GARANTS",
-  "ADMIN_ADD_PERSON"
+  "ADMIN_ADD_PERSON",
+  "ADMIN_CHAT_MESSAGES"
 ] as const;

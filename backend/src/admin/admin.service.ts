@@ -12,6 +12,14 @@ export class AdminService {
         private readonly usersService: UsersService,
     ) { }
 
+    async findMessageByChatUsername(name: string) {
+        return await this.database.newMemberChatMessage.findFirst({
+            where: {
+                chatUsername: name
+            }
+        })
+    }
+
 
     // ____________________
 
