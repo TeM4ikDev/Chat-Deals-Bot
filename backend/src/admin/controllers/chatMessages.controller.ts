@@ -30,6 +30,7 @@ export class ChatMessagesController {
             },
             data: {
                 ...body,
+                chatUsername: body.chatUsername.replace('@', ''),
                 showNewUserInfo: body.showNewUserInfo == 'true'
             }
         })
@@ -50,6 +51,7 @@ export class ChatMessagesController {
         return await this.database.newMemberChatMessage.create({
             data: {
                 ...body,
+                chatUsername: body.chatUsername.replace('@', ''),
                 showNewUserInfo: body.showNewUserInfo == 'true'
             }
         })

@@ -55,25 +55,27 @@ export class TelegramUpdate {
     const chatUsername = (ctx as any).chat.username
 
     const message = await this.adminService.findMessageByChatUsername(chatUsername)
+    if (!message) return
     console.log('message', message)
     const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
     const userLink = newMember.username
-      ? `[${newMember.first_name}](https://t.me/${newMember.username})`
-      : `[${newMember.first_name}](tg://user?id=${newMember.id})`;
+      ? `[${this.telegramService.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
+      : `[${this.telegramService.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
 
     const userInfo = message.showNewUserInfo ?
       `• Статус: \`${newUser.status}\`\n` +
       `• Количество жалоб: \`${newUser.scamForms.length || 0}\`\n\n` : ''
 
-    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})` : ''
+    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})\n\n` : ''
 
     await ctx.reply(
       `👋 Привет, ${userLink}!\n` +
-      `🎉 Добро пожаловать в @${chatUsername}!\n\n` +
-      `${message.message}\n\n` +
+      `🎉 Добро пожаловать в @${this.telegramService.escapeMarkdown(chatUsername)}!\n\n` +
+      `${this.telegramService.escapeMarkdown(message.message || '')}\n\n` +
       userInfo +
-      userRulesLink
+      userRulesLink+
+      "разработчик бота: @Tem4ik20"
       ,
       {
         parse_mode: 'Markdown',

@@ -183,7 +183,7 @@ model NewMemberChatMessage{
   id String @id @default(uuid())
   chatUsername String @unique
 
-  message String
+  message String?
 
   rulesTelegramLink String?
   showNewUserInfo Boolean @default(false)

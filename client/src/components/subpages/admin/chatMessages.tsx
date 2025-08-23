@@ -9,8 +9,11 @@ import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import { PageContainer } from "../../layout/PageContainer"
 import { Block } from "@/components/ui/Block"
+import { useStore } from "@/store/root.store"
+import { UserRoles } from "@/types/auth"
 
 export const ChatMessages: React.FC = () => {
+    const { userStore: {userRole} } = useStore()
     const [chatMessages, setChatMessages] = useState<IChatMessage[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -23,7 +26,7 @@ export const ChatMessages: React.FC = () => {
                 label: "Сообщение",
                 type: "textarea",
                 placeholder: "Введите сообщение для новых пользователей",
-                required: true
+                required: false
             },
             {
                 name: "chatUsername",
@@ -90,8 +93,8 @@ export const ChatMessages: React.FC = () => {
                 await onRequest(AdminService.addChatMessage(values))
                 toast.success("Сообщение успешно создано")
             }
-            // setIsModalOpen(false)
-            // setEditingMessage(null)
+            setIsModalOpen(false)
+            setEditingMessage(null)
             getChatMessages()
         } catch (error) {
             toast.error("Ошибка при сохранении сообщения")
@@ -111,6 +114,15 @@ export const ChatMessages: React.FC = () => {
     useEffect(() => {
         getChatMessages()
     }, [])
+
+
+    if(userRole != UserRoles.SuperAdmin){
+        return <PageContainer itemsStart title="">
+            <div className="text-center py-8 text-gray-500">
+                У вас нет доступа к этой странице
+            </div>
+        </PageContainer>
+    }
 
     return (
         <PageContainer itemsStart title="Сообщения в чате">
@@ -162,7 +174,7 @@ export const ChatMessages: React.FC = () => {
             <Modal
                 isOpen={isModalOpen}
                 setIsOpen={setIsModalOpen}
-                title={editingMessage ? "Редактировать сообщение" : "Создать новое сообщение"}
+                title={editingMessage ? `Редактировать сообщение ${editingMessage.chatUsername}` : "Создать новое сообщение"}
             >
                 <Form
                     config={formConfig}
