@@ -33,7 +33,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       closeButton={false}
       draggable
       draggableDirection="x"
-
     />
 
 

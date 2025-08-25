@@ -249,7 +249,7 @@ export class TelegramService implements OnModuleInit {
 
   escapeMarkdown(text: string): string {
     if (!text) return text;
-    return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+    return text.replace(/[_*[\]()~`>#+=|{}-]/g, '\\$&');
   }
 
   formatUserLink(id: number | string, firstName: string, username?: string): string {
