@@ -127,7 +127,16 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     onChange={e => {
                                         const files = e.target.files ? Array.from(e.target.files) : [];
-                                        setValues(prev => ({ ...prev, [field.name]: field.multiple ? files : files[0] }));
+                                        if (field.multiple) {
+                                            // Для множественного выбора добавляем к существующим файлам
+                                            setValues(prev => {
+                                                const existingFiles = Array.isArray(prev[field.name]) ? prev[field.name] : [];
+                                                return { ...prev, [field.name]: [...existingFiles, ...files] };
+                                            });
+                                        } else {
+                                            // Для одиночного выбора заменяем файл
+                                            setValues(prev => ({ ...prev, [field.name]: files[0] }));
+                                        }
                                     }}
                                     required={field.required !== false}
                                 />
@@ -140,25 +149,58 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                                 <div className="flex gap-2 flex-wrap mt-2">
                                     {values[field.name].map((file: File | string, idx: number) => (
                                         typeof file === 'string' && file.match(/^data:|^blob:|^https?:/) ? (
-                                            <img
-                                                key={idx}
-                                                src={file}
-                                                alt="preview"
-                                                className="w-24 h-24 object-cover rounded border border-gray-600"
-                                            />
+                                            <div key={idx} className="relative">
+                                                <img
+                                                    src={file}
+                                                    alt="preview"
+                                                    className="w-24 h-24 object-cover rounded border border-gray-600"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const newFiles = values[field.name].filter((_: any, i: number) => i !== idx);
+                                                        setValues(prev => ({ ...prev, [field.name]: newFiles }));
+                                                    }}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
                                         ) : file instanceof File && file.type.startsWith('image') ? (
-                                            <img
-                                                key={idx}
-                                                src={URL.createObjectURL(file)}
-                                                alt="preview"
-                                                className="w-24 h-24 object-cover rounded border border-gray-600"
-                                            />
+                                            <div key={idx} className="relative">
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt="preview"
+                                                    className="w-24 h-24 object-cover rounded border border-gray-600"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const newFiles = values[field.name].filter((_: any, i: number) => i !== idx);
+                                                        setValues(prev => ({ ...prev, [field.name]: newFiles }));
+                                                    }}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
                                         ) : (
-                                            <span key={idx} className="text-xs bg-gray-100 text-gray-700 rounded px-2 py-1 border border-gray-300">{file instanceof File ? file.name : String(file)}</span>
+                                            <div key={idx} className="relative">
+                                                <span className="text-xs bg-gray-100 text-gray-700 rounded px-2 py-1 border border-gray-300">{file instanceof File ? file.name : String(file)}</span>
+                                                <button
+                                                    onClick={() => {
+                                                        const newFiles = values[field.name].filter((_: any, i: number) => i !== idx);
+                                                        setValues(prev => ({ ...prev, [field.name]: newFiles }));
+                                                    }}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
                                         )
                                     ))}
                                 </div>
                             )}
+
+                           
 
                             {!Array.isArray(values[field.name]) && values[field.name] && (
                                 typeof values[field.name] === 'string' && values[field.name].match(/^data:|^blob:|^https?:/) ? (

@@ -56,7 +56,7 @@
       "userSelectedFromForward": "✅ User selected from forwarded message:\n\nID: {userId}\nUsername: \\{username\\}\n\n⚡️ Quick complaint submission.\n\n2 - Send description of the scam (500 characters max)",
       "confirmation": "💎 **@{botName}**\n\n**Scam Evidence**\n\nComplaint against user:\n{userInfo}\n\n**Victim's description of situation:** {description}\n\n✅ In this form your complaint will be sent to bot moderators. If everything looks good, don't forget to click \"Confirm Submission\"",
       "channelMessage": "💎 **@{botName}**\n\n📢 **Scam Evidence**\n\n⚠️ Complaint against user:\n{scammerInfo}\n\n📝 **Victim's description of situation:**\n{description}\n\n🔗 [Open scammer's profile](https://t.me/svdbasebot/scammers?startapp={encoded})\n\n👤 **Sender:** {userInfo}",
-      "success": "✅ Your complaint has been sent to moderators. We'll notify you about the results.",
+      "success": "✅ Your complaint(`{complaintId}`) has been sent to moderators. We'll notify you about the results.",
       "cancelled": "❌ Complaint cancelled.",
       "fillFormAgain": "📁 Fill Form Again",
       "confirmSubmission": "✅ Confirm Submission",

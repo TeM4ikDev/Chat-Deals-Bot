@@ -1,13 +1,11 @@
 import { AdminService } from '@/admin/admin.service';
 import { ScamformService } from '@/scamform/scamform.service';
-import { IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, ScammerStatus, UserRoles, VoteType } from '@prisma/client';
+import { VoteType } from '@prisma/client';
 import { Action, Ctx, On, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
 import { User } from 'telegraf/typings/core/types/typegram';
-import { IMAGE_PATHS } from './constants/telegram.constants';
 import { Language } from './decorators/language.decorator';
 import { LocalizationService } from './services/localization.service';
 import { TelegramService } from './telegram.service';
@@ -21,19 +19,10 @@ export class TelegramUpdate {
     protected readonly userService: UsersService,
     private readonly scamformService: ScamformService,
     private readonly localizationService: LocalizationService,
-
     private readonly adminService: AdminService,
-
   ) { }
 
-
-  // @On('new_chat_members')
-  // async handleNewChatMembers(@Ctx() ctx: Context) {
-  //   const user: User | undefined = (ctx.message as any)?.new_chat_members?.[0];
-  //   if (!user || user.is_bot) return;
-
-  //   await this.sendNewUserMessage(ctx, user)
-  // }
+  
 
   @On('chat_member')
   async onChatMember(@Ctx() ctx: Context) {
@@ -43,12 +32,10 @@ export class TelegramUpdate {
     const oldStatus = chatMember.old_chat_member.status;
     const newStatus = chatMember.new_chat_member.status;
 
-
     if (oldStatus === 'left' && newStatus === 'member' && !newMember.is_bot) {
       await this.sendNewUserMessage(ctx, newMember)
     }
   }
-
 
   private async sendNewUserMessage(ctx: Context, newMember: User) {
     console.log('sendNewUserMessage', ctx.chat)
@@ -69,12 +56,12 @@ export class TelegramUpdate {
 
     const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})\n\n` : ''
 
-    await ctx.reply(
+    await this.telegramService.replyWithAutoDelete(ctx,
       `👋 Привет, ${userLink}!\n` +
       `🎉 Добро пожаловать в @${this.telegramService.escapeMarkdown(chatUsername)}!\n\n` +
       `${this.telegramService.escapeMarkdown(message.message || '')}\n\n` +
       userInfo +
-      userRulesLink+
+      userRulesLink +
       "разработчик бота: @Tem4ik20"
       ,
       {
@@ -235,10 +222,4 @@ export class TelegramUpdate {
   }
 
   // _____________________________
-
-
-
-
 }
-
-

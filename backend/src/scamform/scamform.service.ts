@@ -683,7 +683,7 @@ export class ScamformService {
         }
       });
 
-      if (data.formId && scammer.marked == false) {
+      if (data.formId) {
         const form = await this.findById(data.formId)
         await this.telegramService.complaintOutcome(form, status)
       }

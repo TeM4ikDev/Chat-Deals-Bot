@@ -242,10 +242,11 @@ export class ScammerFrom {
                 scamForm
             })
 
-            await ctx.reply(this.localizationService.getT('complaint.form.success', this.language), {
+            await ctx.reply(this.localizationService.getT('complaint.form.success', this.language).replace('{complaintId}', scamForm.id), {
                 reply_markup: {
-                    remove_keyboard: true
-                }
+                    remove_keyboard: true,
+                },
+                parse_mode: 'Markdown',
             });
 
             await ctx.scene.leave();

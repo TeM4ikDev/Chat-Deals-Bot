@@ -82,9 +82,24 @@ export class TelegramService implements OnModuleInit {
     return Input.fromLocalFile(filePath)
   }
 
-  async sendMessage(telegramId: string, message: string) {
-    return await this.bot.telegram.sendMessage(telegramId, message)
+  async sendMessage(telegramId: string, message: string, options?: any) {
+    return await this.bot.telegram.sendMessage(telegramId, message, options)
   }
+
+  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 5000) {
+    const message = await ctx.reply(text, options);
+
+    setTimeout(async () => {
+      try {
+        await ctx.deleteMessage(message.message_id);
+      } catch (error: any) {
+        console.log('Не удалось удалить сообщение:', error.message);
+      }
+    }, deleteAfterMs);
+
+    return message;
+  }
+
 
   async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
     return await this.bot.telegram.sendMessage(channelId, message, options)
@@ -106,26 +121,29 @@ export class TelegramService implements OnModuleInit {
     complaint: Prisma.ScamFormGetPayload<{ include: { scammer, user } }>,
     status: ScammerStatus,
   ) {
-    const scammerInfo: string = complaint.user.telegramId || complaint.user.username
+    const scammerInfo: string = complaint.scammer.telegramId || complaint.scammer.username
     let textReq: string;
-
+  
     switch (status) {
       case ScammerStatus.SCAMMER:
-        textReq = `✅ Исход вашей жалобы на ${scammerInfo}. Аккаунт добавлен в базу мошенников`;
+        textReq = `✅ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nАккаунт добавлен в базу мошенников.`;
         break;
-
+  
       case ScammerStatus.SUSPICIOUS:
-        textReq = `☑️ Исход вашей жалобы на #${scammerInfo}. Пользователь добавлен в базу подозрительных аккаунтов.`;
+        textReq = `☑️ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nПользователь добавлен в базу подозрительных аккаунтов.`;
         break;
-
+  
       case ScammerStatus.UNKNOWN:
       default:
-        textReq = `🚫 Ваша жалоба на #${scammerInfo} отклонена.\n\nПричина: Недостаточность / неинформативность / невалидность отправленных вами доказательств. Учтите это, соберите доказательства повторно и отправьте жалобу заново.`;
+        textReq = `🚫 Ваша жалоба \`${complaint.id}\` на \`${scammerInfo}\` отклонена.\n\nПричина: Недостаточность / неинформативность / невалидность отправленных вами доказательств.\n\nУчтите это, соберите доказательства повторно и отправьте жалобу заново.`;
         break;
     }
-
-    await this.sendMessage(complaint.user.telegramId, textReq)
+  
+    await this.sendMessage(complaint.user.telegramId, textReq, {
+      parse_mode: 'Markdown',
+    })
   }
+  
 
   private async handleInlineQuery(ctx: Context) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
@@ -363,5 +381,7 @@ export class TelegramService implements OnModuleInit {
       console.error('Error sending to channel:', error);
     }
   }
+
+  
 
 }
