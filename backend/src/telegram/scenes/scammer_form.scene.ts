@@ -34,12 +34,14 @@ export class ScammerFrom {
     private static readonly SELECT_USER_TEXT = '👉 Выбрать мошенника — Select scammer';
     private static readonly DONE_TEXT = '✅ Я закончил — I am done';
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
-    
+    // private static readonly ADD_TWIN_TEXT = '➕ Добавить твинк — Add twin';
+    private static readonly SKIP_TWINS_TEXT = '⏭️ Пропустить твинки — Skip twins';
+
     // Username validation regex: starts with letter, 5-32 chars total, letters/numbers/underscores only
     private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
 
     private language: string = 'ru';
-    private min_media = 2
+    private min_media = 0
     private max_media = 10
 
     private static readonly KEYBOARDS = {
@@ -54,7 +56,9 @@ export class ScammerFrom {
             }
         } as any],
         DONE: [{ text: ScammerFrom.DONE_TEXT }],
-        RESEND: [{ text: ScammerFrom.RESEND_TEXT }]
+        RESEND: [{ text: ScammerFrom.RESEND_TEXT }],
+        // ADD_TWIN: [{ text: ScammerFrom.ADD_TWIN_TEXT }],
+        SKIP_TWINS: [{ text: ScammerFrom.SKIP_TWINS_TEXT }]
     };
 
     constructor(
@@ -71,7 +75,9 @@ export class ScammerFrom {
 
         ctx.session.scamForm = {
             step: 1,
-            scammerData: {},
+            scammerData: {
+                twinAccounts: []
+            },
             description: null,
             media: [],
             processedMediaGroups: new Set()
@@ -104,7 +110,7 @@ export class ScammerFrom {
     @Hears(ScammerFrom.DONE_TEXT)
     async onFinish(@Ctx() ctx: ScammerFormSession) {
         const form = ctx.session.scamForm;
-        if (!form || form.step !== 3) return;
+        if (!form || form.step !== 4) return;
 
         if (form.media.length < this.min_media) {
             await ctx.reply(this.localizationService.getT('complaint.errors.minMedia', this.language));
@@ -140,6 +146,7 @@ export class ScammerFrom {
             this.localizationService.getT('complaint.form.confirmation', this.language)
                 .replace('{botName}', BOT_NAME)
                 .replace('{userInfo}', userInfo)
+                .replace('{twinAccounts}', this.telegramService.formatTwinAccounts(form.scammerData.twinAccounts))
                 .replace('{description}', this.telegramService.escapeMarkdown(form.description) || ''), {
 
             parse_mode: 'Markdown',
@@ -155,7 +162,7 @@ export class ScammerFrom {
     @Hears(ScammerFrom.RESEND_TEXT)
     async onResend(@Ctx() ctx: ScammerFormSession) {
         const form = ctx.session.scamForm;
-        if (!form || form.step !== 3) return;
+        if (!form || form.step !== 4) return;
 
         form.media = [];
         form.processedMediaGroups = new Set();
@@ -169,7 +176,7 @@ export class ScammerFrom {
         }
 
         const message = await ctx.reply(
-            this.localizationService.getT('complaint.form.step3', this.language).replace('{count}', '0'), {
+            this.localizationService.getT('complaint.form.step4', this.language).replace('{count}', '0'), {
             reply_markup: {
                 keyboard: [
                     ScammerFrom.KEYBOARDS.DONE,
@@ -201,6 +208,29 @@ export class ScammerFrom {
     @Hears(ScammerFrom.SELECT_USER_TEXT)
     async onSelectScammer(@Ctx() ctx: ScammerFormSession) {
         return;
+    }
+
+    // @Hears(ScammerFrom.ADD_TWIN_TEXT)
+    // async onAddTwin(@Ctx() ctx: ScammerFormSession) {
+    //     const form = ctx.session.scamForm;
+    //     if (!form || form.step !== 2) return;
+
+    //     await ctx.reply(
+    //         'Отправьте username или Telegram ID твинка (можно несколько через пробел):\n\nПримеры:\n• @username 1234567890\n• @username\n• 1234567890\n\nИли перешлите сообщение от твинка',
+    //         { reply_markup: { keyboard: [ScammerFrom.KEYBOARDS.CANCEL], resize_keyboard: true } }
+    //     );
+    // }
+
+    @Hears(ScammerFrom.SKIP_TWINS_TEXT)
+    async onSkipTwins(@Ctx() ctx: ScammerFormSession) {
+        const form = ctx.session.scamForm;
+        if (!form || form.step !== 2) return;
+
+        form.step = 3;
+        await ctx.reply(
+            this.localizationService.getT('complaint.form.step3', this.language),
+            { reply_markup: { keyboard: [ScammerFrom.KEYBOARDS.CANCEL], resize_keyboard: true } }
+        );
     }
 
     @On('callback_query')
@@ -255,11 +285,14 @@ export class ScammerFrom {
 
             ctx.session.scamForm = {
                 step: 1,
-                scammerData: {},
+                scammerData: {
+                    twinAccounts: []
+                },
                 description: null,
                 media: [],
                 processedMediaGroups: new Set()
             };
+
 
             const message = await ctx.reply(
                 this.localizationService.getT('complaint.form.step1', this.language), {
@@ -268,7 +301,7 @@ export class ScammerFrom {
                         ScammerFrom.KEYBOARDS.NO_USERNAME,
                         ScammerFrom.KEYBOARDS.CANCEL,
                     ],
-                    resize_keyboard: true
+                    resize_keyboard: true,
                 }
             });
 
@@ -276,30 +309,54 @@ export class ScammerFrom {
         }
     }
 
+
+
     @On('text')
     async onText(@Ctx() ctx: ScammerFormSession) {
         const form = ctx.session.scamForm;
         if (!form) return;
-
         const text: string = (ctx.message as any)?.text;
+
         if (form.step === 1) {
             const msg = ctx.message as any;
             const text = msg?.text;
             const forwardedMessage = msg?.forward_from;
 
+            // console.log(text)
+
             if (forwardedMessage) {
                 form.scammerData.telegramId = forwardedMessage.id.toString();
                 form.scammerData.username = forwardedMessage.username;
-            } else if (text?.startsWith('@')) {
-                const username = text.slice(1);
-                if (!ScammerFrom.USERNAME_REGEX.test(username)) {
-                    await ctx.reply(this.localizationService.getT('complaint.errors.invalidUsername', this.language));
+            }
+            else if (text) {
+                const parts = text.trim().split(/\s+/).slice(0, 2);
+                let hasValidInput = false;
+                console.log(parts)
+
+                for (const part of parts) {
+                    if (part.startsWith('@')) {
+                        const username = part.slice(1);
+                        if (ScammerFrom.USERNAME_REGEX.test(username)) {
+                            form.scammerData.username = username;
+                            hasValidInput = true;
+                        }
+                    }
+                    else if (/^\d+$/.test(part)) {
+                        form.scammerData.telegramId = part;
+                        hasValidInput = true;
+                    }
+                }
+
+
+
+                console.log(form.scammerData)
+
+                if (!hasValidInput) {
+                    await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
                     return;
                 }
-                form.scammerData.username = username;
-            } else if (/^\d+$/.test(text)) {
-                form.scammerData.telegramId = text;
-            } else {
+            }
+            else {
                 await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
                 return;
             }
@@ -307,20 +364,92 @@ export class ScammerFrom {
             form.step = 2;
             await ctx.reply(
                 this.localizationService.getT('complaint.form.step2', this.language),
-                { reply_markup: { keyboard: [ScammerFrom.KEYBOARDS.CANCEL], resize_keyboard: true } }
+                { reply_markup: { 
+                    keyboard: [
+                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
+                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                        ScammerFrom.KEYBOARDS.CANCEL
+                    ], 
+                    resize_keyboard: true 
+                } }
             );
             return;
         }
+
         if (form.step === 2) {
+            // Обработка твинков
+            const msg = ctx.message as any;
+            const text = msg?.text;
+            const forwardedMessage = msg?.forward_from;
+
+            if (forwardedMessage) {
+                form.scammerData.twinAccounts.push({
+                    telegramId: forwardedMessage.id.toString(),
+                    username: forwardedMessage.username
+                });
+            }
+            else if (text) {
+                const parts = text.trim().split(/\s+/).slice(0, 2);
+                let hasValidInput = false;
+                const newTwin: IScammerData = {};
+
+                for (const part of parts) {
+                    if (part.startsWith('@')) {
+                        const username = part.slice(1);
+                        if (ScammerFrom.USERNAME_REGEX.test(username)) {
+                            newTwin.username = username;
+                            hasValidInput = true;
+                        }
+                    }
+                    else if (/^\d+$/.test(part)) {
+                        newTwin.telegramId = part;
+                        hasValidInput = true;
+                    }
+                }
+
+                if (hasValidInput) {
+                    form.scammerData.twinAccounts.push(newTwin);
+                } else {
+                    await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
+                    return;
+                }
+            }
+            else {
+                await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
+                return;
+            }
+
+           
+            const twinsList = form.scammerData.twinAccounts.length > 0 
+                ? form.scammerData.twinAccounts.map((twin, index) => 
+                    `${index + 1}. ${twin.username ? '@' + twin.username : ''} ${twin.telegramId ? `(${twin.telegramId})` : ''}`
+                ).join('\n')
+                : 'Пока нет твинков';
+
+            await ctx.reply(
+                `✅ Твинк добавлен!\n\n📋 Текущие твинки:\n${twinsList}\n\nОтправьте еще твинков или нажмите "Пропустить твинки"`,
+                { reply_markup: { 
+                    keyboard: [
+                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
+                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                        ScammerFrom.KEYBOARDS.CANCEL
+                    ], 
+                    resize_keyboard: true 
+                } }
+            );
+            return;
+        }
+
+        if (form.step === 3) {
             if (!text || text.length > 500) {
                 await ctx.reply(this.localizationService.getT('complaint.errors.descriptionTooLong', this.language));
                 return;
             }
             form.description = text;
-            form.step = 3;
+            form.step = 4;
 
             const message = await ctx.reply(
-                this.localizationService.getT('complaint.form.step3', this.language).replace('{count}', '0'), {
+                this.localizationService.getT('complaint.form.step4', this.language).replace('{count}', '0'), {
                 reply_markup: {
                     keyboard: [
                         ScammerFrom.KEYBOARDS.DONE,
@@ -346,15 +475,6 @@ export class ScammerFrom {
             const text = (ctx.message as any)?.text;
             const userSharedId = (ctx.message as any)?.user_shared?.user_id;
 
-
-            // console.log((ctx.message as any)?.user_shared)
-
-            // const user = await ctx.telegram.getChat(userSharedId);
-
-            // console.log(user)
-
-
-
             if (userSharedId) {
                 form.scammerData.telegramId = userSharedId.toString();
             } else {
@@ -373,12 +493,19 @@ export class ScammerFrom {
             form.step = 2;
             await ctx.reply(
                 this.localizationService.getT('complaint.form.step2', this.language),
-                { reply_markup: { keyboard: [ScammerFrom.KEYBOARDS.CANCEL], resize_keyboard: true } }
+                { reply_markup: { 
+                    keyboard: [
+                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
+                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                        ScammerFrom.KEYBOARDS.CANCEL
+                    ], 
+                    resize_keyboard: true 
+                } }
             );
             return;
         }
 
-        if (form.step === 3) {
+        if (form.step === 4) {
             const hasPhoto = (ctx.message as any)?.photo;
             const hasVideo = (ctx.message as any)?.video;
 
@@ -418,7 +545,7 @@ export class ScammerFrom {
                     }
 
                     const message = await ctx.reply(
-                        this.localizationService.getT('complaint.form.step3', this.language).replace('{count}', mediaCount.toString()), {
+                        this.localizationService.getT('complaint.form.step4', this.language).replace('{count}', mediaCount.toString()), {
                         reply_markup: {
                             keyboard: [
                                 ScammerFrom.KEYBOARDS.DONE,
@@ -440,7 +567,7 @@ export class ScammerFrom {
                     form.processedMediaGroups.add(mediaGroupId);
 
                     setTimeout(async () => {
-                        if (form.step === 3) {
+                        if (form.step === 4) {
                             if (form.lastInstructionMessageId) {
                                 try {
                                     await ctx.deleteMessage(form.lastInstructionMessageId);
@@ -450,7 +577,7 @@ export class ScammerFrom {
                             }
 
                             const message = await ctx.reply(
-                                this.localizationService.getT('complaint.form.step3', this.language).replace('{count}', form.media.length.toString()), {
+                                this.localizationService.getT('complaint.form.step4', this.language).replace('{count}', form.media.length.toString()), {
                                 reply_markup: {
                                     keyboard: [
                                         ScammerFrom.KEYBOARDS.DONE,
@@ -474,7 +601,7 @@ export class ScammerFrom {
         ctx.session.scamForm = undefined;
     }
 
-   
+
 
 
 

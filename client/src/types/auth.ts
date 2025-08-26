@@ -9,6 +9,8 @@
 //     role: UserRoles;
 //     // hasAccess: boolean;
 
+import { IScamForm } from ".";
+
 
 export enum UserRoles {
     Admin = 'ADMIN',
@@ -22,11 +24,15 @@ export enum UserRoles {
 //     updatedAt: Date;
 // }
 
+
+
 export interface IUser {
     id: string;
     role: UserRoles;
     banned: boolean;
     name: string;
+
+    ScamForms: IScamForm[];
 
     telegramId: string;
     username: string;

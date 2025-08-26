@@ -127,6 +127,19 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                 </div>
 
                 <div className="flex flex-col text-sm gap-1 text-gray-400">
+                    {scammer.twinAccounts && scammer.twinAccounts.length > 0 && (
+                        <Block variant='lighter' title="Твинки" className="!p-0 !gap-0">
+                            <div className="flex flex-row gap-1">
+                                {scammer.twinAccounts.map((twin) => (
+                                    <div className="flex items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
+                                        <span>@{twin.username}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Block>
+                    )}
+
+
                     <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
                         <span>Telegram ID: {scammer.telegramId}</span>

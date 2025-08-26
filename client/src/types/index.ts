@@ -20,6 +20,7 @@ declare global {
         };
     }
 }
+
 export const appName = "SVD BASE BOT"
 export const TelegramBot: string = "tem4ik_ru_bot"
 export type userIdParam = number | string
@@ -29,12 +30,18 @@ export interface IPagination {
     maxPage: number
     currentPage: number
     limit: number
-  }
+}
+
+interface ITelegramUserInfo{
+    username: string
+    telegramId: string
+}
 
 export interface IScammer {
     id: string
     telegramId: string
     username?: string
+    twinAccounts: ITelegramUserInfo[]
     status: ScammerStatus
     scamForms: number
     marked: boolean

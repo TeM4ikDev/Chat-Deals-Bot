@@ -6,6 +6,7 @@ import { Command, Ctx, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
+import { TelegramService } from "../telegram.service";
 
 @UseGuards(UserCheckMiddleware)
 @Update()
@@ -13,7 +14,8 @@ export class GarantsUpdate {
     constructor(
         private readonly database: DatabaseService,
         private readonly localizationService: LocalizationService,
-        private readonly userService: UsersService
+        private readonly userService: UsersService,
+        private readonly telegramService: TelegramService
     ) { }
 
     @Command('garants')
@@ -28,7 +30,7 @@ export class GarantsUpdate {
         const garantsList = garants.map((garant, index) => {
             const number = index + 1
             const description = garant.description || this.localizationService.getT('garant.defaultDescription', lang)
-            
+
             // Экранируем специальные символы Markdown
             const escapedDescription = description
                 .replace(/\*/g, '\\*')
@@ -47,17 +49,28 @@ export class GarantsUpdate {
                 .replace(/\}/g, '\\}')
                 .replace(/\./g, '\\.')
                 .replace(/!/g, '\\!')
-            
+
             return `🔸 ${number}. @${garant.username}\n   ${escapedDescription}`
         }).join('\n\n')
 
         const totalCount = garants.length
         const header = this.localizationService.getT('garant.header', lang)
             .replace('{count}', totalCount.toString())
-        
 
         const message = `${header}${garantsList}\n\n @TeM4ik20 - разраб`
 
-        ctx.reply(message)
+        this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
+    }
+
+    @Command('stat')
+    async showStat(@Ctx() ctx: Context, @Language() lang: string) {
+        const stat = await this.userService.getTopUsersWithScamForms()
+
+        const message = stat.map((user, index) => {
+            const number = index + 1
+            return `🔸 ${number}. @${user.username} ${user.ScamForms.length}`
+        }).join('\n')
+
+        this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
     }
 }

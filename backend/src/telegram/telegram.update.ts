@@ -22,8 +22,6 @@ export class TelegramUpdate {
     private readonly adminService: AdminService,
   ) { }
 
-  
-
   @On('chat_member')
   async onChatMember(@Ctx() ctx: Context) {
     console.log('onChatMember')
@@ -62,12 +60,12 @@ export class TelegramUpdate {
       `${this.telegramService.escapeMarkdown(message.message || '')}\n\n` +
       userInfo +
       userRulesLink +
-      "разработчик бота: @Tem4ik20"
-      ,
+      "разработчик бота: @Tem4ik20",
       {
         parse_mode: 'Markdown',
         link_preview_options: { is_disabled: true }
-      }
+      },
+      15000
     );
   }
 

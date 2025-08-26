@@ -17,9 +17,10 @@ interface FormProps<T> extends Omit<BlockProps, 'children'> {
     initialValues?: T;
     requestMethod?: (values: T) => Promise<any>;
     onSubmit?: (...args: any[]) => Promise<any>;
+    customElements?: React.ReactNode;
 }
 
-export function Form<T extends Record<string, any>>({ config, initialValues, className, requestMethod, message, onSubmit, ...blockProps }: FormProps<T>) {
+export function Form<T extends Record<string, any>>({ config, initialValues, className, requestMethod, message, onSubmit, customElements, ...blockProps }: FormProps<T>) {
     function getInitialValuesFromConfig(config: FormConfig) {
         const initial: Record<string, any> = {};
         if (config.input) {
@@ -243,6 +244,8 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                         />
                     )
                 ))}
+
+                {customElements}
 
                 <Button text="Отправить" formSubmit loading={loading} />
             </form>

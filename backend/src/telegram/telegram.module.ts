@@ -55,6 +55,6 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     ChatCommandsUpdate,
     BusinessModeUpdate,
   ],
-  exports: [TelegramService, LocalizationService]
+  exports: [TelegramService, LocalizationService, BusinessModeUpdate]
 })
 export class TelegramModule { }

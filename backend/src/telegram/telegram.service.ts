@@ -1,6 +1,6 @@
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
-import { IMessageDataScamForm } from '@/types/types';
+import { IMessageDataScamForm, IScammerData } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -33,9 +33,11 @@ export class TelegramService implements OnModuleInit {
       console.log('bot start')
       await this.handleInlineQuery(ctx);
     });
+  }
 
-    // const chat = await this.bot.telegram.getChat('@imagesbase');
-    // console.log(chat.id);
+
+  async checkIsMessageNotPrivate(ctx: Context): Promise<boolean> {
+    return ctx.message.chat.type !== 'private'
   }
 
   async uploadFilesGroup(files: any[]): Promise<Array<{ type: string; file_id: string }>> {
@@ -86,11 +88,17 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMessage(telegramId, message, options)
   }
 
-  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 5000) {
-    const message = await ctx.reply(text, options);
+  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 8000) {
+    const message = await ctx.reply(text, {
+      parse_mode: 'Markdown',
+      ...options
+    });
+
+    if (await this.checkIsMessageNotPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
+        await ctx.deleteMessage(ctx.message.message_id);
         await ctx.deleteMessage(message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
@@ -100,6 +108,21 @@ export class TelegramService implements OnModuleInit {
     return message;
   }
 
+  async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000) {
+
+    const message = mediaType === 'photo' ? await ctx.replyWithPhoto(source, options) : await ctx.replyWithVideo(source, options);
+
+    if (await this.checkIsMessageNotPrivate(ctx)) return
+
+    setTimeout(async () => {
+      try {
+        await ctx.deleteMessage(ctx.message.message_id);
+        await ctx.deleteMessage(message.message_id);
+      } catch (error: any) {
+        console.log('Не удалось удалить сообщение:', error.message);
+      }
+    }, deleteAfterMs);
+  }
 
   async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
     return await this.bot.telegram.sendMessage(channelId, message, options)
@@ -123,27 +146,27 @@ export class TelegramService implements OnModuleInit {
   ) {
     const scammerInfo: string = complaint.scammer.telegramId || complaint.scammer.username
     let textReq: string;
-  
+
     switch (status) {
       case ScammerStatus.SCAMMER:
         textReq = `✅ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nАккаунт добавлен в базу мошенников.`;
         break;
-  
+
       case ScammerStatus.SUSPICIOUS:
         textReq = `☑️ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nПользователь добавлен в базу подозрительных аккаунтов.`;
         break;
-  
+
       case ScammerStatus.UNKNOWN:
       default:
         textReq = `🚫 Ваша жалоба \`${complaint.id}\` на \`${scammerInfo}\` отклонена.\n\nПричина: Недостаточность / неинформативность / невалидность отправленных вами доказательств.\n\nУчтите это, соберите доказательства повторно и отправьте жалобу заново.`;
         break;
     }
-  
+
     await this.sendMessage(complaint.user.telegramId, textReq, {
       parse_mode: 'Markdown',
     })
   }
-  
+
 
   private async handleInlineQuery(ctx: Context) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
@@ -248,6 +271,12 @@ export class TelegramService implements OnModuleInit {
     }
   }
 
+
+  formatTwinAccounts(twinAccounts: IScammerData[]): string {
+    if (twinAccounts.length === 0) return '—';
+    return twinAccounts.map(twin => `• ${this.formatUserInfo(twin.username, twin.telegramId)}`).join('\n');
+  }
+
   encodeParams(payload: {}) {
     return Buffer.from(JSON.stringify(payload)).toString('base64url');
   }
@@ -282,48 +311,59 @@ export class TelegramService implements OnModuleInit {
 
 
   async banScammerFromGroup(scammer: Scammer) {
-    console.log('banScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
+    try {
 
-    if (!scammer.telegramId || scammer.telegramId === '') {
-      console.log('Invalid telegramId for ban:', scammer.telegramId);
-      return;
-    }
 
-    const telegramId = Number(scammer.telegramId);
-    const userText = this.formatUserLink(
-      telegramId,
-      scammer.username || 'Без имени',
-      scammer.username || undefined,
-    );
+      console.log('banScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
 
-    console.log('Отправляем сообщение о бане для:', userText);
-
-    await this.bot.telegram.sendMessage(
-      this.mainGroupName,
-      `${userText} забанен в чате`,
-      {
-        parse_mode: 'Markdown',
-        link_preview_options: {
-          is_disabled: true,
-        },
+      if (!scammer.telegramId || scammer.telegramId === '') {
+        console.log('Invalid telegramId for ban:', scammer.telegramId);
+        return;
       }
-    );
 
-    console.log('Баним пользователя с ID:', telegramId);
-    await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
+      const telegramId = Number(scammer.telegramId);
+      const userText = this.formatUserLink(
+        telegramId,
+        scammer.username || 'Без имени',
+        scammer.username || undefined,
+      );
+
+      console.log('Отправляем сообщение о бане для:', userText);
+
+      await this.bot.telegram.sendMessage(
+        this.mainGroupName,
+        `${userText} забанен в чате`,
+        {
+          parse_mode: 'Markdown',
+          link_preview_options: {
+            is_disabled: true,
+          },
+        }
+      );
+
+      console.log('Баним пользователя с ID:', telegramId);
+      await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
+
+    } catch (error) {
+      console.error('Error banning scammer:', error);
+    }
   }
 
 
 
   async unbanScammerFromGroup(scammer: Scammer) {
-    console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
-    
-    if (!scammer.telegramId || scammer.telegramId === '') {
-      console.log('Invalid telegramId for unban:', scammer.telegramId);
-      return;
+    try {
+      console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
+
+      if (!scammer.telegramId || scammer.telegramId === '') {
+        console.log('Invalid telegramId for unban:', scammer.telegramId);
+        return;
+      }
+      console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
+      await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
+    } catch (error) {
+      console.error('Error unbanning scammer:', error);
     }
-    console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
-    await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
   }
 
 
@@ -340,6 +380,7 @@ export class TelegramService implements OnModuleInit {
     const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
       .replace('{botName}', BOT_NAME)
       .replace('{scammerInfo}', scammerInfo)
+      .replace('{twinAccounts}', this.formatTwinAccounts(scammerData.twinAccounts))
       .replace('{description}', description || '')
       .replace('{encoded}', encoded)
       .replace('{userInfo}', userInfo);
@@ -382,6 +423,6 @@ export class TelegramService implements OnModuleInit {
     }
   }
 
-  
+
 
 }

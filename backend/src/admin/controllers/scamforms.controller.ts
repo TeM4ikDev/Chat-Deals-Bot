@@ -1,5 +1,5 @@
-import { DatabaseService } from '@/database/database.service';
 import { Roles } from '@/decorators/roles.decorator';
+import { UserId } from '@/decorators/userid.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
 import { TelegramService } from '@/telegram/telegram.service';
 import { Body, Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
@@ -7,7 +7,6 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Prisma, UserRoles } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
-import { UserId } from '@/decorators/userid.decorator';
 
 @Controller('admin/scamforms')
 @UseGuards(JwtAuthGuard)
@@ -21,17 +20,27 @@ export class ScamformController {
 
     @Post('scammers')
     @UseInterceptors(AnyFilesInterceptor())
-    async createScammer(@UploadedFiles() files: any[], @Body() body: Prisma.ScammerCreateInput, @UserId() userId: string) {
+    async createScammer(@UploadedFiles() files: any[], @Body() body: { scammerData: Prisma.ScammerCreateInput, twinAccounts: Prisma.TwinAccountCreateInput[] }, @UserId() userId: string) {
+        console.log('=== Создание скаммера ===');
+        console.log('Scammer Data:', JSON.stringify(body.scammerData, null, 2));
+        console.log('Twin Accounts:', JSON.stringify(body.twinAccounts, null, 2));
+        console.log('Files count:', files?.length || 0);
+        console.log('User ID:', userId);
+        console.log('========================');
+
+        // return
+
         const user = await this.usersService.findUserById(userId);
-        const scammer = await this.scamformService.createScammer(body);
+        const scammer = await this.scamformService.createScammer(body.scammerData, body.twinAccounts);
         const mediaData = await this.telegramService.uploadFilesGroup(files);
+
 
         const scamForm = await this.scamformService.create({
             scammerData: {
                 username: scammer.username,
                 telegramId: scammer.telegramId
             },
-            description: body.description,
+            description: body.scammerData.description,
             media: mediaData,
             userTelegramId: user?.telegramId,
         })
@@ -48,7 +57,7 @@ export class ScamformController {
             },
             media: mediaData,
         })
-        
+
         return scamForm;
     }
 

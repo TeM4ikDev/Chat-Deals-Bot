@@ -48,6 +48,7 @@ class ApiConfig {
         baseInstance: createAxiosInstance('users/'),
         updateConfig: 'updateProfitConfig',
         deals: 'deals',
+        profile: 'profile'
     }
 }
 

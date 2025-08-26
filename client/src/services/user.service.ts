@@ -39,7 +39,11 @@ export class userService implements ApiRoute {
         return data
     }
 
-  
+    async getUserProfile() {
+        const { data } = await this.instance.get(this.baseUrl.profile)
+        return data
+    }
+
     clearMediaCache() {
         mediaCache.clear();
     }

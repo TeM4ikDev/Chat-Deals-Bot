@@ -64,8 +64,9 @@ export class adminService implements ApiRoute {
         return data
     }
 
-    addScammer = async (scammerData: { telegramId: string; username?: string; status: string }) => {
-        const { data } = await this.instance.post(`${this.baseUrl.scamforms.main}/scammers`, scammerData, {
+    addScammer = async (scammerData: { telegramId: string; username?: string; status: string }, twinAccounts: { telegramId?: string; username?: string }[]) => {
+        const { data } = await this.instance.post(`${this.baseUrl.scamforms.main}/scammers`,
+            { scammerData, twinAccounts }, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

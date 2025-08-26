@@ -16,4 +16,10 @@ export class UsersController {
     private readonly telegramService: TelegramService,
   ) { }
 
+
+  @Get('profile')
+  async getUserDetails(@UserId() userId: string) {
+    return this.usersService.getUserDetailedProfile(userId)
+  }
+
 }

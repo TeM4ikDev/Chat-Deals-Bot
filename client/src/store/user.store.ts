@@ -30,6 +30,7 @@ class UserStore {
     checkAuth = () => {
         this.isLoading = true;
         const authPromise = fromPromise(this.getAuthPromise());
+        
 
         authPromise.then(
             (data) => {

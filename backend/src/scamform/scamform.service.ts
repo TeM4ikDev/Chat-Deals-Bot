@@ -73,10 +73,7 @@ export class ScamformService {
         });
       }
 
-      if (
-        data.scammerData.username &&
-        data.scammerData.username !== scammerWithTelegramId.username
-      ) {
+      if (data.scammerData.username && data.scammerData.username !== scammerWithTelegramId.username) {
         scammerWithTelegramId = await this.database.scammer.update({
           where: { id: scammerWithTelegramId.id },
           data: { username: data.scammerData.username },
@@ -85,6 +82,8 @@ export class ScamformService {
     }
 
     let scammerToUse = scammerWithTelegramId;
+
+    console.log(data.scammerData.twinAccounts, 'twinAccounts')
 
     if (!scammerToUse) {
       if (data.scammerData.username) {
@@ -98,6 +97,13 @@ export class ScamformService {
           data: {
             username: data.scammerData.username,
             telegramId: data.scammerData.telegramId,
+            twinAccounts: {
+              create: data.scammerData.twinAccounts.map(twin => ({
+                username: twin.username,
+                telegramId: twin.telegramId,
+              })),
+            },
+
           },
         });
       }
@@ -257,7 +263,17 @@ export class ScamformService {
             {
               OR: [
                 { username: { contains: search } },
-                { telegramId: { contains: search } }
+                { telegramId: { contains: search } },
+                {
+                  twinAccounts: {
+                    some: {
+                      OR: [
+                        { username: { contains: search } },
+                        { telegramId: { contains: search } }
+                      ]
+                    }
+                  }
+                }
               ]
             }
           ]
@@ -272,7 +288,8 @@ export class ScamformService {
         skip,
         take: limit,
         include: {
-          scamForms: true
+          scamForms: true,
+          twinAccounts: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -294,23 +311,35 @@ export class ScamformService {
     };
   }
 
-  async createScammer(data: Prisma.ScammerCreateInput) {
-
-
-    const exsScammer = await this.getScammerByQuery(data.username)
+  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: Prisma.TwinAccountCreateInput[]) {
+    const exsScammer = await this.getScammerByQuery(data.username || data.telegramId)
 
     if (exsScammer) throw new BadRequestException('User already exists')
 
-    return await this.database.scammer.create({
+    const createdScammer = await this.database.scammer.create({
       data: {
         ...data,
         username: data.username,
-        marked: true
+        marked: true,
+        ...(twinAccounts ? {
+          twinAccounts: {
+            create: twinAccounts
+          }
+        } : {})
       },
       include: {
-        scamForms: true
+        scamForms: true,
+        twinAccounts: true
       }
     })
+
+
+    console.log(createdScammer.status, 'createdScammer.status')
+    if (createdScammer.status === ScammerStatus.SCAMMER) {
+      this.telegramService.banScammerFromGroup(createdScammer)
+    }
+
+    return createdScammer
   }
 
   async getScammerByQuery(query: string) {
@@ -332,11 +361,22 @@ export class ScamformService {
           },
           {
             telegramId: query
+          },
+          {
+            twinAccounts: {
+              some: {
+                OR: [
+                  { username: query },
+                  { telegramId: query }
+                ]
+              }
+            }
           }
         ]
       },
       include: {
-        scamForms: true
+        scamForms: true,
+        twinAccounts: true
       }
     });
 

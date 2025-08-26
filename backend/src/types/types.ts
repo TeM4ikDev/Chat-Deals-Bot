@@ -27,6 +27,9 @@ export enum BotScenes {
 export interface IScammerData {
   username?: string
   telegramId?: string
+
+  twinAccounts?: IScammerData[];
+
 }
 
 export interface IMediaData {

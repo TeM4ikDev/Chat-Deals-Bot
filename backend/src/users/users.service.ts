@@ -1,7 +1,7 @@
 import { DatabaseService } from '@/database/database.service';
 import { IUser, superAdminsTelegramIds } from '@/types/types';
 import { Injectable } from '@nestjs/common';
-import { UserLanguage, UserRoles } from '@prisma/client';
+import { ScammerStatus, UserLanguage, UserRoles } from '@prisma/client';
 import { User } from 'telegraf/typings/core/types/typegram';
 
 
@@ -56,7 +56,7 @@ export class UsersService {
 
   async findUserByTelegramId(telegramId: string) {
 
-    
+
     return await this.database.user.findUnique({
       where: {
         telegramId: telegramId
@@ -135,7 +135,6 @@ export class UsersService {
     })
   }
 
-
   async updateUserRights(telegramId: string) {
     const user = await this.findUserByTelegramId(telegramId);
 
@@ -150,7 +149,6 @@ export class UsersService {
 
     return updatedUser;
   }
-
 
   async updateUserRole(telegramId: string, role: UserRoles) {
     const user = await this.findUserByTelegramId(telegramId);
@@ -181,7 +179,6 @@ export class UsersService {
       data: { language },
     });
   }
-
 
   async generateMockUsers(count: number = 20) {
     const users = [];
@@ -217,6 +214,49 @@ export class UsersService {
       where: { telegramId },
       data: { username }
     });
+  }
+
+  async getUserDetailedProfile(userId: string) {
+    return await this.database.user.findUnique({
+      where: { id: userId },
+      include: {
+        UsersConfig: true,
+        ScamForms: {
+          include: {
+            scammer: true
+          }
+        }
+        // ScamForms: {
+        //   where: {
+        //     scammer: {
+        //       marked: true
+        //       // status: ScammerStatus.SCAMMER
+        //     }
+        //   }
+        // },
+      }
+    });
+  }
+
+
+  async getTopUsersWithScamForms() {
+    return await this.database.user.findMany({
+      take: 10,
+      orderBy: {
+        ScamForms: {
+          _count: 'desc',
+        }
+      },
+      include: {
+        ScamForms: {
+          where: {
+            scammer: {
+              marked: true
+            }
+          }
+        }
+      }
+    })
   }
 
 }

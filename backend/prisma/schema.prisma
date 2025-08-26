@@ -78,6 +78,14 @@ model Garants {
   updatedAt DateTime @updatedAt
 }
 
+model TwinAccount {
+  id String @id @default(uuid())
+  username String
+  telegramId String
+  scammerId String
+  scammer Scammer @relation(fields: [scammerId], references: [id])
+}
+
 model Scammer {
   id         String  @id @default(uuid())
   username   String?
@@ -86,6 +94,8 @@ model Scammer {
   description String?
 
   scamForms ScamForm[]
+  
+  twinAccounts TwinAccount[]
 
   likes    Int @default(0)
   dislikes Int @default(0)
