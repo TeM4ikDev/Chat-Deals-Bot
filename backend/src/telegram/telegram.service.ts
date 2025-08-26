@@ -98,7 +98,7 @@ export class TelegramService implements OnModuleInit {
 
     setTimeout(async () => {
       try {
-        await ctx.deleteMessage(ctx.message.message_id);
+        if(ctx.message.message_id) await ctx.deleteMessage(ctx.message.message_id);
         await ctx.deleteMessage(message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
@@ -116,7 +116,7 @@ export class TelegramService implements OnModuleInit {
 
     setTimeout(async () => {
       try {
-        await ctx.deleteMessage(ctx.message.message_id);
+        if(ctx.message.message_id) await ctx.deleteMessage(ctx.message.message_id);
         await ctx.deleteMessage(message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
