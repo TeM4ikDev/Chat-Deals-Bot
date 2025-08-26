@@ -94,7 +94,7 @@ export class TelegramService implements OnModuleInit {
       ...options
     });
 
-    if (!await this.checkIsMessageNotPrivate(ctx)) return
+    // if (!await this.checkIsMessageNotPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
@@ -112,7 +112,7 @@ export class TelegramService implements OnModuleInit {
 
     const message = mediaType === 'photo' ? await ctx.replyWithPhoto(source, options) : await ctx.replyWithVideo(source, options);
 
-    if (!await this.checkIsMessageNotPrivate(ctx)) return
+    // if (!await this.checkIsMessageNotPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
