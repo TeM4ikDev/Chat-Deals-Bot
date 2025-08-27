@@ -98,8 +98,8 @@ export class TelegramService implements OnModuleInit {
 
     setTimeout(async () => {
       try {
-        if(ctx.message.message_id) await ctx.deleteMessage(ctx.message.message_id);
         await ctx.deleteMessage(message.message_id);
+        if(ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
       }
@@ -110,14 +110,14 @@ export class TelegramService implements OnModuleInit {
 
   async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000) {
 
-    const message = mediaType === 'photo' ? await ctx.replyWithPhoto(source, options) : await ctx.replyWithVideo(source, options);
+    const message = mediaType === 'photo' ? await ctx.replyWithPhoto(source, {parse_mode: 'Markdown', ...options}) : await ctx.replyWithVideo(source, {parse_mode: 'Markdown', ...options});
 
     // if (!await this.checkIsMessageNotPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
-        if(ctx.message.message_id) await ctx.deleteMessage(ctx.message.message_id);
         await ctx.deleteMessage(message.message_id);
+        if(ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
       }

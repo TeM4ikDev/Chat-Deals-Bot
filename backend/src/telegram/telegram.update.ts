@@ -44,6 +44,8 @@ export class TelegramUpdate {
     console.log('message', message)
     const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
+    console.log(newUser)
+
     const userLink = newMember.username
       ? `[${this.telegramService.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
       : `[${this.telegramService.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
