@@ -204,7 +204,7 @@ export class ChatCommandsUpdate {
         }
 
         const scammer = await this.scamformService.getScammerByQuery(query);
-        if (await this.checkCustomUserInfo(ctx, scammer.username)) return;
+        if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
         if (await this.checkIsGarant(query)) {
             const garant = await this.userService.findGarantByUsername(query)
@@ -294,7 +294,7 @@ export class ChatCommandsUpdate {
         console.log(queryFind, 'queryFind')
 
         const scammer = await this.scamformService.findOrCreateScammer(queryFind);
-        if (await this.checkCustomUserInfo(ctx, scammer.username)) return;
+        if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
         if (!statusText) {
             if (!scammer) {
@@ -354,7 +354,7 @@ export class ChatCommandsUpdate {
         }
 
 
-        if (await this.checkCustomUserInfo(ctx, scammer.username)) return;
+        if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
         const escapedUsername = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
         const telegramId = scammer.telegramId || '--';

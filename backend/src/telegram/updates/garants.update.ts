@@ -31,26 +31,7 @@ export class GarantsUpdate {
             const number = index + 1
             const description = garant.description || this.localizationService.getT('garant.defaultDescription', lang)
 
-            // Экранируем специальные символы Markdown
-            const escapedDescription = description
-                .replace(/\*/g, '\\*')
-                .replace(/_/g, '\\_')
-                .replace(/`/g, '\\`')
-                .replace(/\[/g, '\\[')
-                .replace(/\]/g, '\\]')
-                .replace(/\(/g, '\\(')
-                .replace(/\)/g, '\\)')
-                .replace(/#/g, '\\#')
-                .replace(/\+/g, '\\+')
-                .replace(/-/g, '\\-')
-                .replace(/=/g, '\\=')
-                .replace(/\|/g, '\\|')
-                .replace(/\{/g, '\\{')
-                .replace(/\}/g, '\\}')
-                .replace(/\./g, '\\.')
-                .replace(/!/g, '\\!')
-
-            return `🔸 ${number}. @${garant.username}\n   ${escapedDescription}`
+            return `🔸 ${number}. @${this.telegramService.escapeMarkdown(garant.username)}\n   ${this.telegramService.escapeMarkdown(description)}`
         }).join('\n\n')
 
         const totalCount = garants.length
@@ -68,7 +49,7 @@ export class GarantsUpdate {
 
         const message = stat.map((user, index) => {
             const number = index + 1
-            return `🔸 ${number}. @${user.username} ${user.ScamForms.length}`
+            return `🔸 ${number}. @${this.telegramService.escapeMarkdown(user.username)} ${user.ScamForms.length}`
         }).join('\n')
 
         this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)

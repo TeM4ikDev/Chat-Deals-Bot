@@ -51,10 +51,8 @@ export class BusinessModeUpdate {
         const chat = msg.chat;
         const chatId = chat.id;
 
-        // Сохраняем сообщение в историю
         await this.saveMessageToHistory(msg, chatId);
 
-        // Обрабатываем команды
         if (msg.text === 'инфо') {
             await this.sendUserInfo(ctx, chat, msg);
         } else if (msg.text === 'история') {

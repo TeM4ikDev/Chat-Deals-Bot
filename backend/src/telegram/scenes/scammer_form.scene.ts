@@ -41,7 +41,7 @@ export class ScammerFrom {
     private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
 
     private language: string = 'ru';
-    private min_media = 0
+    private min_media = 1
     private max_media = 10
 
     private static readonly KEYBOARDS = {
