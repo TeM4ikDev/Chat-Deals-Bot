@@ -88,9 +88,12 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMessage(telegramId, message, options)
   }
 
-  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 8000) {
+  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 15000) {
     const message = await ctx.reply(text, {
       parse_mode: 'Markdown',
+      link_preview_options: {
+        is_disabled: true,
+      },
       ...options
     });
 
@@ -99,7 +102,7 @@ export class TelegramService implements OnModuleInit {
     setTimeout(async () => {
       try {
         await ctx.deleteMessage(message.message_id);
-        if(ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
+        if (ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
       }
@@ -110,14 +113,26 @@ export class TelegramService implements OnModuleInit {
 
   async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000) {
 
-    const message = mediaType === 'photo' ? await ctx.replyWithPhoto(source, {parse_mode: 'Markdown', ...options}) : await ctx.replyWithVideo(source, {parse_mode: 'Markdown', ...options});
+    const message = mediaType === 'photo' ?
+      await ctx.replyWithPhoto(source, {
+        parse_mode: 'MarkdownV2',
+        link_preview_options: {
+          is_disabled: true,
+        }, ...options
+      })
+      : await ctx.replyWithVideo(source, {
+        parse_mode: 'MarkdownV2',
+        link_preview_options: {
+          is_disabled: true,
+        }, ...options
+      });
 
     // if (!await this.checkIsMessageNotPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
         await ctx.deleteMessage(message.message_id);
-        if(ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
+        if (ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
       } catch (error: any) {
         console.log('Не удалось удалить сообщение:', error.message);
       }
@@ -253,9 +268,8 @@ export class TelegramService implements OnModuleInit {
   }
 
 
-  formatUserInfo(username?: string, telegramId?: string, language: string = 'ru'): string {
-
-    const escapedUsername = this.escapeMarkdown(username)
+  formatUserInfo(username?: string, telegramId?: string, language: string = 'ru', escapeMarkdown: boolean = true): string {
+    const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
     if (username && telegramId) {
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
         .replace('{username}', escapedUsername)
@@ -274,7 +288,7 @@ export class TelegramService implements OnModuleInit {
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
     if (twinAccounts.length === 0) return '—';
-    return twinAccounts.map(twin => `• ${this.formatUserInfo(twin.username, twin.telegramId)}`).join('\n');
+    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin.username, twin.telegramId, 'ru', false))}`).join('\n')
   }
 
   encodeParams(payload: {}) {
@@ -296,7 +310,7 @@ export class TelegramService implements OnModuleInit {
 
   escapeMarkdown(text: string): string {
     if (!text) return text;
-    return text.replace(/[_*[\]()~`>#+=|{}-]/g, '\\$&');
+    return text.replace(/[_*[\]~`>#+=|{}-]/g, '\\$&');
   }
 
   formatUserLink(id: number | string, firstName: string, username?: string): string {

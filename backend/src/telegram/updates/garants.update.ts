@@ -49,7 +49,8 @@ export class GarantsUpdate {
 
         const message = stat.map((user, index) => {
             const number = index + 1
-            return `🔸 ${number}. @${this.telegramService.escapeMarkdown(user.username)} ${user.ScamForms.length}`
+            const isUsername = user.username ? `[${this.telegramService.escapeMarkdown(user.firstName)}](https://t.me/${user.username})` : this.telegramService.escapeMarkdown(user.firstName)
+            return `🔸 ${number}. ${isUsername} ${user.ScamForms.length}`
         }).join('\n')
 
         this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)

@@ -47,6 +47,8 @@ export class BusinessModeUpdate {
     async onBusinessMessage(@Ctx() ctx: Context) {
         const msg = (ctx.update as any).business_message;
 
+        console.log(msg)
+
         const from = msg.from;
         const chat = msg.chat;
         const chatId = chat.id;
@@ -55,11 +57,11 @@ export class BusinessModeUpdate {
 
         if (msg.text === 'инфо') {
             await this.sendUserInfo(ctx, chat, msg);
-        } else if (msg.text === 'история') {
-            await this.exportChatHistory(ctx, chatId, msg.business_connection_id);
-        } else if (msg.text === 'очистить') {
-            await this.clearChatHistory(ctx, chatId, msg.business_connection_id);
         }
+        else if (msg.text === 'история') {
+            await this.exportChatHistory(ctx, chatId, msg.business_connection_id);
+        }
+
     }
 
     private async saveMessageToHistory(msg: any, chatId: number) {
@@ -71,7 +73,7 @@ export class BusinessModeUpdate {
         }
 
         const history = chatHistories.get(chatId)!;
-        
+
         const message: ChatMessage = {
             messageId: msg.message_id,
             from: msg.from,
@@ -118,7 +120,7 @@ Username: @${chat.username || 'нет'}
 
     private async exportChatHistory(ctx: Context, chatId: number, businessConnectionId: string) {
         const history = chatHistories.get(chatId);
-        
+
         if (!history || history.messages.length === 0) {
             await ctx.telegram.callApi('sendMessage', {
                 business_connection_id: businessConnectionId,
@@ -132,7 +134,7 @@ Username: @${chat.username || 'нет'}
             // Создаем текстовый файл с историей
             const chatInfo = history.messages[0]?.from;
             const fileName = `chat_history_${chatInfo?.username || chatInfo?.id}_${Date.now()}.txt`;
-            
+
             let fileContent = `=== ИСТОРИЯ ЧАТА ===\n`;
             fileContent += `Пользователь: ${chatInfo?.first_name || ''} ${chatInfo?.last_name || ''}\n`;
             fileContent += `Username: @${chatInfo?.username || 'нет'}\n`;
@@ -143,9 +145,9 @@ Username: @${chat.username || 'нет'}
             history.messages.forEach((msg, index) => {
                 const date = new Date(msg.timestamp).toLocaleString('ru-RU');
                 const sender = msg.from.first_name || msg.from.username || msg.from.id;
-                
+
                 fileContent += `[${date}] ${sender}:\n`;
-                
+
                 if (msg.text) {
                     fileContent += `${msg.text}\n`;
                 } else if (msg.photo) {
@@ -187,42 +189,7 @@ Username: @${chat.username || 'нет'}
         }
     }
 
-    private async clearChatHistory(ctx: Context, chatId: number, businessConnectionId: string) {
-        const history = chatHistories.get(chatId);
-        
-        if (history) {
-            const messageCount = history.messages.length;
-            chatHistories.delete(chatId);
-            
-            await ctx.telegram.callApi('sendMessage', {
-                business_connection_id: businessConnectionId,
-                chat_id: chatId,
-                text: `🗑️ История чата очищена (удалено ${messageCount} сообщений)`,
-            } as any);
-        } else {
-            await ctx.telegram.callApi('sendMessage', {
-                business_connection_id: businessConnectionId,
-                chat_id: chatId,
-                text: '📭 История чата уже пуста',
-            } as any);
-        }
-    }
 
-    // Метод для получения статистики по всем чатам
-    getChatStatistics() {
-        const stats = [];
-        for (const [chatId, history] of chatHistories.entries()) {
-            stats.push({
-                chatId,
-                messageCount: history.messages.length,
-                lastMessageTime: history.messages.length > 0 ? 
-                    new Date(history.messages[history.messages.length - 1].timestamp) : null,
-                lastExportTime: history.lastExportTime ? 
-                    new Date(history.lastExportTime) : null
-            });
-        }
-        return stats;
-    }
 }
 
 

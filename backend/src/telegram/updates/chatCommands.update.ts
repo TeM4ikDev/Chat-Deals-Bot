@@ -234,7 +234,8 @@ export class ChatCommandsUpdate {
         }
 
         await this.scamformService.updateScammer(scammer.id, { description })
-        await this.telegramService.replyWithAutoDelete(ctx, `Описание пользователя (@${scammer.username || scammer.telegramId || 'без username'}) обновлено`)
+        const scammerInfo = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username')
+        await this.telegramService.replyWithAutoDelete(ctx, `Описание пользователя (@${scammerInfo}) обновлено`)
     }
 
     private async handleCheckCommand(ctx: Context, query: string, lang: string) {
@@ -301,7 +302,9 @@ export class ChatCommandsUpdate {
                 await this.telegramService.replyWithAutoDelete(ctx, 'Пользователь не найден.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр');
                 return;
             }
-            await this.telegramService.replyWithAutoDelete(ctx, `Статус @${scammer.username || scammer.telegramId || 'без username'} ${scammer.status}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр`);
+            const scammerInfo = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username'    )
+
+            await this.telegramService.replyWithAutoDelete(ctx, `Статус @${scammerInfo} ${scammer.status}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр`);
             return;
         }
 
@@ -331,7 +334,8 @@ export class ChatCommandsUpdate {
         });
 
         if (result.isSuccess && result.scammer) {
-            await this.telegramService.replyWithAutoDelete(ctx, `Статус пользователя (@${result.scammer.username || scammer.username}) изменен на ${result.scammer.status}`);
+            const scammerInfo = this.telegramService.escapeMarkdown(result.scammer.username || result.scammer.telegramId || 'без username')
+            await this.telegramService.replyWithAutoDelete(ctx, `Статус пользователя (@${scammerInfo}) изменен на ${result.scammer.status}`);
         }
     }
 
@@ -400,16 +404,16 @@ export class ChatCommandsUpdate {
     async checkCustomUserInfo(ctx: Context, username?: string): Promise<boolean> {
         if (!username) return false;
         username = username.replace('@', '');
-    
+
         switch (username) {
             case 'TeM4ik20':
                 await this.handleCustomInfo(ctx, CUSTOM_INFO.PROGRAMMER_INFO, IMAGE_PATHS.PROGRAMMER, 'video');
                 return true;
-    
+
             case 'svdbasebot':
                 await this.handleCustomInfo(ctx, CUSTOM_INFO.BOT_INFO, IMAGE_PATHS.BOT, 'photo');
                 return true;
-    
+
             default:
                 return false;
         }

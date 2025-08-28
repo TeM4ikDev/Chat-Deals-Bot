@@ -80,8 +80,10 @@ model Garants {
 
 model TwinAccount {
   id String @id @default(uuid())
-  username String
-  telegramId String
+
+  username String?
+  telegramId String?
+
   scammerId String
   scammer Scammer @relation(fields: [scammerId], references: [id])
 }
