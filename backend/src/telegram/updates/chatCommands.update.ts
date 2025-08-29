@@ -380,7 +380,6 @@ export class ChatCommandsUpdate {
                     .replace('{description}', description)
                     .replace('{twinAccounts}', twinAccounts)
                     .replace('{link}', link),
-                parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
                         [{

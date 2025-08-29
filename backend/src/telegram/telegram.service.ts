@@ -115,13 +115,13 @@ export class TelegramService implements OnModuleInit {
 
     const message = mediaType === 'photo' ?
       await ctx.replyWithPhoto(source, {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'Markdown',
         link_preview_options: {
           is_disabled: true,
         }, ...options
       })
       : await ctx.replyWithVideo(source, {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'Markdown',
         link_preview_options: {
           is_disabled: true,
         }, ...options
@@ -310,7 +310,7 @@ export class TelegramService implements OnModuleInit {
 
   escapeMarkdown(text: string): string {
     if (!text) return text;
-    return text.replace(/[_*[\]~`>#+=|{}-]/g, '\\$&');
+    return text.replace(/[_*[\]()~`>#+=|{}.]/g, '\\$&');
   }
 
   formatUserLink(id: number | string, firstName: string, username?: string): string {

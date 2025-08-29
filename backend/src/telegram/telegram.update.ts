@@ -67,7 +67,7 @@ export class TelegramUpdate {
         parse_mode: 'Markdown',
         link_preview_options: { is_disabled: true }
       },
-      15000
+      30000
     );
   }
 
