@@ -120,7 +120,7 @@ export class TelegramService implements OnModuleInit {
       ...options
     });
 
-    if (await this.checkIsChatPrivate(ctx)) return
+    // if (await this.checkIsChatPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
@@ -150,7 +150,7 @@ export class TelegramService implements OnModuleInit {
         }, ...options
       });
 
-    if (await this.checkIsChatPrivate(ctx)) return
+    // if (await this.checkIsChatPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
