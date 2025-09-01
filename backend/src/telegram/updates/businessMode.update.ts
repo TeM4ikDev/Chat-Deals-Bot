@@ -290,10 +290,11 @@ export class BusinessModeUpdate {
         console.log(Array.from(chatHistories.values())[1])
         const userChats = Array.from(chatHistories.values()).filter(chat => chat.userTelegramId == ctx.chat.id).map(chat => chat.chatUserInfo);
 
-
+        // TEM4iKTESTERBOT
+        // svdbasebot
         let replyText = ''
         userChats.forEach((chat, index) => {
-            replyText += `${index + 1}. ${this.telegramService.formatUserLink(chat.id, chat.first_name, chat.username)} [просмотреть действия](https://t.me/TEM4iKTESTERBOT?start=chatActions_${chat.id}) \n`
+            replyText += `${index + 1}. ${this.telegramService.formatUserLink(chat.id, chat.first_name, chat.username)} [просмотреть действия](https://t.me/svdbasebot?start=chatActions_${chat.id}) \n`
         })
 
         await ctx.reply(replyText || 'Не найдено чатов', {
