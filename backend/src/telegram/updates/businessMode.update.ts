@@ -42,7 +42,7 @@ enum BusinessMemes {
     'бро' = 'https://t.me/botmemesbase/11',
     'мачомэн' = 'https://t.me/botmemesbase/12',
     'alex f' = 'https://t.me/botmemesbase/13',
-    'сегодня на занятом' = 'https://t.me/botmemesbase/15',
+    'сегодня на занятом' = 'https://t.me/botmemesbase/16',
     'нектаринки' = 'https://t.me/botmemesbase/17',
     'дикий огурец' = 'https://t.me/botmemesbase/18',
 
