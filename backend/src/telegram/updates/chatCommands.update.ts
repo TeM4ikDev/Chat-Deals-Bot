@@ -35,12 +35,20 @@ export class ChatCommandsUpdate {
     @On('message')
     async findUser(@Ctx() ctx: Context, @Language() lang: string) {
         const message = ctx.text?.trim().replace('@', '');
+        console.log(message)
+        console.log(ctx.message.chat)
         if (!message) return;
+
 
         const words = message.split(/\s+/).filter(word => word.length > 0);
         const command = words[0].toLowerCase();
 
         const commandData = words.slice(2).join(' ');
+
+        if(await this.telegramService.checkIsChatPrivate(ctx)) {
+            this.handleCheckCommand(ctx, words[0], lang);
+            return;
+        }
 
 
         if ('reply_to_message' in ctx.message && ctx.message.reply_to_message) {

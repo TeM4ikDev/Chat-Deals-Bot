@@ -14,7 +14,7 @@ import { ScamformModule } from '@/scamform/scamform.module';
 import { AppealForm } from './scenes/appeal_form.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
 import { TelegramUpdate } from './telegram.update';
-import { BusinessModeUpdate } from './updates/businessMode.update';
+import { BusinessModeUpdate, BusinessMessageUpdate } from './updates/businessMode.update';
 import { ChatCommandsUpdate } from './updates/chatCommands.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
@@ -25,8 +25,8 @@ import { MainMenuUpdate } from './updates/main-menu.update';
   imports: [
     ConfigModule,
     DatabaseModule,
-    forwardRef(() => AdminModule),
     JwtModule,
+    forwardRef(() => AdminModule),
     forwardRef(() => ScamformModule),
     forwardRef(() => UsersModule),
     TelegrafModule.forRootAsync({
@@ -45,7 +45,9 @@ import { MainMenuUpdate } from './updates/main-menu.update';
             'business_message' as any,
             'edited_business_message',
             'deleted_business_message',
-            'sender_business_bot'
+            'sender_business_bot',
+            'business_connection'
+
           ],
           dropPendingUpdates: true,
         },
@@ -62,11 +64,14 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     LocalizationService,
     ScammerFrom,
     AppealForm,
+    
+    BusinessMessageUpdate,
+    BusinessModeUpdate,
+
+    ChatCommandsUpdate,
     TelegramService,
     TelegramUpdate,
-    ChatCommandsUpdate,
-    BusinessModeUpdate,
   ],
-  exports: [TelegramService, LocalizationService, BusinessModeUpdate]
+  exports: [TelegramService, LocalizationService, BusinessModeUpdate, BusinessMessageUpdate]
 })
 export class TelegramModule { }

@@ -7,10 +7,11 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, Scammer, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
-import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo } from 'telegraf/typings/core/types/typegram';
+import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
 import { BOT_NAME } from './constants/telegram.constants';
 import { LocalizationService } from './services/localization.service';
-
+import { AdminService } from '@/admin/admin.service';
+import { BusinessModeUpdate } from './updates/businessMode.update';
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
@@ -19,11 +20,14 @@ export class TelegramService implements OnModuleInit {
     @Inject('DEFAULT_BOT_NAME') private readonly botName: string,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
-    private readonly database: DatabaseService,
     private readonly configService: ConfigService,
     private readonly scamformService: ScamformService,
-    private readonly localizationService: LocalizationService
+    private readonly localizationService: LocalizationService,
+    @Inject(forwardRef(() => AdminService))
+    private readonly adminService: AdminService,
 
+    // @Inject(forwardRef(() => BusinessModeUpdate))
+    private readonly businessModeUpdate: BusinessModeUpdate
   ) { }
 
   private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
@@ -35,9 +39,28 @@ export class TelegramService implements OnModuleInit {
     });
   }
 
+  async checkStartPayload(ctx: Context): Promise<boolean> {
+    const startPayload = (ctx as any).startPayload
+    if (!startPayload) return false
 
-  async checkIsMessageNotPrivate(ctx: Context): Promise<boolean> {
-    return ctx.message.chat.type !== 'private'
+    const command = startPayload.split('_')[0]
+    const commandData: string = startPayload.split('_')[1]
+   
+   switch (command) {
+    case 'chatActions':
+      console.log(commandData)
+      await this.businessModeUpdate.onChatActions(ctx, Number(commandData))
+      await ctx.deleteMessage()
+      return true
+    default:
+      return false
+   }
+
+    return false
+  }
+
+  async checkIsChatPrivate(ctx: Context): Promise<boolean> {
+    return ctx.message.chat.type === 'private'
   }
 
   async uploadFilesGroup(files: any[]): Promise<Array<{ type: string; file_id: string }>> {
@@ -97,7 +120,7 @@ export class TelegramService implements OnModuleInit {
       ...options
     });
 
-    // if (!await this.checkIsMessageNotPrivate(ctx)) return
+    if (await this.checkIsChatPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
@@ -127,7 +150,7 @@ export class TelegramService implements OnModuleInit {
         }, ...options
       });
 
-    // if (!await this.checkIsMessageNotPrivate(ctx)) return
+    if (await this.checkIsChatPrivate(ctx)) return
 
     setTimeout(async () => {
       try {
@@ -141,6 +164,15 @@ export class TelegramService implements OnModuleInit {
 
   async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
     return await this.bot.telegram.sendMessage(channelId, message, options)
+  }
+
+  // async sendBusinessMessage(ctx: Context, string, message: string, options?: any) {
+  //   return await ctx.telegram.send.(channelId, message, options)
+  // }
+
+
+  async forwardMessage(channelId: string, fromChatId: string, messageId: number) {
+    return await this.bot.telegram.forwardMessage(channelId, fromChatId, messageId)
   }
 
   async forwardMessageToChannel(channelId: string, fromChatId: string, messageId: number) {
@@ -181,7 +213,6 @@ export class TelegramService implements OnModuleInit {
       parse_mode: 'Markdown',
     })
   }
-
 
   private async handleInlineQuery(ctx: Context) {
     const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
@@ -267,7 +298,6 @@ export class TelegramService implements OnModuleInit {
     await ctx.answerInlineQuery(results);
   }
 
-
   formatUserInfo(username?: string, telegramId?: string, language: string = 'ru', escapeMarkdown: boolean = true): string {
     const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
     if (username && telegramId) {
@@ -284,7 +314,6 @@ export class TelegramService implements OnModuleInit {
       return this.localizationService.getT('userInfo.noInfo', language);
     }
   }
-
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
     if (twinAccounts.length === 0) return '—';
@@ -322,7 +351,6 @@ export class TelegramService implements OnModuleInit {
 
     return `${userLink} (ID: \`${id}\`)`;
   }
-
 
   async banScammerFromGroup(scammer: Scammer) {
     try {
@@ -363,8 +391,6 @@ export class TelegramService implements OnModuleInit {
     }
   }
 
-
-
   async unbanScammerFromGroup(scammer: Scammer) {
     try {
       console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
@@ -379,7 +405,6 @@ export class TelegramService implements OnModuleInit {
       console.error('Error unbanning scammer:', error);
     }
   }
-
 
   async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
     const { fromUser, scamForm, scammerData } = messageData
@@ -437,6 +462,39 @@ export class TelegramService implements OnModuleInit {
     }
   }
 
+  async sendNewUserMessage(ctx: Context, newMember: User) {
+    console.log('sendNewUserMessage', ctx.chat)
+    const chatUsername = (ctx as any).chat.username
 
+    const message = await this.adminService.findMessageByChatUsername(chatUsername)
+    if (!message) return
+    console.log('message', message)
+    const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
+    console.log(newUser)
+
+    const userLink = newMember.username
+      ? `[${this.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
+      : `[${this.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
+
+    const userInfo = message.showNewUserInfo ?
+      `• Статус: \`${newUser.status}\`\n` +
+      `• Количество жалоб: \`${newUser.scamForms.length || 0}\`\n\n` : ''
+
+    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})\n\n` : ''
+
+    await this.replyWithAutoDelete(ctx,
+      `👋 Привет, ${userLink}!\n` +
+      `🎉 Добро пожаловать в @${this.escapeMarkdown(chatUsername)}!\n\n` +
+      `${this.escapeMarkdown(message.message || '')}\n\n` +
+      userInfo +
+      userRulesLink +
+      "разработчик бота: @Tem4ik20",
+      {
+        parse_mode: 'Markdown',
+        link_preview_options: { is_disabled: true }
+      },
+      30000
+    );
+  }
 }

@@ -18,8 +18,6 @@ export class TelegramUpdate {
     protected readonly configService: ConfigService,
     protected readonly userService: UsersService,
     private readonly scamformService: ScamformService,
-    private readonly localizationService: LocalizationService,
-    private readonly adminService: AdminService,
   ) { }
 
   @On('chat_member')
@@ -31,44 +29,8 @@ export class TelegramUpdate {
     const newStatus = chatMember.new_chat_member.status;
 
     if (oldStatus === 'left' && newStatus === 'member' && !newMember.is_bot) {
-      await this.sendNewUserMessage(ctx, newMember)
+      await this.telegramService.sendNewUserMessage(ctx, newMember)
     }
-  }
-
-  private async sendNewUserMessage(ctx: Context, newMember: User) {
-    console.log('sendNewUserMessage', ctx.chat)
-    const chatUsername = (ctx as any).chat.username
-
-    const message = await this.adminService.findMessageByChatUsername(chatUsername)
-    if (!message) return
-    console.log('message', message)
-    const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
-
-    console.log(newUser)
-
-    const userLink = newMember.username
-      ? `[${this.telegramService.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
-      : `[${this.telegramService.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
-
-    const userInfo = message.showNewUserInfo ?
-      `• Статус: \`${newUser.status}\`\n` +
-      `• Количество жалоб: \`${newUser.scamForms.length || 0}\`\n\n` : ''
-
-    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})\n\n` : ''
-
-    await this.telegramService.replyWithAutoDelete(ctx,
-      `👋 Привет, ${userLink}!\n` +
-      `🎉 Добро пожаловать в @${this.telegramService.escapeMarkdown(chatUsername)}!\n\n` +
-      `${this.telegramService.escapeMarkdown(message.message || '')}\n\n` +
-      userInfo +
-      userRulesLink +
-      "разработчик бота: @Tem4ik20",
-      {
-        parse_mode: 'Markdown',
-        link_preview_options: { is_disabled: true }
-      },
-      30000
-    );
   }
 
   // ___________

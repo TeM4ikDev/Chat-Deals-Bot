@@ -22,10 +22,13 @@ export class MainMenuUpdate {
         private readonly scamformService: ScamformService,
     ) { }
 
-   
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
         const { user, isNew } = await this.userService.findOrCreateUser(ctx.from);
+
+
+        const handled = await this.telegramService.checkStartPayload(ctx)
+        if (handled) return
 
         if (isNew) {
             ctx.reply(this.localizationService.getT('mainMenu.welcome', language))
@@ -95,10 +98,7 @@ export class MainMenuUpdate {
     async onSubmitComplaint(@Ctx() ctx: Context, @Language() language: string) {
         await this.reportUser(ctx, language)
         await ctx.answerCbQuery();
-
     }
-
-   
 
     @Action('submit_appeal')
     async onSubmitAppealAction(@Ctx() ctx: Context, @Language() language: string) {
@@ -149,7 +149,4 @@ export class MainMenuUpdate {
 
         await this.onStart(ctx, language)
     }
-
-
-
 }

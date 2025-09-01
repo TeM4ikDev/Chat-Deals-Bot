@@ -1,86 +1,122 @@
+import { ActionParam, ActionWithData, getActionParams } from '@/decorators/telegram.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
+import { ChatHistory, ChatMessage, PhotoMessage, TextMessage, VideoMessage } from '@/types/businessChat';
+import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
+import { forwardRef, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Ctx, On, Update } from 'nestjs-telegraf';
+import { Action, Command, Ctx, On, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
+import path from 'path';
+import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
 
-
-interface ITelegramUser {
-    id: number;
-    is_bot: boolean;
-    first_name: string;
-    username?: string;
-    is_premium?: boolean;
+interface ExtendedBusinessVideoMessageOptions extends Message.VideoMessage {
+    parse_mode: ParseMode;
+    business_connection_id: string;
+    message_id: number;
+    reply_to_message_id: number;
+    chat: Chat;
 }
 
-interface ChatMessage {
-    messageId: number;
-    from: ITelegramUser;
-    date: number;
-    businessConnectionId?: string;
-
-    type: 'text' | 'photo' | 'video';
+interface BusinessMessage extends Message.TextMessage {
+    business_connection_id: string;
 }
 
-interface TextMessage extends ChatMessage {
-    text: string;
-    editedHistory: string[];
+interface BusinessContext extends Context {
+    update: UpdateType & {
+        business_message?: BusinessMessage;
+    };
+    // business_message: BusinessMessage;
+
 }
 
-interface PhotoMessage extends ChatMessage {
-    file_id: string;
-    media_group_id?: string;
-    caption?: string;
+enum BusinessMemes {
+    'рассказывай' = 'https://t.me/botmemesbase/3',
+    'нет!' = 'https://t.me/botmemesbase/4',
+    'мне лень фиксить' = 'https://t.me/botmemesbase/6',
+    'доброе утро' = 'https://t.me/botmemesbase/8',
+    'иди нахуй' = 'https://t.me/botmemesbase/9',
+    'орешки биг боб' = 'https://t.me/botmemesbase/10',
+    'бро' = 'https://t.me/botmemesbase/11',
+    'мачомэн' = 'https://t.me/botmemesbase/12',
+    'alex f' = 'https://t.me/botmemesbase/13',
+    'сегодня на занятом' = 'https://t.me/botmemesbase/15',
+    'нектаринки' = 'https://t.me/botmemesbase/17',
+    'дикий огурец' = 'https://t.me/botmemesbase/18',
+
 }
 
-interface VideoMessage extends ChatMessage {
-    file_id: string;
-    media_group_id?: string;
-    caption?: string;
-}
 
-
-interface ChatHistory {
-    chatId: number;
-    messages: ChatMessage[];
-    lastExportTime?: number;
-}
-
+const telegramIdsWithBusinessBot = new Set<number>([1360482307, 2027571609]);
 const chatHistories = new Map<number, ChatHistory>();
 
+chatHistories.set(1360482307, {
+    userTelegramId: 2027571609,
+    chatUserInfo: {
+        id: 1360482307,
+        first_name: 'Bruklin',
+        username: 'bruklinzz',
+    },
+    messages: [
+
+    ],
+});
+
 @Update()
-export class BusinessModeUpdate {
+export class BusinessMessageUpdate {
     constructor(
+        @Inject(forwardRef(() => TelegramService))
         protected readonly telegramService: TelegramService,
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
-        private readonly scamFormService: ScamformService,
     ) { }
 
+    //     id: 'EgCyyIuTmEktEAAARkFNHRnPEzQ',
+    //     user: {
+    //       id: 2027571609,
+    //       is_bot: false,
+    //       first_name: 'Artem',
+    //       username: 'TeM4ik20',
+    //       language_code: 'ru',
+    //       is_premium: true
+    //     },
+    //     user_chat_id: 2027571609,
+    //     date: 1756563297,
+    //     is_enabled: true,
+    //     can_reply: false,
+    //     rights: {}
+    //   }
 
+    @On('business_connection' as any)
+    async onBusinessConnection(@Ctx() ctx: Context) {
+        const msg = (ctx.update as any).business_connection;
+        console.log(msg)
 
-    // @On('sender_business_bot' as any)
-    // async onSenderBusinessBot(@Ctx() ctx: Context) {
-    //     console.log(ctx)
-    // }
-
+        if (msg.is_enabled) {
+            ctx.telegram.sendMessage(msg.user_chat_id, 'Спасибо за подключение бизнес бота, пупсик')
+            telegramIdsWithBusinessBot.add(msg.user_chat_id);
+        } else {
+            ctx.telegram.sendMessage(msg.user_chat_id, 'Бизнес бот отключен, я злой')
+            telegramIdsWithBusinessBot.delete(msg.user_chat_id);
+        }
+    }
 
     @On('business_message' as any)
-    async onBusinessMessage(@Ctx() ctx: Context) {
+    async onBusinessMessage(@Ctx() ctx: BusinessContext) {
         // console.log(ctx)
 
-        const msg = (ctx.update as any).business_message;
-        const chat = msg.chat;
+        const msg = ctx.update.business_message;
+        const chat = msg.chat as ITelegramUser;
         const chatId = chat.id;
 
+        // console.log(msg)
         const handleMessage = await this.handleBusinessMessage(ctx, msg, chatId);
-        console.log('handleMessage', handleMessage)
         if (handleMessage) return
 
-        await this.saveMessageToHistory(msg, chatId);
+        await this.saveMessageToHistory(msg, chat);
     }
 
     @On('edited_business_message' as any)
@@ -94,31 +130,64 @@ export class BusinessModeUpdate {
         console.log(ctx)
     }
 
-    private async handleBusinessMessage(ctx: Context, msg: any, chatId: number): Promise<boolean> {
+    private async handleBusinessMessage(ctx: BusinessContext, msg: any, chatId: number): Promise<boolean> {
         if (!msg.text) return false;
+        console.log(msg.from.id, msg.chat.id)
+        if (!telegramIdsWithBusinessBot.has(msg.from.id) || msg.from.id == msg.chat.id) return false;
 
         const commandText = msg.text.toLowerCase();
+
+        await this.handleBusinessMemes(ctx, msg);
+
+
         switch (commandText) {
             case 'инфо':
                 await this.sendUserInfo(ctx, msg);
                 return true;
-            case 'история':
-                await this.exportChatHistory(ctx, chatId, msg.business_connection_id);
+
+            case 'мемы':
+                const memes = Object.keys(BusinessMemes);
+                let memesText: string = 'Выберите мем(просто отправьте название):\n\n';
+                memes.forEach((meme, index) => {
+                    memesText += `[${index + 1}. ${meme}](${BusinessMemes[meme]})\n`;
+                });
+                await this.sendChatTextMessage(ctx, memesText);
+                return true;
 
             default: return false;
         }
+
     }
 
+    async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
+        const commandText = msg.text.toLowerCase();
+        if (BusinessMemes[commandText]) {
+            await this.sendMedia(ctx, BusinessMemes[commandText], msg);
+        }
+    }
 
-    private async saveMessageToHistory(msg: any, chatId: number) {
-        if (!chatHistories.has(chatId)) {
-            chatHistories.set(chatId, {
-                chatId,
+    private async saveMessageToHistory(msg: any, chat: ITelegramUser) {
+        // console.log(chat.id)
+        if (!chatHistories.has(chat.id)) {
+            chatHistories.set(chat.id, {
+                userTelegramId: null,
+                chatUserInfo: chat,
                 messages: []
             });
         }
 
-        const history = chatHistories.get(chatId);
+        const history = chatHistories.get(chat.id);
+
+        if (!history.userTelegramId) {
+            let userTelegramId = null;
+            if (msg.from.id != msg.chat.id) {
+                userTelegramId = msg.from.id;
+            }
+
+            console.log(userTelegramId)
+            history.userTelegramId = userTelegramId;
+        }
+
 
         let message: ChatMessage = {
             messageId: msg.message_id,
@@ -153,7 +222,8 @@ export class BusinessModeUpdate {
             } as VideoMessage;
         }
 
-        console.log(message);
+
+
 
         history.messages.push(message);
 
@@ -161,10 +231,29 @@ export class BusinessModeUpdate {
         //     history.messages = history.messages.slice(-1000);
         // }
 
-        console.log(`Сообщение сохранено для чата ${chatId}. Всего сообщений: ${history.messages.length}`);
+        console.log(`Сообщение сохранено для чата ${chat.id}. Всего сообщений: ${history.messages.length}`);
     }
 
-    private async sendUserInfo(ctx: Context, msg: any) {
+
+    private async sendChatTextMessage(ctx: BusinessContext, text: string) {
+
+        // console.log(ctx)
+        ctx.telegram.sendMessage(ctx.update.business_message.chat.id, text, {
+            business_connection_id: ctx.update.business_message.business_connection_id,
+            parse_mode: 'Markdown',
+            link_preview_options: { is_disabled: true },
+        } as ExtendedBusinessVideoMessageOptions)
+    }
+
+    private async sendMedia(ctx: Context, source: string, msg: BusinessMessage) {
+        ctx.telegram.sendVideo(msg.chat.id, source, {
+            business_connection_id: msg.business_connection_id,
+            link_preview_options: { is_disabled: false },
+            reply_to_message_id: msg.message_id,
+        } as ExtendedBusinessVideoMessageOptions)
+    }
+
+    private async sendUserInfo(ctx: BusinessContext, msg: any) {
         const { from, chat } = msg;
 
         const info = `
@@ -176,21 +265,83 @@ Username: @${chat.username || 'нет'}
 `;
 
         await ctx.telegram.callApi('sendMessage', {
-            business_connection_id: (msg as any).business_connection_id,
+            business_connection_id: msg.business_connection_id,
             chat_id: chat.id,
             text: info,
         } as any);
     }
+}
 
-    private async exportChatHistory(ctx: Context, chatId: number, businessConnectionId: string) {
-        const history = chatHistories.get(chatId);
+@Update()
+export class BusinessModeUpdate {
+    constructor(
+        @Inject(forwardRef(() => TelegramService))
+        protected readonly telegramService: TelegramService,
+        protected readonly configService: ConfigService,
+        protected readonly userService: UsersService,
+        @Inject(forwardRef(() => ScamformService))
+        private readonly scamFormService: ScamformService,
+    ) { }
+
+    @Command('business_mode')
+    async onBusinessMode(@Ctx() ctx: Context) {
+        console.log(ctx.chat.id)
+
+        console.log(Array.from(chatHistories.values())[1])
+        const userChats = Array.from(chatHistories.values()).filter(chat => chat.userTelegramId == ctx.chat.id).map(chat => chat.chatUserInfo);
+
+
+        let replyText = ''
+        userChats.forEach((chat, index) => {
+            replyText += `${index + 1}. ${this.telegramService.formatUserLink(chat.id, chat.first_name, chat.username)} [просмотреть действия](https://t.me/TEM4iKTESTERBOT?start=chatActions_${chat.id}) \n`
+        })
+
+        await ctx.reply(replyText || 'Не найдено чатов', {
+            parse_mode: 'Markdown',
+            link_preview_options: { is_disabled: true }
+        })
+    }
+
+    async onChatActions(ctx: Context, exportChatId: number) {
+        const history = chatHistories.get(exportChatId);
+        if (!history) {
+            await ctx.reply('Чат не найден')
+            return
+        }
+
+        await ctx.reply(
+            `Чат: ${this.telegramService.formatUserLink(exportChatId, history.chatUserInfo.first_name, history.chatUserInfo.username)} \n` +
+            `Количество сообщений: ${history.messages.length}`,
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: 'Отправить жалобу', callback_data: `sendComplaint:${exportChatId}` }],
+                        [{ text: 'Скачать историю чата', callback_data: `downloadChat:${exportChatId}` }],
+                    ]
+                },
+                parse_mode: 'Markdown',
+                link_preview_options: { is_disabled: true }
+            })
+    }
+
+    @ActionWithData('sendComplaint')
+    async sendComplaint(@Ctx() ctx: Context, @ActionParam(0) exportChatId: number) {
+        await ctx.reply('Пока в разработке.....')
+        // await this.sendComplaint(ctx, parseInt(exportChatId));
+        await ctx.answerCbQuery();
+    }
+
+    @ActionWithData('downloadChat')
+    async downloadChat(@Ctx() ctx: Context, @ActionParam(0) exportChatId: string) {
+        await this.exportChatHistory(ctx, parseInt(exportChatId));
+        await ctx.answerCbQuery();
+    }
+
+    async exportChatHistory(ctx: Context, exportChatId: number) {
+        const history = chatHistories.get(exportChatId);
 
         if (!history || history.messages.length === 0) {
-            await ctx.telegram.callApi('sendMessage', {
-                business_connection_id: businessConnectionId,
-                chat_id: chatId,
-                text: '📭 История чата пуста',
-            } as any);
+            await ctx.reply('История чата пуста')
             return;
         }
 
@@ -220,7 +371,7 @@ Username: @${chat.username || 'нет'}
     <div class='chat-container'>`;
 
             for (const msg of history.messages) {
-                const alignment = msg.from.id !== chatId ? 'right' : 'left';
+                const alignment = msg.from.id !== exportChatId ? 'right' : 'left';
                 htmlContent += `<div class='message ${alignment}'>`;
                 htmlContent += `<div class='sender'>${msg.from.first_name || msg.from.username || 'Unknown'}</div>`;
                 htmlContent += await this.generateHtmlForMessage(msg);
@@ -230,244 +381,33 @@ Username: @${chat.username || 'нет'}
             htmlContent += `</div></body></html>`;
 
             const buffer = Buffer.from(htmlContent, 'utf-8');
-            await (ctx.telegram as any).sendDocument(
-                chatId,
-                { source: buffer, filename: 'chat_history.html' },
-                {
-                    business_connection_id: businessConnectionId,
-                    caption: `📄 История чата (${history.messages.length} сообщений)`
-                }
+            await ctx.telegram.sendDocument(ctx.chat.id, {
+                source: buffer,
+                filename: 'chat_history.html',
+
+            }, {
+                caption: `📄 История чата (${history.messages.length} сообщений)`
+
+            }
             );
-
-            history.lastExportTime = Date.now();
-
         } catch (error) {
-            console.error('Ошибка при экспорте истории:', error);
-            await ctx.telegram.callApi('sendMessage', {
-                business_connection_id: businessConnectionId,
-                chat_id: chatId,
-                text: '❌ Ошибка при экспорте истории чата',
-            } as any);
+            console.error('Error exporting chat history:', error);
+            await ctx.reply('Произошла ошибка при экспорте истории чата.');
         }
     }
 
-    private async generateHtmlForMessage(msg: ChatMessage): Promise<string> {
-        let html = `<div class='message'>`;
-
-        if (msg.type === 'text') {
+    private async generateHtmlForMessage(msg: ChatMessage) {
+        let html = '';
+        if ('text' in msg) {
             html += `<p>${(msg as TextMessage).text}</p>`;
-        }
-
-        if (msg.type === 'photo') {
-            const photoMsg = msg as any;
-            const fileUrl = await this.scamFormService.getFileUrl(photoMsg.file_id);
+        } else if ('file_id' in msg) {
+            const fileUrl = await this.scamFormService.getFileUrl((msg as any).file_id);
             if (fileUrl) {
                 html += `<img src='${fileUrl}' alt='photo' />`;
             } else {
                 html += `<p>[Photo not available]</p>`;
             }
         }
-
-        if (msg.type === 'video') {
-            const videoMsg = msg as any;
-            const fileUrl = await this.scamFormService.getFileUrl(videoMsg.file_id);
-            if (fileUrl) {
-                html += `<video controls>
-                            <source src='${fileUrl}' type='video/mp4'>
-                            Your browser does not support the video tag.
-                         </video>`;
-            } else {
-                html += `<p>[Video not available]</p>`;
-            }
-        }
-
-        html += `</div>`;
         return html;
     }
 }
-
-
-// {
-//     business_connection_id: 'jYNOkSg2kEkAEAAARE5ID4b1vZU',
-//     message_id: 249276,
-//     from: {
-//       id: 1360482307,
-//       is_bot: false,
-//       first_name: 'Bruklin',
-//       username: 'bruklinzz',
-//       is_premium: true
-//     },
-//     chat: {
-//       id: 1360482307,
-//       first_name: 'Bruklin',
-//       username: 'bruklinzz',
-//       type: 'private'
-//     },
-//     date: 1756469926,
-//     text: 'ыы'
-//   }
-
-
-// подврок 
-// {
-//     business_connection_id: 'jYNOkSg2kEkAEAAARE5ID4b1vZU',
-//     message_id: 249417,
-//     from: {
-//       id: 2027571609,
-//       is_bot: false,
-//       first_name: 'Artem',
-//       username: 'TeM4ik20',
-//       language_code: 'pl',
-//       is_premium: true
-//     },
-//     chat: {
-//       id: 7640988442,
-//       first_name: '𝑼𝒍𝒚𝒂𝒏𝒂',
-//       username: 'Ulyanochka45',
-//       type: 'private'
-//     },
-//     date: 1756475431,
-//     gift: {
-//       gift: { id: '5170233102089322756', sticker: [Object], star_count: 15 },
-//       convert_star_count: 13
-//     }
-//   }
-
-
-
-// кружки
-// {
-//   business_connection_id: 'jYNOkSg2kEkAEAAARE5ID4b1vZU',
-//   message_id: 249202,
-//   from: {
-//     id: 2027571609,
-//     is_bot: false,
-//     first_name: 'Artem',
-//     username: 'TeM4ik20',
-//     language_code: 'pl',
-//     is_premium: true
-//   },
-//   chat: {
-//     id: 1360482307,
-//     first_name: 'Bruklin',
-//     username: 'bruklinzz',
-//     type: 'private'
-//   },
-//   date: 1756466363,
-//   video_note: {
-//     duration: 2,
-//     length: 400,
-//     thumbnail: {
-//       file_id: 'AAMCAgADGQMAAQPNcmixjLtYXzRmRiK44Nyv_C1K20ZmAAIGfQACWyyJSaMrVHjTEIq9AQAHbQADNgQ',
-//       file_unique_id: 'AQADBn0AAlssiUly',
-//       file_size: 16768,
-//       width: 320,
-//       height: 320
-//     },
-//     thumb: {
-//       file_id: 'AAMCAgADGQMAAQPNcmixjLtYXzRmRiK44Nyv_C1K20ZmAAIGfQACWyyJSaMrVHjTEIq9AQAHbQADNgQ',
-//       file_unique_id: 'AQADBn0AAlssiUly',
-//       file_size: 16768,
-//       width: 320,
-//       height: 320
-//     },
-//     file_id: 'DQACAgIAAxkDAAEDzXJosYy7WF80ZkYiuODcr_wtSttGZgACBn0AAlssiUmjK1R40xCKvTYE',
-//     file_unique_id: 'AgADBn0AAlssiUk',
-//     file_size: 102575
-//   }
-// }
-
-
-// vide
-// 
-// {
-//   business_connection_id: 'jYNOkSg2kEkAEAAARE5ID4b1vZU',
-//   message_id: 249253,
-//   from: {
-//     id: 1360482307,
-//     is_bot: false,
-//     first_name: 'Bruklin',
-//     username: 'bruklinzz',
-//     is_premium: true
-//   },
-//   chat: {
-//     id: 1360482307,
-//     first_name: 'Bruklin',
-//     username: 'bruklinzz',
-//     type: 'private'
-//   },
-//   date: 1756468633,
-//   video: {
-//     duration: 23,
-//     width: 1940,
-//     height: 1300,
-//     file_name: 'Screen Recording 2024-12-24 190722.mp4',
-//     mime_type: 'video/mp4',
-//     thumbnail: {
-//       file_id: 'AAMCAgADGQEAAQPNpWixlZicm4gIeotcoMLJzT7ma7eYAALYfQACWyyJSQdx3cQSlDZcAQAHbQADNgQ',
-//       file_unique_id: 'AQAD2H0AAlssiUly',
-//       file_size: 11794,
-//       width: 320,
-//       height: 214
-//     },
-//     thumb: {
-//       file_id: 'AAMCAgADGQEAAQPNpWixlZicm4gIeotcoMLJzT7ma7eYAALYfQACWyyJSQdx3cQSlDZcAQAHbQADNgQ',
-//       file_unique_id: 'AQAD2H0AAlssiUly',
-//       file_size: 11794,
-//       width: 320,
-//       height: 214
-//     },
-//     file_id: 'BAACAgIAAxkBAAEDzaVosZWYnJuICHqLXKDCyc0-5mu3mAAC2H0AAlssiUkHcd3EEpQ2XDYE',
-//     file_unique_id: 'AgAD2H0AAlssiUk',
-//     file_size: 30524754
-//   }
-// }
-let a
-
-
-// фото
-// {
-//     business_connection_id: 'jYNOkSg2kEkAEAAARE5ID4b1vZU',
-//     message_id: 249204,
-//     from: {
-//       id: 2027571609,
-//       is_bot: false,
-//       first_name: 'Artem',
-//       username: 'TeM4ik20',
-//       language_code: 'ru',
-//       is_premium: true
-//     },
-//     chat: {
-//       id: 1360482307,
-//       first_name: 'Bruklin',
-//       username: 'bruklinzz',
-//       type: 'private'
-//     },
-//     date: 1756466417,
-//     photo: [
-//       {
-//         file_id: 'AgACAgIAAxkDAAEDzXRosYzxG4UbOnmUQgABGon2q4oAAUCZAAKy-jEbWyyJSUdCXCWNTnZhAQADAgADcwADNgQ',
-//         file_unique_id: 'AQADsvoxG1ssiUl4',
-//         file_size: 1127,
-//         width: 72,
-//         height: 90
-//       },
-//       {
-//         file_id: 'AgACAgIAAxkDAAEDzXRosYzxG4UbOnmUQgABGon2q4oAAUCZAAKy-jEbWyyJSUdCXCWNTnZhAQADAgADbQADNgQ',
-//         file_unique_id: 'AQADsvoxG1ssiUly',
-//         file_size: 14361,
-//         width: 257,
-//         height: 320
-//       },
-//       {
-//         file_id: 'AgACAgIAAxkDAAEDzXRosYzxG4UbOnmUQgABGon2q4oAAUCZAAKy-jEbWyyJSUdCXCWNTnZhAQADAgADeAADNgQ',
-//         file_unique_id: 'AQADsvoxG1ssiUl9',
-//         file_size: 31489,
-//         width: 539,
-//         height: 672
-//       }
-//     ]
-//   }
-
-
-

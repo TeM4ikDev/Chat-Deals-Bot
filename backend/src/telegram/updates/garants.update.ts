@@ -55,4 +55,5 @@ export class GarantsUpdate {
 
         this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
     }
+
 }

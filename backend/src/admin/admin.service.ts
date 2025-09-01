@@ -8,8 +8,6 @@ import { UsersService } from '@/users/users.service';
 export class AdminService {
     constructor(
         private readonly database: DatabaseService,
-        private readonly telegramService: TelegramService,
-        private readonly usersService: UsersService,
     ) { }
 
     async findMessageByChatUsername(name: string) {
