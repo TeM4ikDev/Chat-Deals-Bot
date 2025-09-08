@@ -79,12 +79,18 @@ export interface ApiRoute {
     baseUrl: Object
 }
 
-export interface IChatMessage {
+export interface IChatData {
     id: string
-    chatUsername: string
-    message: string
+    username: string
+
+    newUserMessage?: string
     rulesTelegramLink?: string
     showNewUserInfo: boolean
+
+    autoMessageId?: string
+    autoMessageIntervalSec?: number
+    
+    banWords: string[]
 }
 
 export enum voteType {
@@ -95,7 +101,8 @@ export enum voteType {
 export enum ScammerStatus {
     SCAMMER = 'SCAMMER',
     UNKNOWN = 'UNKNOWN',
-    SUSPICIOUS = 'SUSPICIOUS'
+    SUSPICIOUS = 'SUSPICIOUS',
+    SPAMMER = 'SPAMMER'
 }
 
 

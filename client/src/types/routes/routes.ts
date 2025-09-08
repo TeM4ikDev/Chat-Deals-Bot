@@ -50,7 +50,6 @@ export let RoutesConfigMain: Route[] = [
                         showInHeader: false,
 
                     },
-                   
                 }
             },
             GARANTS:{
@@ -70,6 +69,13 @@ export let RoutesConfigMain: Route[] = [
                 icon: 'UserPlus' 
 
             },
+            NEW_USERS_MESSAGES:{
+                key: 'NEW_USERS_MESSAGES',
+                path: '/new-users-messages',
+                showInHeader: false,
+                label: 'Приветствия',
+                icon: 'MessageSquareText' 
+            },
             CHAT_MESSAGES:{
                 key: 'CHAT_MESSAGES',
                 path: '/chat-messages',
@@ -77,7 +83,6 @@ export let RoutesConfigMain: Route[] = [
                 label: 'Сообщения в чате',
                 icon: 'MessageCircle' 
             },
-           
         }
     },
     {

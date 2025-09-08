@@ -1,7 +1,7 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
-import { IMediaData, IScammerData, IUser } from '@/types/types';
+import { banStatuses, IMediaData, IScammerData, IUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -333,9 +333,8 @@ export class ScamformService {
       }
     })
 
-
     console.log(createdScammer.status, 'createdScammer.status')
-    if (createdScammer.status === ScammerStatus.SCAMMER) {
+    if (banStatuses.includes(createdScammer.status)) {
       this.telegramService.banScammerFromGroup(createdScammer)
     }
 
@@ -389,7 +388,6 @@ export class ScamformService {
       data: { ...data }
     })
   }
-
 
   async getScammerByTelegramId(telegramId: string) {
     return await this.database.scammer.findUnique({
@@ -475,7 +473,6 @@ export class ScamformService {
           userVote: null,
         };
       } else {
-        // Если голос другой - изменяем его
         await this.database.userFormVote.update({
           where: { id: existingVote.id },
           data: { voteType: voteType },
@@ -499,7 +496,6 @@ export class ScamformService {
       }
     }
 
-    // Если пользователь ещё не голосовал - создаём новый голос
     await this.database.userFormVote.create({
       data: {
         userId: user.id,
@@ -538,7 +534,6 @@ export class ScamformService {
       };
     }
 
-    // Проверяем существование скамера
     const scammer = await this.database.scammer.findUnique({
       where: { id: scammerId }
     });
@@ -582,7 +577,6 @@ export class ScamformService {
           userVote: null,
         };
       } else {
-        // Если голос другой - изменяем его
         await this.database.userScammerVote.update({
           where: { id: existingVote.id },
           data: { voteType: voteType },
@@ -606,7 +600,6 @@ export class ScamformService {
       }
     }
 
-    // Если пользователь ещё не голосовал - создаём новый голос
     await this.database.userScammerVote.create({
       data: {
         userId: user.id,
@@ -631,77 +624,6 @@ export class ScamformService {
       userVote: voteType,
     };
   }
-
-  // async updateScammerStatus(data: IUpdateScamFormDto, createData?: IUser) {
-  //   const { status, scammerId } = data
-  //   try {
-  //     let scammer = null;
-
-  //     if (createData?.telegramId) {
-  //       scammer = await this.database.scammer.findUnique({
-  //         where: { telegramId: createData.telegramId }
-  //       });
-  //     }
-
-  //     if (scammer) {
-
-  //       scammer = await this.database.scammer.update({
-  //         where: { id: scammer.id },
-  //         data: {
-  //           status,
-  //           marked: true
-  //         }
-  //       });
-
-
-  //       console.log('Старый статус:', scammer.status)
-  //       console.log('Новый статус:', status)
-  //       console.log('ScammerStatus.SCAMMER:', ScammerStatus.SCAMMER)
-
-  //       if (status == ScammerStatus.SCAMMER) {
-  //         console.log('banScammerFromGroup - баним пользователя')
-  //         this.telegramService.banScammerFromGroup(scammer)
-  //       }
-  //       else {
-  //         console.log('unbanScammerFromGroup - разбаниваем пользователя')
-  //         this.telegramService.unbanScammerFromGroup(scammer)
-  //       }
-  //     } else {
-
-  //       scammer = await this.database.scammer.create({
-  //         data: {
-  //           username: createData?.username,
-  //           telegramId: createData?.telegramId,
-  //           status,
-  //           marked: true
-  //         }
-  //       });
-
-
-  //     }
-
-  //     if (data.formId && !scammer.marked) {
-  //       const form = await this.findById(data.formId)
-  //       await this.telegramService.complaintOutcome(form, status)
-  //     }
-
-
-
-  //     return {
-  //       message: '✅ Статус успешно обновлен',
-  //       isSuccess: true,
-  //       scammer: scammer
-  //     };
-  //   } catch (error) {
-  //     console.error('Error updating scammer status:', error);
-  //     return {
-  //       message: '❌ Ошибка при обновлении статуса',
-  //       isSuccess: false,
-  //       error: error instanceof Error ? error.message : 'Unknown error'
-  //     };
-  //   }
-  // }
-
 
   async updateScammerStatusByUsername(data: IUpdateScamFormDto) {
 
@@ -732,7 +654,7 @@ export class ScamformService {
         console.log('unbanScammerFromGroup - разбаниваем пользователя')
         this.telegramService.unbanScammerFromGroup(updatedScammer)
       }
-      else if (updatedScammer.status == ScammerStatus.SCAMMER) {
+      else if (banStatuses.includes(updatedScammer.status)) {
         console.log('banScammerFromGroup - баним пользователя')
         this.telegramService.banScammerFromGroup(updatedScammer)
       }

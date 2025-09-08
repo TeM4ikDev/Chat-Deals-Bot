@@ -213,7 +213,6 @@ export class BusinessMessageUpdate {
             }
         }
 
-    
         return matrix[a.length][b.length];
     }
     

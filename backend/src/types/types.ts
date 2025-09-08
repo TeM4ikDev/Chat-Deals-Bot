@@ -1,6 +1,8 @@
-import { Prisma, ScamForm } from "@prisma/client";
+import { Prisma, ScamForm, ScammerStatus } from "@prisma/client";
 
 export const superAdminsTelegramIds = ['1162525174', '2027571609']
+
+export const banStatuses = [ScammerStatus.SCAMMER, ScammerStatus.SPAMMER] as string[]
 
 export type IUser = Prisma.UserGetPayload<{}>
 
@@ -27,9 +29,7 @@ export enum BotScenes {
 export interface IScammerData {
   username?: string
   telegramId?: string
-
   twinAccounts?: IScammerData[];
-
 }
 
 export interface IMediaData {

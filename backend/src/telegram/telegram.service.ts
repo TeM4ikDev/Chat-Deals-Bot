@@ -1,10 +1,10 @@
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
-import { IMessageDataScamForm, IScammerData } from '@/types/types';
+import { banStatuses, IMessageDataScamForm, IScammerData } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, Scammer, ScammerStatus } from '@prisma/client';
+import { ChatConfig, Prisma, Scammer, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
@@ -20,6 +20,7 @@ export class TelegramService implements OnModuleInit {
     @Inject('DEFAULT_BOT_NAME') private readonly botName: string,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
+    private readonly database: DatabaseService,
     private readonly configService: ConfigService,
     private readonly scamformService: ScamformService,
     private readonly localizationService: LocalizationService,
@@ -45,16 +46,16 @@ export class TelegramService implements OnModuleInit {
 
     const command = startPayload.split('_')[0]
     const commandData: string = startPayload.split('_')[1]
-   
-   switch (command) {
-    case 'chatActions':
-      console.log(commandData)
-      await this.businessModeUpdate.onChatActions(ctx, Number(commandData))
-      await ctx.deleteMessage()
-      return true
-    default:
-      return false
-   }
+
+    switch (command) {
+      case 'chatActions':
+        console.log(commandData)
+        await this.businessModeUpdate.onChatActions(ctx, Number(commandData))
+        await ctx.deleteMessage()
+        return true
+      default:
+        return false
+    }
 
     return false
   }
@@ -466,14 +467,18 @@ export class TelegramService implements OnModuleInit {
     console.log('sendNewUserMessage', ctx.chat)
     const chatUsername = (ctx as any).chat.username
 
-    const message = await this.adminService.findMessageByChatUsername(chatUsername)
+    const message = await this.adminService.findChatConfigByUsername(chatUsername)
     if (!message) return
     console.log('message', message)
     const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
 
+
+    if (banStatuses.includes(newUser.status)) {
+      this.banScammerFromGroup(newUser)
+    }
     console.log(newUser)
 
-    const userLink = newMember.username
+    const userLink = newUser.username
       ? `[${this.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
       : `[${this.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
 
@@ -486,7 +491,7 @@ export class TelegramService implements OnModuleInit {
     await this.replyWithAutoDelete(ctx,
       `👋 Привет, ${userLink}!\n` +
       `🎉 Добро пожаловать в @${this.escapeMarkdown(chatUsername)}!\n\n` +
-      `${this.escapeMarkdown(message.message || '')}\n\n` +
+      `${this.escapeMarkdown(message.newUserMessage || '')}\n\n` +
       userInfo +
       userRulesLink +
       "разработчик бота: [Artem](https://t.me/TeM4ik20)",
@@ -496,5 +501,24 @@ export class TelegramService implements OnModuleInit {
       },
       30000
     );
+  }
+
+  // https://t.me/testscambase/415
+  // https://t.me/giftthread/132854
+  
+
+
+  async getChatConfig() {
+    return await this.usersService.findUsersConfig()
+  }
+
+  async sendChatAutoMessage(chatConfig: ChatConfig) {
+    const { autoMessageId, autoMessageIntervalSec, } = chatConfig
+    if (!autoMessageId || !autoMessageIntervalSec) return
+
+    console.log(await this.bot.telegram.getChat('@testscambase'))
+
+    await this.bot.telegram.forwardMessage(`@${chatConfig.username}`, '@testscambase', 415)
+    // // const message = await this.bot.telegram.sendMessage(chatConfig.username, chatConfig.autoMessage)
   }
 }

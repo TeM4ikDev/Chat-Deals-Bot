@@ -19,6 +19,8 @@ import { ChatCommandsUpdate } from './updates/chatCommands.update';
 import { GarantsUpdate } from './updates/garants.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
+import { PollingService } from './services/polling.service';
+import { DatabaseService } from '@/database/database.service';
 
 @Module({
 
@@ -53,7 +55,7 @@ import { MainMenuUpdate } from './updates/main-menu.update';
         },
 
       }),
-      inject: [ConfigService, UsersService],
+      inject: [ConfigService, UsersService ],
     }),
 
   ],
@@ -64,6 +66,10 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     LocalizationService,
     ScammerFrom,
     AppealForm,
+
+    PollingService,
+
+   
     
     BusinessMessageUpdate,
     BusinessModeUpdate,
@@ -71,6 +77,7 @@ import { MainMenuUpdate } from './updates/main-menu.update';
     ChatCommandsUpdate,
     TelegramService,
     TelegramUpdate,
+
   ],
   exports: [TelegramService, LocalizationService, BusinessModeUpdate, BusinessMessageUpdate]
 })

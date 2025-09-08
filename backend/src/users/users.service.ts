@@ -9,6 +9,14 @@ import { User } from 'telegraf/typings/core/types/typegram';
 export class UsersService {
   constructor(private database: DatabaseService) { }
 
+  async getChatConfig() {
+    return await this.database.chatConfig.findMany()
+  }
+
+  async findUsersConfig() {
+    return await this.database.usersConfig.findMany()
+  }
+
   async findAllUsers(page: number = 1, limit: number = 10, search: string = '') {
     const skip = (page - 1) * limit;
     const where = search

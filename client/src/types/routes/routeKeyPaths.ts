@@ -16,7 +16,7 @@
         isSubRoute?: boolean;
     };
 
-    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, UserPlus, MessageCircle, NotebookPen, DatabaseZap } from 'lucide-react';
+    import { HomeIcon, UserCog2Icon, ShieldCheckIcon, UserIcon, UserRoundPen, UserPlus, MessageSquareText, MessageCircle, NotebookPen, DatabaseZap } from 'lucide-react';
 
 
    
@@ -82,6 +82,15 @@
     "isSubRoute": false
   },
   {
+    "key": "ADMIN_NEW_USERS_MESSAGES",
+    "path": "/admin/new-users-messages",
+    "showInHeader": false,
+    "label": "Приветствия",
+    "icon": MessageSquareText,
+    "isSubRoute": false
+  },
+  {
+   
     "key": "ADMIN_CHAT_MESSAGES",
     "path": "/admin/chat-messages",
     "showInHeader": false,

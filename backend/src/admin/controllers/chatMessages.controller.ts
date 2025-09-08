@@ -19,18 +19,18 @@ export class ChatMessagesController {
 
     @Get()
     async findAllMessages() {
-        return await this.database.newMemberChatMessage.findMany()
+        return await this.database.chatConfig.findMany()
     }
 
     @Patch()
     async updateMessage(@Body() body: CreateChatMessageDto & { id: string }) {
-        return await this.database.newMemberChatMessage.update({
+        return await this.database.chatConfig.update({
             where: {
                 id: body.id
             },
             data: {
                 ...body,
-                chatUsername: body.chatUsername.replace('@', ''),
+                username: body.username.replace('@', ''),
                 showNewUserInfo: body.showNewUserInfo == 'true'
             }
         })
@@ -40,18 +40,18 @@ export class ChatMessagesController {
     async addMessage(@Body() body: CreateChatMessageDto) {
         console.log(body)
 
-        const exMessage = await this.database.newMemberChatMessage.findUnique({
+        const exMessage = await this.database.chatConfig.findUnique({
             where: {
-                chatUsername: body.chatUsername
+                username: body.username
             }
         })
 
         if (exMessage) throw new BadRequestException('Такое сообщение уже есть')
 
-        return await this.database.newMemberChatMessage.create({
+        return await this.database.chatConfig.create({
             data: {
                 ...body,
-                chatUsername: body.chatUsername.replace('@', ''),
+                username: body.username.replace('@', ''),
                 showNewUserInfo: body.showNewUserInfo == 'true'
             }
         })

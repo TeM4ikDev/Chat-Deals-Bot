@@ -134,7 +134,8 @@ const ScammerPage: React.FC = observer(() => {
             const statusMessages = {
                 [ScammerStatus.SCAMMER]: 'Пользователь занесен как скамер',
                 [ScammerStatus.SUSPICIOUS]: 'Пользователь занесен как подозрительный',
-                [ScammerStatus.UNKNOWN]: 'В занесении отказано, аккаунт остается в неизвестных'
+                [ScammerStatus.UNKNOWN]: 'В занесении отказано, аккаунт остается в неизвестных',
+                [ScammerStatus.SPAMMER]: 'Пользователь занесен как спамер'
             }
             toast.success(statusMessages[status])
 

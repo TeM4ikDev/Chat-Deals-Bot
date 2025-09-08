@@ -12,6 +12,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { UsersModule } from './users/users.module';
 import { UsersService } from './users/users.service';
 import { ScamformModule } from './scamform/scamform.module';
+import { PollingService } from './telegram/services/polling.service';
 
 @Module({
   imports: [
@@ -27,9 +28,12 @@ import { ScamformModule } from './scamform/scamform.module';
     UsersModule,
     ScamformModule,
 
+
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+  ],
   exports: [],
 })
 export class AppModule implements OnModuleInit {
@@ -44,12 +48,13 @@ export class AppModule implements OnModuleInit {
   }
 
   async cleanDatabase() {
-    await this.databaseService.scamForm.deleteMany();
-    await this.databaseService.media.deleteMany();
-    await this.databaseService.usersConfig.deleteMany();
-    await this.databaseService.user.deleteMany();
+    // await this.databaseService.scamForm.deleteMany();
+    // await this.databaseService.media.deleteMany();
+    // await this.databaseService.usersConfig.deleteMany();
+    // await this.databaseService.user.deleteMany();
+    await this.databaseService.chatConfig.deleteMany();
   }
-  
+
 
 
 

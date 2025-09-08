@@ -10,10 +10,10 @@ export class AdminService {
         private readonly database: DatabaseService,
     ) { }
 
-    async findMessageByChatUsername(name: string) {
-        return await this.database.newMemberChatMessage.findFirst({
+    async findChatConfigByUsername(username: string) {
+        return await this.database.chatConfig.findUnique({
             where: {
-                chatUsername: name
+                username
             }
         })
     }

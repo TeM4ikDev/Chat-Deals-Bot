@@ -1,6 +1,9 @@
 export interface CreateChatMessageDto {
-    chatUsername: string;
-    message: string;
+    username: string
+
+    newUserMessage: string;
     showNewUserInfo?: 'true' | 'false';
     rulesTelegramLink?: string;
+
+    banWorlds?: string[];
 }

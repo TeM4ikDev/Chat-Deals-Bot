@@ -307,12 +307,12 @@ export class ChatCommandsUpdate {
 
         if (!statusText) {
             if (!scammer) {
-                await this.telegramService.replyWithAutoDelete(ctx, 'Пользователь не найден.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр');
+                await this.telegramService.replyWithAutoDelete(ctx, 'Пользователь не найден.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр, спам');
                 return;
             }
             const scammerInfo = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username'    )
 
-            await this.telegramService.replyWithAutoDelete(ctx, `Статус @${scammerInfo} ${scammer.status}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр`);
+            await this.telegramService.replyWithAutoDelete(ctx, `Статус @${scammerInfo} ${scammer.status}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр, спам`);
             return;
         }
 
@@ -327,6 +327,10 @@ export class ChatCommandsUpdate {
 
             case 'подозр':
                 status = ScammerStatus.SUSPICIOUS;
+                break;
+
+            case 'спам':
+                status = ScammerStatus.SPAMMER;
                 break;
         }
 

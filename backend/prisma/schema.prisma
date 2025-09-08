@@ -32,6 +32,7 @@ enum ScammerStatus {
   SCAMMER
   UNKNOWN
   SUSPICIOUS
+  SPAMMER
   TRUSTED 
 }
 
@@ -194,14 +195,18 @@ model UserScammerVote {
 
 
 
-model NewMemberChatMessage{
+model ChatConfig{
   id String @id @default(uuid())
-  chatUsername String @unique
+  username String @unique
 
-  message String?
-
+  newUserMessage String?
   rulesTelegramLink String?
   showNewUserInfo Boolean @default(false)
+
+  autoMessageId String?
+  autoMessageIntervalSec Int?
+
+  banWords Json? @default("[]")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
