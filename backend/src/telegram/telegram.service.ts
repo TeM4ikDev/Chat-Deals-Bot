@@ -489,7 +489,7 @@ export class TelegramService implements OnModuleInit {
       `${this.escapeMarkdown(message.message || '')}\n\n` +
       userInfo +
       userRulesLink +
-      "разработчик бота: @Tem4ik20",
+      "разработчик бота: [Artem](https://t.me/TeM4ik20)",
       {
         parse_mode: 'Markdown',
         link_preview_options: { is_disabled: true }

@@ -5,12 +5,12 @@ import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Action, Command, Ctx, On, Update } from 'nestjs-telegraf';
+import { Command, Ctx, On, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
-import path from 'path';
 import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
+import { randElemFromArray } from '@/utils';
 
 interface ExtendedBusinessVideoMessageOptions extends Message.VideoMessage {
     parse_mode: ParseMode;
@@ -27,30 +27,54 @@ interface BusinessMessage extends Message.TextMessage {
 interface BusinessContext extends Context {
     update: UpdateType & {
         business_message?: BusinessMessage;
-    };
-    // business_message: BusinessMessage;
-
+    }
 }
 
-enum BusinessMemes {
-    'рассказывай' = 'https://t.me/botmemesbase/3',
-    'нет!' = 'https://t.me/botmemesbase/4',
-    'мне лень фиксить' = 'https://t.me/botmemesbase/6',
-    'доброе утро' = 'https://t.me/botmemesbase/8',
-    'иди нахуй' = 'https://t.me/botmemesbase/9',
-    'орешки биг боб' = 'https://t.me/botmemesbase/10',
-    'бро' = 'https://t.me/botmemesbase/11',
-    'мачомэн' = 'https://t.me/botmemesbase/12',
-    'alex f' = 'https://t.me/botmemesbase/13',
-    'сегодня на занятом' = 'https://t.me/botmemesbase/16',
-    'нектаринки' = 'https://t.me/botmemesbase/17',
-    'дикий огурец' = 'https://t.me/botmemesbase/18',
+const BusinessMemes = {
+    'рассказывай': ['https://t.me/botmemesbase/3'],
+    'нет!': ['https://t.me/botmemesbase/4'],
+    'мне лень фиксить': ['https://t.me/botmemesbase/6'],
+    'доброе утро': ['https://t.me/botmemesbase/8'],
+    'иди нахуй': [
+        'https://t.me/botmemesbase/9',
+        'https://t.me/botmemesbase/33'
+    ],
+    'орешки биг боб': ['https://t.me/botmemesbase/10'],
+    'бро': ['https://t.me/botmemesbase/11'],
+    'мачомэн': [
+        'https://t.me/botmemesbase/12',
+        'https://t.me/botmemesbase/47',
+        'https://t.me/botmemesbase/48',
+        'https://t.me/botmemesbase/42',
+        'https://t.me/botmemesbase/41',
+        'https://t.me/botmemesbase/39',
+        'https://t.me/botmemesbase/36',
+        'https://t.me/botmemesbase/35',
+        'https://t.me/botmemesbase/28',
+        'https://t.me/botmemesbase/27',
+        'https://t.me/botmemesbase/26',
+        'https://t.me/botmemesbase/24',
+        'https://t.me/botmemesbase/23',
+        'https://t.me/botmemesbase/21',
+    ],
+    'alex f': ['https://t.me/botmemesbase/13'],
+    'сигма': [
+        'https://t.me/botmemesbase/45',
+        'https://t.me/botmemesbase/31',
+    ],
+    'сегодня на занятом': ['https://t.me/botmemesbase/16'],
+    'нектаринки': ['https://t.me/botmemesbase/17'],
+    'дикий огурец': ['https://t.me/botmemesbase/18'],
+    'похуй': ['https://t.me/botmemesbase/30'],
+    'хм': ['https://t.me/botmemesbase/40'],
+    'иисус': ['https://t.me/botmemesbase/32'],
+    'гений': ['https://t.me/botmemesbase/22'],
 
 }
-
 
 const telegramIdsWithBusinessBot = new Set<number>([1360482307, 2027571609]);
 const chatHistories = new Map<number, ChatHistory>();
+
 
 chatHistories.set(1360482307, {
     userTelegramId: 2027571609,
@@ -113,7 +137,7 @@ export class BusinessMessageUpdate {
         const chatId = chat.id;
 
         // console.log(msg)
-        const handleMessage = await this.handleBusinessMessage(ctx, msg, chatId);
+        const handleMessage = await this.handleBusinessCommands(ctx, msg, chatId);
         if (handleMessage) return
 
         await this.saveMessageToHistory(msg, chat);
@@ -130,7 +154,11 @@ export class BusinessMessageUpdate {
         console.log(ctx)
     }
 
-    private async handleBusinessMessage(ctx: BusinessContext, msg: any, chatId: number): Promise<boolean> {
+
+
+
+
+    async handleBusinessCommands(ctx: BusinessContext, msg: any, chatId: number): Promise<boolean> {
         if (!msg.text) return false;
         console.log(msg.from.id, msg.chat.id)
         if (!telegramIdsWithBusinessBot.has(msg.from.id) || msg.from.id == msg.chat.id) return false;
@@ -149,7 +177,12 @@ export class BusinessMessageUpdate {
                 const memes = Object.keys(BusinessMemes);
                 let memesText: string = 'Выберите мем(просто отправьте название):\n\n';
                 memes.forEach((meme, index) => {
-                    memesText += `[${index + 1}. ${meme}](${BusinessMemes[meme]})\n`;
+                    let memesUrls = '';
+                    BusinessMemes[meme].forEach((url, index) => {
+                        const tab = BusinessMemes[meme].length == index + 1 ? '' : ' ';
+                        memesUrls += `[${index + 1}](${url})${tab}`;
+                    });
+                    memesText += `${index + 1}. ${meme}(${memesUrls})\n`;
                 });
                 await this.sendChatTextMessage(ctx, memesText);
                 return true;
@@ -159,14 +192,44 @@ export class BusinessMessageUpdate {
 
     }
 
+    levenshtein(a: string, b: string): number {
+        const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+    
+        for (let i = 0; i <= a.length; i++) {
+            matrix[i][0] = i;
+        }
+        for (let j = 0; j <= b.length; j++) {
+            matrix[0][j] = j;
+        }
+    
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1, // deletion
+                    matrix[i][j - 1] + 1, // insertion
+                    matrix[i - 1][j - 1] + cost // substitution
+                );
+            }
+        }
+
+    
+        return matrix[a.length][b.length];
+    }
+    
     async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
         const commandText = msg.text.toLowerCase();
-        if (BusinessMemes[commandText]) {
-            await this.sendMedia(ctx, BusinessMemes[commandText], msg);
+        const threshold = 1; // допустимое количество ошибок
+    
+        for (const meme in BusinessMemes) {
+            if (this.levenshtein(commandText, meme) <= threshold) {
+                await this.sendMedia(ctx, randElemFromArray(BusinessMemes[meme]), msg);
+                break;
+            }
         }
     }
 
-    private async saveMessageToHistory(msg: any, chat: ITelegramUser) {
+    async saveMessageToHistory(msg: any, chat: ITelegramUser) {
         // console.log(chat.id)
         if (!chatHistories.has(chat.id)) {
             chatHistories.set(chat.id, {
@@ -234,10 +297,7 @@ export class BusinessMessageUpdate {
         console.log(`Сообщение сохранено для чата ${chat.id}. Всего сообщений: ${history.messages.length}`);
     }
 
-
-    private async sendChatTextMessage(ctx: BusinessContext, text: string) {
-
-        // console.log(ctx)
+    async sendChatTextMessage(ctx: BusinessContext, text: string) {
         ctx.telegram.sendMessage(ctx.update.business_message.chat.id, text, {
             business_connection_id: ctx.update.business_message.business_connection_id,
             parse_mode: 'Markdown',
@@ -245,15 +305,15 @@ export class BusinessMessageUpdate {
         } as ExtendedBusinessVideoMessageOptions)
     }
 
-    private async sendMedia(ctx: Context, source: string, msg: BusinessMessage) {
+    async sendMedia(ctx: Context, source: string, msg: BusinessMessage) {
         ctx.telegram.sendVideo(msg.chat.id, source, {
             business_connection_id: msg.business_connection_id,
             link_preview_options: { is_disabled: false },
-            reply_to_message_id: msg.message_id,
+            // reply_to_message_id: msg.message_id,
         } as ExtendedBusinessVideoMessageOptions)
     }
 
-    private async sendUserInfo(ctx: BusinessContext, msg: any) {
+    async sendUserInfo(ctx: BusinessContext, msg: any) {
         const { from, chat } = msg;
 
         const info = `

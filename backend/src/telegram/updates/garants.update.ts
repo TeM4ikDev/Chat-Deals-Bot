@@ -38,7 +38,7 @@ export class GarantsUpdate {
         const header = this.localizationService.getT('garant.header', lang)
             .replace('{count}', totalCount.toString())
 
-        const message = `${header}${garantsList}\n\n @TeM4ik20 - разраб`
+        const message = `${header}${garantsList}\n\n [Artem](https://t.me/TeM4ik20) - разраб`
 
         this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
     }
