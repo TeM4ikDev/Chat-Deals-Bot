@@ -7,14 +7,14 @@ import { ConfigService } from '@nestjs/config';
 import { ChatConfig, Prisma, Scammer, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
-import { InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
+import { InlineKeyboardButton, InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
 import { BOT_NAME } from './constants/telegram.constants';
 import { LocalizationService } from './services/localization.service';
 import { AdminService } from '@/admin/admin.service';
 import { BusinessModeUpdate } from './updates/businessMode.update';
 
 @Injectable()
-export class TelegramService implements OnModuleInit {
+export class TelegramService {
   constructor(
     @InjectBot() private readonly bot: Telegraf,
     @Inject('DEFAULT_BOT_NAME') private readonly botName: string,
@@ -33,12 +33,7 @@ export class TelegramService implements OnModuleInit {
 
   private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
 
-  async onModuleInit() {
-    this.bot.on('inline_query', async (ctx) => {
-      console.log('bot start')
-      await this.handleInlineQuery(ctx);
-    });
-  }
+
 
   async checkStartPayload(ctx: Context): Promise<boolean> {
     const startPayload = (ctx as any).startPayload
@@ -167,11 +162,6 @@ export class TelegramService implements OnModuleInit {
     return await this.bot.telegram.sendMessage(channelId, message, options)
   }
 
-  // async sendBusinessMessage(ctx: Context, string, message: string, options?: any) {
-  //   return await ctx.telegram.send.(channelId, message, options)
-  // }
-
-
   async forwardMessage(channelId: string, fromChatId: string, messageId: number) {
     return await this.bot.telegram.forwardMessage(channelId, fromChatId, messageId)
   }
@@ -215,89 +205,17 @@ export class TelegramService implements OnModuleInit {
     })
   }
 
-  private async handleInlineQuery(ctx: Context) {
-    const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
-
-    console.log(query)
-
-    if (!query) {
-      const results: InlineQueryResult[] = [
-        {
-          type: 'article',
-          id: 'instruction',
-          title: 'Введите @username для поиска',
-          input_message_content: {
-            message_text: '🔍 Введите @username для поиска в базе',
-          },
-          description: 'Начните вводить username',
-        },
-      ];
-      await ctx.answerInlineQuery(results);
-      return;
-    }
-
-    console.log('Inline query:', query);
-
-    // Проверяем, является ли пользователь гарантом
+  async checkIsGarant(username: string): Promise<boolean> {
     const garants = await this.usersService.findGarants();
-    const isGarant = garants.some(garant =>
-      garant.username?.toLowerCase() === query.toLowerCase()
+
+    if (!username) return false;
+
+    return garants.some(garant =>
+      garant.username?.toLowerCase() === username.toLowerCase()
     );
-
-    if (isGarant) {
-      const results: InlineQueryResult[] = [
-        {
-          type: 'article',
-          id: 'garant_found',
-          title: '✅ Проверенный гарант найден',
-          input_message_content: {
-            message_text: `✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @${this.escapeMarkdown(query)}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.`,
-            parse_mode: 'Markdown',
-          },
-          description: 'Пользователь найден в базе гарантов',
-        },
-      ];
-      await ctx.answerInlineQuery(results);
-      return;
-    }
-
-    // Ищем скаммера
-    const scammer = await this.scamformService.getScammerByQuery(query);
-
-    console.log(scammer)
-
-    const results: InlineQueryResult[] = [];
-    if (!scammer) {
-      results.push({
-        type: 'article',
-        id: 'not_found',
-        title: 'Пользователь не найден',
-        input_message_content: {
-          message_text: `🔍 Пользователь не найден в базе.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.`,
-          parse_mode: 'Markdown',
-        },
-        description: 'Пользователь не найден в базе',
-      });
-    } else {
-      const username = scammer.username ? `@${(scammer.username)}` : 'Без username';
-      const telegramId = scammer.telegramId || '--';
-      const formsCount = scammer.scamForms.length;
-      const status = this.getScammerStatusText(scammer);
-
-      results.push({
-        type: 'article',
-        id: 'scammer_found',
-        title: `${status} найден`,
-        input_message_content: {
-          message_text: `*${username}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
-          parse_mode: 'Markdown',
-        },
-        description: `${status} • ${formsCount} жалоб`,
-      });
-    }
-
-    await ctx.answerInlineQuery(results);
   }
+
+
 
   formatUserInfo(username?: string, telegramId?: string, language: string = 'ru', escapeMarkdown: boolean = true): string {
     const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
@@ -329,6 +247,8 @@ export class TelegramService implements OnModuleInit {
     switch (scammer.status) {
       case ScammerStatus.SCAMMER:
         return "Скамер"
+      case ScammerStatus.SPAMMER:
+        return "Спаммер"
       case ScammerStatus.SUSPICIOUS:
         return "Подозрительный"
       case ScammerStatus.UNKNOWN:
@@ -503,22 +423,21 @@ export class TelegramService implements OnModuleInit {
     );
   }
 
-  // https://t.me/testscambase/415
-  // https://t.me/giftthread/132854
-  
-
-
   async getChatConfig() {
     return await this.usersService.findUsersConfig()
   }
 
   async sendChatAutoMessage(chatConfig: ChatConfig) {
-    const { autoMessageId, autoMessageIntervalSec, } = chatConfig
+    const { autoMessageId, autoMessageIntervalSec, autoMessageKeyboardUrls } = chatConfig
     if (!autoMessageId || !autoMessageIntervalSec) return
+    const [chatFromUsername, messageId] = autoMessageId.split('/').slice(-2)
 
-    console.log(await this.bot.telegram.getChat('@testscambase'))
+    const chatCopyFrom = `@${chatFromUsername}`
 
-    await this.bot.telegram.forwardMessage(`@${chatConfig.username}`, '@testscambase', 415)
-    // // const message = await this.bot.telegram.sendMessage(chatConfig.username, chatConfig.autoMessage)
+    const message = await this.bot.telegram.copyMessage(chatCopyFrom, `@${chatConfig.username}`, Number(messageId))
+
+    await this.bot.telegram.editMessageReplyMarkup(chatCopyFrom, message.message_id, undefined, {
+      inline_keyboard: JSON.parse(autoMessageKeyboardUrls as string) as InlineKeyboardButton[][]
+    })
   }
 }

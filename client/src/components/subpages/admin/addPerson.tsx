@@ -2,6 +2,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { Block } from "@/components/ui/Block";
 import { Button } from "@/components/ui/Button";
 import { Form } from "@/components/ui/Form";
+import { GradientLine } from "@/components/ui/GradientLine";
 import { Input } from "@/components/ui/Input";
 import { AdminService } from "@/services/admin.service";
 import { ScammerStatus } from "@/types";
@@ -65,6 +66,18 @@ export const AddPerson = () => {
 
 
     };
+
+    const formConfig2: FormConfig = {
+        input: [
+            {
+                name: "username",
+                label: "Username",
+                type: "text",
+                placeholder: "Введите Username",
+                required: true
+            },
+        ],
+    }
 
     const addTwink = () => {
         setTwinks(prev => [...prev, { telegramId: '', username: '' }]);
@@ -158,6 +171,13 @@ export const AddPerson = () => {
         )
     }
 
+    const handleSubmitSpammer = async (values: { username: string }) => {
+        const data = await onRequest(AdminService.addSpammer(values.username));
+        if (data) {
+            toast.success("Человек успешно занесен в базу");
+        }
+    }
+
     return (
         <PageContainer title="Занести в базу" itemsStart returnPage>
             <Form
@@ -172,6 +192,18 @@ export const AddPerson = () => {
                     </>
                 }
             />
+
+            <GradientLine className="m-4" />
+
+
+            <Form title="Занести спаммера" icons={[]}
+                message="Человек успешно занесен в базу"
+                config={formConfig2}
+                onSubmit={handleSubmitSpammer}
+            />
+
+
+
         </PageContainer>
     );
 };

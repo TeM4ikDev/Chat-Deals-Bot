@@ -89,6 +89,8 @@ export interface IChatData {
 
     autoMessageId?: string
     autoMessageIntervalSec?: number
+
+    autoMessageKeyboardUrls?: string[]
     
     banWords: string[]
 }

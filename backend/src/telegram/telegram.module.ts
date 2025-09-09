@@ -21,6 +21,7 @@ import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
 import { PollingService } from './services/polling.service';
 import { DatabaseService } from '@/database/database.service';
+import { InlineQueryUpdate } from './updates/InlineQuery.update';
 
 @Module({
 
@@ -35,7 +36,9 @@ import { DatabaseService } from '@/database/database.service';
       imports: [ConfigModule, forwardRef(() => UsersModule)],
       useFactory: (configService: ConfigService, usersService: UsersService) => ({
         token: configService.get<string>('BOT_TOKEN'),
-        middlewares: [session()],
+        middlewares: [session()
+          
+        ],
         launchOptions: {
           allowedUpdates: [
             'message',
@@ -69,6 +72,7 @@ import { DatabaseService } from '@/database/database.service';
 
     PollingService,
 
+
    
     
     BusinessMessageUpdate,
@@ -77,6 +81,8 @@ import { DatabaseService } from '@/database/database.service';
     ChatCommandsUpdate,
     TelegramService,
     TelegramUpdate,
+    InlineQueryUpdate,
+
 
   ],
   exports: [TelegramService, LocalizationService, BusinessModeUpdate, BusinessMessageUpdate]

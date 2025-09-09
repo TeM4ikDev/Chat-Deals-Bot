@@ -14,7 +14,6 @@ import { ScamForms } from './pages/ScamformsPage';
 import ScammerPage from './pages/ScammerPage';
 import { useStore } from './store/root.store';
 import { UserRoles } from './types/auth';
-import {NewUsersMessages } from './components/subpages/admin/newUsersMessages';
 import { ChatMessages } from './components/subpages/admin/chatMessages';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
@@ -72,9 +71,9 @@ const ProtectedRoutes = observer(() => {
         <Route path="users/:id" element={<UserDetails />} />
 
         <Route path="add-person" element={<AddPerson />} />
-        <Route path="new-users-messages" element={<NewUsersMessages />} />
+        {/* <Route path="new-users-messages" element={<NewUsersMessages />} /> */}
 
-        <Route path="chat-messages" element={<ChatMessages />} />
+          <Route path="chat-messages" element={<ChatMessages />} />
 
         <Route path="garants" element={<Garants />} />
       </Route>

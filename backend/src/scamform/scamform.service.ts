@@ -314,7 +314,16 @@ export class ScamformService {
   async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: Prisma.TwinAccountCreateInput[]) {
     const exsScammer = await this.getScammerByQuery(data.username || data.telegramId)
 
-    if (exsScammer) throw new BadRequestException('User already exists')
+    if (exsScammer) {
+      console.log('exsScammer', exsScammer.status)
+      console.log('banStatuses', banStatuses)
+      if (banStatuses.includes(data.status)) {
+        console.log('banScammerFromGroup - баним пользователя')
+        await this.updateScammer(exsScammer.id, { status: data.status })
+        await this.telegramService.banScammerFromGroup(exsScammer)
+      }
+      throw new BadRequestException('User already exists and banned again')
+    }
 
     const createdScammer = await this.database.scammer.create({
       data: {
@@ -332,11 +341,10 @@ export class ScamformService {
         twinAccounts: true
       }
     })
-
-    console.log(createdScammer.status, 'createdScammer.status')
     if (banStatuses.includes(createdScammer.status)) {
       this.telegramService.banScammerFromGroup(createdScammer)
     }
+
 
     return createdScammer
   }
@@ -388,6 +396,11 @@ export class ScamformService {
       data: { ...data }
     })
   }
+
+  // async createOrUpdateScammer(data: Prisma.ScammerCreateInput) {
+
+  // }
+
 
   async getScammerByTelegramId(telegramId: string) {
     return await this.database.scammer.findUnique({
@@ -650,7 +663,7 @@ export class ScamformService {
         await this.telegramService.complaintOutcome(form, status)
       }
 
-      if (scammer.status == ScammerStatus.SCAMMER && updatedScammer.status != ScammerStatus.SCAMMER) {
+      if (banStatuses.includes(scammer.status) && !banStatuses.includes(updatedScammer.status)) {
         console.log('unbanScammerFromGroup - разбаниваем пользователя')
         this.telegramService.unbanScammerFromGroup(updatedScammer)
       }

@@ -13,6 +13,7 @@ import { CUSTOM_INFO, IMAGE_PATHS } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
 import { TelegramService } from "../telegram.service";
+import { PollingService } from "../services/polling.service";
 
 
 
@@ -28,6 +29,7 @@ export class ChatCommandsUpdate {
         private readonly scamformService: ScamformService,
         private readonly localizationService: LocalizationService,
 
+        private readonly pollingService: PollingService,
         private readonly adminService: AdminService,
 
     ) { }
@@ -39,6 +41,14 @@ export class ChatCommandsUpdate {
         console.log(ctx.message.chat)
         if (!message) return;
 
+        const isChatBanWord = this.pollingService.checkIsChatBanWord((ctx as any).chat.username, message);
+        if (isChatBanWord) {
+            await this.telegramService.replyWithAutoDelete(ctx, 'Это слово запрещено в чате');
+            await ctx.deleteMessage(ctx.message.message_id);
+            return;
+        }
+
+       
 
         const words = message.split(/\s+/).filter(word => word.length > 0);
         const command = words[0].toLowerCase();
@@ -175,7 +185,7 @@ export class ChatCommandsUpdate {
     }
 
     private async checkAndSendGarantInfo(ctx: Context, query: string, lang: string): Promise<boolean> {
-        if (await this.checkIsGarant(query)) {
+        if (await this.telegramService.checkIsGarant(query)) {
             const photoStream = fs.createReadStream(IMAGE_PATHS.GARANT);
             await this.telegramService.replyMediaWithAutoDelete(ctx,
                 { source: photoStream },
@@ -214,7 +224,7 @@ export class ChatCommandsUpdate {
         const scammer = await this.scamformService.getScammerByQuery(query);
         if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
-        if (await this.checkIsGarant(query)) {
+        if (await this.telegramService.checkIsGarant(query)) {
             const garant = await this.userService.findGarantByUsername(query)
             if (garant) {
                 await this.telegramService.replyWithAutoDelete(ctx, this.localizationService.getT('commands.userDescription')
@@ -255,16 +265,7 @@ export class ChatCommandsUpdate {
         await this.checkUserAndSendInfo(ctx, query, lang);
     }
 
-    private async checkIsGarant(username: string): Promise<boolean> {
-        const garants = await this.userService.findGarants();
-
-        if (!username) return false;
-
-        return garants.some(garant =>
-            garant.username?.toLowerCase() === username.toLowerCase()
-        );
-    }
-
+    
     private async handleStatus(ctx: Context, repliedUser: IUser, statusText: string, query?: string) {
         let status: ScammerStatus;
         const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
@@ -272,7 +273,7 @@ export class ChatCommandsUpdate {
         let queryFind
         if (query) {
 
-            if (await this.checkIsGarant(query)) {
+            if (await this.telegramService.checkIsGarant(query)) {
                 this.telegramService.replyWithAutoDelete(ctx, 'Это гарант. Вы не можете изменить его статус');
                 return;
             }
@@ -332,6 +333,11 @@ export class ChatCommandsUpdate {
             case 'спам':
                 status = ScammerStatus.SPAMMER;
                 break;
+
+            default:
+               await this.telegramService.replyWithAutoDelete(ctx, 'Неизвестный статус. Выберите из списка:\n`скам`, `неизв`, `подозр`, `спам`');
+               return;
+               break;
         }
 
         if (!scammer) {

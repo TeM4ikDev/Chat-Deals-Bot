@@ -1,4 +1,4 @@
-import { ApiRoute, IChatMessage } from "@/types";
+import { ApiRoute, IChatData } from "@/types";
 import { UserRoles } from "@/types/auth";
 import { apiConfig } from "@/types/pagesConfig";
 
@@ -74,41 +74,26 @@ export class adminService implements ApiRoute {
         return data
     }
 
-
-
     // ______________
     getChatMessages = async () => {
         const { data } = await this.instance.get(`${this.baseUrl.chatMessages.main}`)
         return data
     }
 
-    updateChatMessage = async (messageId: string, message: IChatMessage) => {
+    updateChatMessage = async (messageId: string, message: IChatData) => {
         const { data } = await this.instance.patch(`${this.baseUrl.chatMessages.main}`, { ...message, id: messageId })
         return data
     }
 
-    addChatMessage = async (message: IChatMessage) => {
+    addChatMessage = async (message: IChatData) => {
         const { data } = await this.instance.post(`${this.baseUrl.chatMessages.main}`, message)
         return data
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    addSpammer = async (username: string) => {
+        const { data } = await this.instance.post(`${this.baseUrl.scamforms.main}/spammer`, { username })
+        return data
+    }
 }
 
 

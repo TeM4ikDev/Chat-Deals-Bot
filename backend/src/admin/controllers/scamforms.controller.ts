@@ -4,7 +4,7 @@ import { ScamformService } from '@/scamform/scamform.service';
 import { TelegramService } from '@/telegram/telegram.service';
 import { Body, Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { Prisma, UserRoles } from '@prisma/client';
+import { Prisma, ScammerStatus, UserRoles } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UsersService } from 'src/users/users.service';
 
@@ -60,6 +60,19 @@ export class ScamformController {
 
         return scamForm;
     }
+
+    @Roles(UserRoles.SUPER_ADMIN)
+    @Post('spammer')
+    async createSpammer(@Body() body: { username: string}) {
+        // console.log(body)
+       
+        
+        return await this.scamformService.createScammer({
+            username: (body.username).replace('@', ''),
+            status: ScammerStatus.SPAMMER
+        });
+    }
+
 
     @Roles(UserRoles.SUPER_ADMIN)
     @Delete(':id')

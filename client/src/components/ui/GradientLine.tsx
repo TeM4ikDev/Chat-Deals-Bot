@@ -6,5 +6,5 @@ interface GradientLineProps {
 }
 
 export const GradientLine: React.FC<GradientLineProps> = ({ className = "", height = "h-[2px]" }) => (
-    <div className={cn("bottom-0 inset-x-0 bg-gradient-to-r from-transparent via-blue-500/40 to-transparent", height, className)} />
+    <div className={cn("w-full bottom-0 inset-x-0 bg-gradient-to-r from-transparent via-white/60 to-transparent", height, className)} />
 ); 

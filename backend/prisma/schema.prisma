@@ -206,6 +206,8 @@ model ChatConfig{
   autoMessageId String?
   autoMessageIntervalSec Int?
 
+  autoMessageKeyboardUrls Json? @default("[]")
+
   banWords Json? @default("[]")
 
   createdAt DateTime @default(now())

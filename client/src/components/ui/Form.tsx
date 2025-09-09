@@ -115,7 +115,7 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                     />
                 ))}
 
-                {config.input && config.input.map((field) => (
+                {config.input && config.input.map((field: any) => (
                     field.type === 'file' ? (
                         <Block key={field.name} icons={[<ImageIcon />]} title={field.label}>
                             <div className="relative w-fit">
@@ -235,6 +235,8 @@ export function Form<T extends Record<string, any>>({ config, initialValues, cla
                         <Input
                             key={field.name}
                             name={field.name}
+                            min={field.min}
+                            max={field.max}
                             type={field.type || 'text'}
                             placeholder={field.placeholder || ''}
                             value={values[field.name] ?? ''}

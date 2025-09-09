@@ -76,13 +76,6 @@ exports.RoutesConfigMain = [
                 label: 'Добавить человека',
                 icon: 'UserPlus'
             },
-            NEW_USERS_MESSAGES: {
-                key: 'NEW_USERS_MESSAGES',
-                path: '/new-users-messages',
-                showInHeader: false,
-                label: 'Приветствия',
-                icon: 'MessageSquareText'
-            },
             CHAT_MESSAGES: {
                 key: 'CHAT_MESSAGES',
                 path: '/chat-messages',
