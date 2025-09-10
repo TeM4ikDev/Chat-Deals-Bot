@@ -1,16 +1,16 @@
-import { ActionParam, ActionWithData, getActionParams } from '@/decorators/telegram.decorator';
+import { ActionParam, ActionWithData } from '@/decorators/telegram.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
 import { ChatHistory, ChatMessage, PhotoMessage, TextMessage, VideoMessage } from '@/types/businessChat';
 import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
+import { chance, levenshtein, randElemFromArray } from '@/utils';
 import { forwardRef, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Command, Ctx, On, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
+import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
-import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
-import { randElemFromArray } from '@/utils';
 
 interface ExtendedBusinessVideoMessageOptions extends Message.VideoMessage {
     parse_mode: ParseMode;
@@ -69,24 +69,31 @@ const BusinessMemes = {
     'хм': ['https://t.me/botmemesbase/40'],
     'иисус': ['https://t.me/botmemesbase/32'],
     'гений': ['https://t.me/botmemesbase/22'],
+    '67': [
+        'https://t.me/botmemesbase/61'
+    ]
 
 }
 
-const telegramIdsWithBusinessBot = new Set<number>([1360482307, 2027571609]);
-const chatHistories = new Map<number, ChatHistory>();
-
-
-chatHistories.set(1360482307, {
-    userTelegramId: 2027571609,
-    chatUserInfo: {
-        id: 1360482307,
-        first_name: 'Bruklin',
-        username: 'bruklinzz',
-    },
-    messages: [
-
+const answersToQuestions = {
+    'yes': [
+        'https://t.me/botmemesbase/51',
+        'https://t.me/botmemesbase/52',
+        'https://t.me/botmemesbase/53',
     ],
-});
+    'no': [
+        'https://t.me/botmemesbase/58',
+        'https://t.me/botmemesbase/60',
+    ],
+    'no answer': [
+        'https://t.me/botmemesbase/54',
+        'https://t.me/botmemesbase/55',
+        'https://t.me/botmemesbase/59',
+    ],
+}
+
+const telegramIdsWithBusinessBot = new Set<number>([1360482307, 2027571609, 1409479468]);
+const chatHistories = new Map<number, ChatHistory>();
 
 @Update()
 export class BusinessMessageUpdate {
@@ -97,22 +104,6 @@ export class BusinessMessageUpdate {
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
     ) { }
-
-    //     id: 'EgCyyIuTmEktEAAARkFNHRnPEzQ',
-    //     user: {
-    //       id: 2027571609,
-    //       is_bot: false,
-    //       first_name: 'Artem',
-    //       username: 'TeM4ik20',
-    //       language_code: 'ru',
-    //       is_premium: true
-    //     },
-    //     user_chat_id: 2027571609,
-    //     date: 1756563297,
-    //     is_enabled: true,
-    //     can_reply: false,
-    //     rights: {}
-    //   }
 
     @On('business_connection' as any)
     async onBusinessConnection(@Ctx() ctx: Context) {
@@ -167,13 +158,14 @@ export class BusinessMessageUpdate {
 
         await this.handleBusinessMemes(ctx, msg);
 
+        console.log(commandText.includes('мудрый конь'))
 
-        switch (commandText) {
-            case 'инфо':
+        switch (true) {
+            case commandText.startsWith('инфо'):
                 await this.sendUserInfo(ctx, msg);
                 return true;
 
-            case 'мемы':
+            case commandText.startsWith('мемы'):
                 const memes = Object.keys(BusinessMemes);
                 let memesText: string = 'Выберите мем(просто отправьте название):\n\n';
                 memes.forEach((meme, index) => {
@@ -187,41 +179,70 @@ export class BusinessMessageUpdate {
                 await this.sendChatTextMessage(ctx, memesText);
                 return true;
 
-            default: return false;
-        }
-
-    }
-
-    levenshtein(a: string, b: string): number {
-        const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-    
-        for (let i = 0; i <= a.length; i++) {
-            matrix[i][0] = i;
-        }
-        for (let j = 0; j <= b.length; j++) {
-            matrix[0][j] = j;
-        }
-    
-        for (let i = 1; i <= a.length; i++) {
-            for (let j = 1; j <= b.length; j++) {
-                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j] + 1, // deletion
-                    matrix[i][j - 1] + 1, // insertion
-                    matrix[i - 1][j - 1] + cost // substitution
+            case commandText === 'мудрый конь':
+                await this.sendChatTextMessage(
+                    ctx,
+                    'Мудрый конь слушает.\nНапиши: мудрый конь `<твой вопрос>`'
                 );
-            }
+                return true;
+
+            case commandText.includes('мудрый конь'):
+
+                const question = commandText.replace('мудрый конь ', '').trim();
+                const chance = Math.random() * 100;
+
+                let answer: keyof typeof answersToQuestions = null;
+                switch (true) {
+                    case chance < 33:
+                        answer = 'yes';
+                        break;
+                    case chance < 66:
+                        answer = 'no';
+                        break;
+                    case chance < 100:
+                        answer = 'no answer';
+                        break;
+                }
+
+                await this.handleAnswerToQuestion(ctx, answer, question);
+                return true;
+
+            default:
+                return false;
         }
 
-        return matrix[a.length][b.length];
+
     }
-    
+
+    async handleAnswerToQuestion(ctx: BusinessContext, answerType: keyof typeof answersToQuestions, question: string) {
+        let answerTypeText: string = answerType;
+        switch (answerType) {
+            case 'yes':
+                answerTypeText = 'да!';
+                break;
+            case 'no':
+                answerTypeText = 'нет!';
+                break;
+
+            case 'no answer':
+                answerTypeText = 'Я озадачен!';
+                break;
+        }
+
+
+        const answer = randElemFromArray(answersToQuestions[answerType]);
+        const caption = `\`${answerTypeText.toUpperCase()}\``;
+        await this.sendMedia(ctx, answer, ctx.update.business_message, caption)
+    }
+
+
+
     async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
         const commandText = msg.text.toLowerCase();
         const threshold = 1; // допустимое количество ошибок
-    
+
         for (const meme in BusinessMemes) {
-            if (this.levenshtein(commandText, meme) <= threshold) {
+            if (levenshtein(commandText, meme) <= threshold) {
                 await this.sendMedia(ctx, randElemFromArray(BusinessMemes[meme]), msg);
                 break;
             }
@@ -304,11 +325,13 @@ export class BusinessMessageUpdate {
         } as ExtendedBusinessVideoMessageOptions)
     }
 
-    async sendMedia(ctx: Context, source: string, msg: BusinessMessage) {
+    async sendMedia(ctx: Context, source: string, msg: BusinessMessage, caption?: string) {
         ctx.telegram.sendVideo(msg.chat.id, source, {
             business_connection_id: msg.business_connection_id,
+            caption: caption,
             link_preview_options: { is_disabled: false },
-            // reply_to_message_id: msg.message_id,
+            reply_to_message_id: msg.message_id,
+            parse_mode: 'Markdown',
         } as ExtendedBusinessVideoMessageOptions)
     }
 

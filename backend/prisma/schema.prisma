@@ -223,3 +223,10 @@ model BusinesBotConnection {
 
 
 }
+
+
+model BusinessMemes{
+  id String @id @default(uuid())
+
+  data Json
+}
