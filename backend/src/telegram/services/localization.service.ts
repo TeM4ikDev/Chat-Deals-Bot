@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
+
 @Injectable()
 export class LocalizationService {
   private translations: Map<string, any> = new Map();
@@ -15,13 +16,18 @@ export class LocalizationService {
     try {
       // Используем абсолютный путь к директории проекта
       const projectRoot = process.cwd();
+      console.log(projectRoot)
+      // backend\src\telegram\locales
       const localesPath = path.join(projectRoot, 'src', 'telegram', 'locales');
-      this.logger.debug(`Loading translations from: ${localesPath}`);
-      
+      // this.logger.debug(`Loading translations from: ${localesPath}`);
+
+      // console.log(`Checking if directory exists: ${localesPath}`);
       if (!fs.existsSync(localesPath)) {
         this.logger.error(`Locales directory not found at: ${localesPath}`);
         return;
       }
+
+      console.log(`Directory exists: ${localesPath}`);
 
       const files = fs.readdirSync(localesPath);
       this.logger.debug(`Found files: ${files.join(', ')}`);
@@ -30,12 +36,15 @@ export class LocalizationService {
         if (file.endsWith('.json')) {
           const lang = file.replace('.json', '');
           const filePath = path.join(localesPath, file);
+          console.log(`Checking if file exists: ${filePath}`);
           this.logger.debug(`Loading ${lang} from ${filePath}`);
           
           if (!fs.existsSync(filePath)) {
             this.logger.error(`Translation file not found: ${filePath}`);
             return;
           }
+
+          console.log(`File exists: ${filePath}`);
 
           const content = JSON.parse(
             fs.readFileSync(filePath, 'utf-8')
@@ -52,6 +61,7 @@ export class LocalizationService {
   getT(key: string, lang: string = 'ru'): string {
     try {
       
+      console.log(this.translations);
       const translation = this.translations.get(lang);
       if (!translation) {
         this.logger.warn(`No translations found for language: ${lang}`);
