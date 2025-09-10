@@ -13,6 +13,7 @@ import { TelegramService } from "../telegram.service";
 export class GarantsUpdate {
     constructor(
         private readonly database: DatabaseService,
+        
         private readonly localizationService: LocalizationService,
         private readonly userService: UsersService,
         private readonly telegramService: TelegramService
@@ -37,6 +38,8 @@ export class GarantsUpdate {
         const totalCount = garants.length
         const header = this.localizationService.getT('garant.header', lang)
             .replace('{count}', totalCount.toString())
+
+            console.log(header)
 
         const message = `${header}${garantsList}\n\n [Artem](https://t.me/TeM4ik20) - разраб`
 
