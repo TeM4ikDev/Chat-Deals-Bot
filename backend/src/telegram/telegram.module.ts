@@ -13,15 +13,14 @@ import { AdminModule } from '@/admin/admin.module';
 import { ScamformModule } from '@/scamform/scamform.module';
 import { AppealForm } from './scenes/appeal_form.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
+import { PollingService } from './services/polling.service';
 import { TelegramUpdate } from './telegram.update';
-import { BusinessModeUpdate, BusinessMessageUpdate } from './updates/businessMode.update';
+import { BusinessMemesActions, BusinessMessageUpdate, BusinessModeUpdate } from './updates/businessMode.update';
 import { ChatCommandsUpdate } from './updates/chatCommands.update';
 import { GarantsUpdate } from './updates/garants.update';
+import { InlineQueryUpdate } from './updates/InlineQuery.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
-import { PollingService } from './services/polling.service';
-import { DatabaseService } from '@/database/database.service';
-import { InlineQueryUpdate } from './updates/InlineQuery.update';
 
 @Module({
 
@@ -77,6 +76,7 @@ import { InlineQueryUpdate } from './updates/InlineQuery.update';
     
     BusinessMessageUpdate,
     BusinessModeUpdate,
+    BusinessMemesActions,
 
     ChatCommandsUpdate,
     TelegramService,

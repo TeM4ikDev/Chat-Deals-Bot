@@ -33,7 +33,7 @@ enum ScammerStatus {
   UNKNOWN
   SUSPICIOUS
   SPAMMER
-  TRUSTED 
+  TRUSTED
 }
 
 model User {
@@ -58,7 +58,6 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
 }
 
 model UsersConfig {
@@ -85,11 +84,11 @@ model Garants {
 model TwinAccount {
   id String @id @default(uuid())
 
-  username String?
+  username   String?
   telegramId String?
 
   scammerId String
-  scammer Scammer @relation(fields: [scammerId], references: [id])
+  scammer   Scammer @relation(fields: [scammerId], references: [id])
 }
 
 model Scammer {
@@ -100,7 +99,7 @@ model Scammer {
   description String?
 
   scamForms ScamForm[]
-  
+
   twinAccounts TwinAccount[]
 
   likes    Int @default(0)
@@ -116,7 +115,7 @@ model Scammer {
 }
 
 model ScamForm {
-  id          String     @id @default(uuid())
+  id          String @id @default(uuid())
   description String
 
   user   User?   @relation(fields: [userId], references: [id])
@@ -136,7 +135,7 @@ model ScamForm {
 }
 
 model AppealForm {
-  id          String     @id @default(uuid())
+  id          String @id @default(uuid())
   description String
 
   appealUsername   String?
@@ -193,17 +192,15 @@ model UserScammerVote {
   @@unique([userId, scammerId])
 }
 
-
-
-model ChatConfig{
-  id String @id @default(uuid())
+model ChatConfig {
+  id       String @id @default(uuid())
   username String @unique
 
-  newUserMessage String?
+  newUserMessage    String?
   rulesTelegramLink String?
-  showNewUserInfo Boolean @default(false)
+  showNewUserInfo   Boolean @default(false)
 
-  autoMessageId String?
+  autoMessageId          String?
   autoMessageIntervalSec Int?
 
   autoMessageKeyboardUrls Json? @default("[]")
@@ -214,19 +211,24 @@ model ChatConfig{
   updatedAt DateTime @updatedAt
 }
 
-
-
 // ________
 
 model BusinesBotConnection {
   id String @id @default(uuid())
-
-
 }
 
+model BusinessMemesGroup {
+  id            String          @id @default(uuid())
+  groupName     String          @unique
+  BusinessMemes BusinessMeme[]
+}
 
-model BusinessMemes{
+model BusinessMeme {
   id String @id @default(uuid())
 
-  data Json
+  url String
+
+  businessMemeGroupId String
+  businessMemesGroup   BusinessMemesGroup @relation(fields: [businessMemeGroupId], references: [id], onDelete: Cascade)
 }
+

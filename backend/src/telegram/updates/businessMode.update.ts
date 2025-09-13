@@ -1,13 +1,15 @@
+import { DatabaseService } from '@/database/database.service';
 import { ActionParam, ActionWithData } from '@/decorators/telegram.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
 import { ChatHistory, ChatMessage, PhotoMessage, TextMessage, VideoMessage } from '@/types/businessChat';
 import { ITelegramUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
-import { chance, levenshtein, randElemFromArray } from '@/utils';
-import { forwardRef, Inject } from '@nestjs/common';
+import { levenshtein, randElemFromArray } from '@/utils';
+import { forwardRef, Inject, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Command, Ctx, On, Update } from 'nestjs-telegraf';
-import { Context } from 'telegraf';
+import { BusinessMemesGroup, Prisma } from '@prisma/client';
+import { Command, Ctx, InjectBot, On, Update } from 'nestjs-telegraf';
+import { Context, Telegraf } from 'telegraf';
 import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
@@ -30,50 +32,103 @@ interface BusinessContext extends Context {
     }
 }
 
-const BusinessMemes = {
-    'рассказывай': ['https://t.me/botmemesbase/3'],
-    'нет!': ['https://t.me/botmemesbase/4'],
-    'мне лень фиксить': ['https://t.me/botmemesbase/6'],
-    'доброе утро': ['https://t.me/botmemesbase/8'],
-    'иди нахуй': [
-        'https://t.me/botmemesbase/9',
-        'https://t.me/botmemesbase/33'
-    ],
-    'орешки биг боб': ['https://t.me/botmemesbase/10'],
-    'бро': ['https://t.me/botmemesbase/11'],
-    'мачомэн': [
-        'https://t.me/botmemesbase/12',
-        'https://t.me/botmemesbase/47',
-        'https://t.me/botmemesbase/48',
-        'https://t.me/botmemesbase/42',
-        'https://t.me/botmemesbase/41',
-        'https://t.me/botmemesbase/39',
-        'https://t.me/botmemesbase/36',
-        'https://t.me/botmemesbase/35',
-        'https://t.me/botmemesbase/28',
-        'https://t.me/botmemesbase/27',
-        'https://t.me/botmemesbase/26',
-        'https://t.me/botmemesbase/24',
-        'https://t.me/botmemesbase/23',
-        'https://t.me/botmemesbase/21',
-    ],
-    'alex f': ['https://t.me/botmemesbase/13'],
-    'сигма': [
-        'https://t.me/botmemesbase/45',
-        'https://t.me/botmemesbase/31',
-    ],
-    'сегодня на занятом': ['https://t.me/botmemesbase/16'],
-    'нектаринки': ['https://t.me/botmemesbase/17'],
-    'дикий огурец': ['https://t.me/botmemesbase/18'],
-    'похуй': ['https://t.me/botmemesbase/30'],
-    'хм': ['https://t.me/botmemesbase/40'],
-    'иисус': ['https://t.me/botmemesbase/32'],
-    'гений': ['https://t.me/botmemesbase/22'],
-    '67': [
-        'https://t.me/botmemesbase/61'
-    ]
+const accessIds = ['2027571609'];
 
-}
+const BusinessMemes = [
+    {
+        groupName: 'рассказывай',
+        urls: ['https://t.me/botmemesbase/3']
+    },
+    {
+        groupName: 'нет!',
+        urls: ['https://t.me/botmemesbase/4']
+    },
+    {
+        groupName: 'мне лень фиксить',
+        urls: ['https://t.me/botmemesbase/6']
+    },
+    {
+        groupName: 'доброе утро',
+        urls: ['https://t.me/botmemesbase/8']
+    },
+    {
+        groupName: 'иди нахуй',
+        urls: [
+            'https://t.me/botmemesbase/9',
+            'https://t.me/botmemesbase/33'
+        ]
+    },
+    {
+        groupName: 'орешки биг боб',
+        urls: ['https://t.me/botmemesbase/10']
+    },
+    {
+        groupName: 'бро',
+        urls: ['https://t.me/botmemesbase/11']
+    },
+    {
+        groupName: 'мачомэн',
+        urls: [
+            'https://t.me/botmemesbase/12',
+            'https://t.me/botmemesbase/47',
+            'https://t.me/botmemesbase/48',
+            'https://t.me/botmemesbase/42',
+            'https://t.me/botmemesbase/41',
+            'https://t.me/botmemesbase/39',
+            'https://t.me/botmemesbase/36',
+            'https://t.me/botmemesbase/35',
+            'https://t.me/botmemesbase/28',
+            'https://t.me/botmemesbase/27',
+            'https://t.me/botmemesbase/26',
+            'https://t.me/botmemesbase/24',
+            'https://t.me/botmemesbase/23',
+            'https://t.me/botmemesbase/21'
+        ]
+    },
+    {
+        groupName: 'alex f',
+        urls: ['https://t.me/botmemesbase/13']
+    },
+    {
+        groupName: 'сигма',
+        urls: [
+            'https://t.me/botmemesbase/45',
+            'https://t.me/botmemesbase/31'
+        ]
+    },
+    {
+        groupName: 'сегодня на занятом',
+        urls: ['https://t.me/botmemesbase/16']
+    },
+    {
+        groupName: 'нектаринки',
+        urls: ['https://t.me/botmemesbase/17']
+    },
+    {
+        groupName: 'дикий огурец',
+        urls: ['https://t.me/botmemesbase/18']
+    },
+    {
+        groupName: 'похуй',
+        urls: ['https://t.me/botmemesbase/30']
+    },
+    {
+        groupName: 'хм',
+        urls: ['https://t.me/botmemesbase/40']
+    },
+    {
+        groupName: 'иисус',
+        urls: ['https://t.me/botmemesbase/32']
+    },
+    {
+        groupName: 'гений',
+        urls: ['https://t.me/botmemesbase/22']
+    },
+    {
+        groupName: '67',
+        urls: ['https://t.me/botmemesbase/61']
+    }
+];
 
 const answersToQuestions = {
     'yes': [
@@ -95,6 +150,72 @@ const answersToQuestions = {
 const telegramIdsWithBusinessBot = new Set<number>([1360482307, 2027571609, 1409479468]);
 const chatHistories = new Map<number, ChatHistory>();
 
+export class BusinessMemesActions implements OnModuleInit {
+    constructor(
+        @InjectBot()
+        protected readonly bot: Telegraf,
+        private readonly database: DatabaseService
+    ) { }
+
+    async onModuleInit() {
+        // await this.database.businessMemesGroup.deleteMany();
+        for (const group of BusinessMemes) {
+            await this.addMemesGroup(group.groupName, group.urls);
+        }
+    }
+
+    async findMemesGroups() {
+        return await this.database.businessMemesGroup.findMany({
+            include: {
+                BusinessMemes: true
+            }
+        });
+    }
+
+    async findMemesGroup(groupName: string): Promise<BusinessMemesGroup | null> {
+        return await this.database.businessMemesGroup.findUnique({
+            where: {
+                groupName: groupName
+            }
+        })
+    }
+
+    async addMemesGroup(groupName: string, urls: string[] = []) {
+        const group = await this.findMemesGroup(groupName);
+        if (group) {
+            console.log(group.groupName + ' exists')
+            return group
+        }
+
+        return await this.database.businessMemesGroup.create({
+            data: {
+                groupName: groupName,
+                BusinessMemes: {
+                    create: urls.map(url => ({
+                        url: url
+                    }))
+                }
+            }
+        })
+    }
+
+    async addMemeToGroup(groupName: string, msg: Message.VideoMessage) {
+        const sentMsg = await this.bot.telegram.sendVideo('@botmemesbase', msg.video.file_id)
+        console.log(sentMsg)
+
+        return await this.database.businessMeme.create({
+            data: {
+                url: `https://t.me/${(sentMsg.sender_chat as any).username}/${sentMsg.message_id}`,
+                businessMemesGroup: {
+                    connect: {
+                        groupName: groupName
+                    }
+                }
+            }
+        })
+    }
+}
+
 @Update()
 export class BusinessMessageUpdate {
     constructor(
@@ -103,6 +224,10 @@ export class BusinessMessageUpdate {
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
+        private readonly businessMemesActions: BusinessMemesActions,
+
+        @InjectBot()
+        protected readonly bot: Telegraf,
     ) { }
 
     @On('business_connection' as any)
@@ -121,13 +246,11 @@ export class BusinessMessageUpdate {
 
     @On('business_message' as any)
     async onBusinessMessage(@Ctx() ctx: BusinessContext) {
-        // console.log(ctx)
 
         const msg = ctx.update.business_message;
         const chat = msg.chat as ITelegramUser;
         const chatId = chat.id;
 
-        // console.log(msg)
         const handleMessage = await this.handleBusinessCommands(ctx, msg, chatId);
         if (handleMessage) return
 
@@ -146,47 +269,136 @@ export class BusinessMessageUpdate {
     }
 
 
-
-
-
-    async handleBusinessCommands(ctx: BusinessContext, msg: any, chatId: number): Promise<boolean> {
+    async handleBusinessCommands(ctx: BusinessContext, msg: BusinessMessage, chatId: number): Promise<boolean> {
         if (!msg.text) return false;
-        console.log(msg.from.id, msg.chat.id)
         if (!telegramIdsWithBusinessBot.has(msg.from.id) || msg.from.id == msg.chat.id) return false;
 
         const commandText = msg.text.toLowerCase();
 
-        await this.handleBusinessMemes(ctx, msg);
-
-        console.log(commandText.includes('мудрый конь'))
-
         switch (true) {
-            case commandText.startsWith('инфо'):
+            case commandText == 'экспорт': {
+                const memesGroups = await this.businessMemesActions.findMemesGroups();
+                const memes = memesGroups.map(group => { return { groupName: group.groupName, url: group.BusinessMemes.map(meme => meme.url) } });
+                const buffer = Buffer.from(JSON.stringify(memes, null, 2), 'utf-8');
+
+
+
+                await this.bot.telegram.sendDocument(2027571609, {
+                    source: buffer,
+                    filename: 'memes.json',
+                },
+                    {
+                        // caption: `📄 мемы`
+                    })
+
+                return true;
+            }
+
+            case commandText.startsWith('инфо'): {
                 await this.sendUserInfo(ctx, msg);
                 return true;
+            }
 
-            case commandText.startsWith('мемы'):
-                const memes = Object.keys(BusinessMemes);
+            case commandText.startsWith('мемы'): {
+                const memesGroups = await this.businessMemesActions.findMemesGroups();
+
                 let memesText: string = 'Выберите мем(просто отправьте название):\n\n';
-                memes.forEach((meme, index) => {
+                memesGroups.forEach((memeGroup, index) => {
                     let memesUrls = '';
-                    BusinessMemes[meme].forEach((url, index) => {
-                        const tab = BusinessMemes[meme].length == index + 1 ? '' : ' ';
-                        memesUrls += `[${index + 1}](${url})${tab}`;
+                    (memeGroup.BusinessMemes).forEach((businessMeme, index) => {
+                        const tab = (memeGroup.BusinessMemes).length == index + 1 ? '' : ' ';
+                        memesUrls += `[${index + 1}](${businessMeme.url})${tab}`;
                     });
-                    memesText += `${index + 1}. ${meme}(${memesUrls})\n`;
+                    memesText += `${index + 1}. ${memeGroup.groupName}(${memesUrls})\n`;
                 });
                 await this.sendChatTextMessage(ctx, memesText);
                 return true;
+            }
 
-            case commandText === 'мудрый конь':
+            case commandText.startsWith('+g'): {
+                if (!this.checkIsUserHasAccess(accessIds, msg)) return false;
+
+
+                const groupName = commandText.replace('+g', '').trim();
+                if (!groupName) {
+                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы');
+                    return true;
+                }
+                console.log(groupName)
+
+                const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+                if (existingGroup) {
+                    await this.sendChatTextMessage(ctx, 'Группа уже существует. Напиши +<название группы> для добавления мема в группу с ответом на видео');
+                    return true;
+                }
+
+                const addedGroup = await this.businessMemesActions.addMemesGroup(groupName)
+                if (addedGroup) {
+                    await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` создана`);
+                }
+
+                return true;
+            }
+
+            case commandText.startsWith('+m'): {
+                if (!this.checkIsUserHasAccess(accessIds, msg)) return false
+
+                const groupName = commandText.replace('+m', '').trim();
+                const videoMsg: Message.VideoMessage = msg as any
+                const replyToMessage = msg.reply_to_message;
+
+                if (!groupName) {
+                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы');
+                    return true;
+                }
+
+                if (!replyToMessage) {
+                    await this.sendChatTextMessage(ctx, 'Нужно ответить на сообщение с мемом');
+                    return true;
+                }
+                else if (!(replyToMessage as Message.VideoMessage).video) {
+                    await this.sendChatTextMessage(ctx, 'Нужно ответить на сообщение с видео');
+                    return true;
+                }
+
+                const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+                if (!existingGroup) {
+
+                    const threshold = 4;
+                    const memesGroups = await this.businessMemesActions.findMemesGroups();
+                    for (const memeGroup of memesGroups) {
+                        if (levenshtein(commandText, memeGroup.groupName) <= threshold) {
+                            await this.sendChatTextMessage(ctx, `Группа не найдена. Возможно ты имел в виду группу \`${memeGroup.groupName}\` ?\nВ таком случае напиши \`+m${memeGroup.groupName}\` для добавления мема в группу`);
+                            return true;
+                        }
+                    }
+
+
+                    await this.sendChatTextMessage(ctx, 'Группа не найдена. Напиши `+g<название группы>` для создания новой группы');
+                    return true;
+                }
+
+                console.log(msg.reply_to_message)
+                const addedMeme = await this.businessMemesActions.addMemeToGroup(groupName, replyToMessage as Message.VideoMessage);
+                console.log(addedMeme)
+
+                if (addedMeme) {
+                    await this.sendChatTextMessage(ctx, `[Мем](${addedMeme.url}) добавлен в группу \`${groupName}\``);
+                }
+
+                return true;
+            }
+
+            case commandText === 'мудрый конь': {
                 await this.sendChatTextMessage(
                     ctx,
                     'Мудрый конь слушает.\nНапиши: мудрый конь `<твой вопрос>`'
                 );
                 return true;
 
-            case commandText.includes('мудрый конь'):
+            }
+
+            case commandText.includes('мудрый конь'): {
 
                 const question = commandText.replace('мудрый конь ', '').trim();
                 const chance = Math.random() * 100;
@@ -206,12 +418,11 @@ export class BusinessMessageUpdate {
 
                 await this.handleAnswerToQuestion(ctx, answer, question);
                 return true;
-
-            default:
-                return false;
+            }
         }
 
-
+        await this.handleBusinessMemes(ctx, msg)
+        return false;
     }
 
     async handleAnswerToQuestion(ctx: BusinessContext, answerType: keyof typeof answersToQuestions, question: string) {
@@ -229,21 +440,19 @@ export class BusinessMessageUpdate {
                 break;
         }
 
-
         const answer = randElemFromArray(answersToQuestions[answerType]);
         const caption = `\`${answerTypeText.toUpperCase()}\``;
         await this.sendMedia(ctx, answer, ctx.update.business_message, caption)
     }
 
-
-
     async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
+        const memesGroups = await this.businessMemesActions.findMemesGroups();
         const commandText = msg.text.toLowerCase();
-        const threshold = 1; // допустимое количество ошибок
+        const threshold = 1;
 
-        for (const meme in BusinessMemes) {
-            if (levenshtein(commandText, meme) <= threshold) {
-                await this.sendMedia(ctx, randElemFromArray(BusinessMemes[meme]), msg);
+        for (const memeGroup of memesGroups) {
+            if (levenshtein(commandText, memeGroup.groupName) <= threshold) {
+                await this.sendMedia(ctx, randElemFromArray(memeGroup.BusinessMemes.map(businessMeme => businessMeme.url)), msg);
                 break;
             }
         }
@@ -351,6 +560,11 @@ Username: @${chat.username || 'нет'}
             chat_id: chat.id,
             text: info,
         } as any);
+    }
+
+    checkIsUserHasAccess(accessIds: string[], msg: BusinessMessage) {
+        if ((accessIds.includes(msg.from.id.toString()))) return true;
+        return false;
     }
 }
 
@@ -494,3 +708,9 @@ export class BusinessModeUpdate {
         return html;
     }
 }
+
+
+
+// https://t.me/botmemesbase
+
+
