@@ -32,7 +32,7 @@ interface BusinessContext extends Context {
     }
 }
 
-const accessIds = ['2027571609'];
+const accessIds = ['2027571609', '1360482307'];
 
 const BusinessMemes = [
     {
