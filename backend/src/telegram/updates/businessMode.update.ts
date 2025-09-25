@@ -1,3 +1,4 @@
+
 import { DatabaseService } from '@/database/database.service';
 import { ActionParam, ActionWithData } from '@/decorators/telegram.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
@@ -7,12 +8,14 @@ import { UsersService } from '@/users/users.service';
 import { levenshtein, randElemFromArray } from '@/utils';
 import { forwardRef, Inject, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BusinessMemesGroup, Prisma } from '@prisma/client';
+import { BusinessMemesGroup } from '@prisma/client';
 import { Command, Ctx, InjectBot, On, Update } from 'nestjs-telegraf';
 import { Context, Telegraf } from 'telegraf';
 import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
+import youtubedl from 'youtube-dl-exec';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
+
 
 interface ExtendedBusinessVideoMessageOptions extends Message.VideoMessage {
     parse_mode: ParseMode;
@@ -159,9 +162,9 @@ export class BusinessMemesActions implements OnModuleInit {
 
     async onModuleInit() {
         // await this.database.businessMemesGroup.deleteMany();
-        for (const group of BusinessMemes) {
-            await this.addMemesGroup(group.groupName, group.urls);
-        }
+        // for (const group of BusinessMemes) {
+        //     await this.addMemesGroup(group.groupName, group.urls);
+        // }
     }
 
     async findMemesGroups() {
@@ -225,6 +228,7 @@ export class BusinessMessageUpdate {
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
         private readonly businessMemesActions: BusinessMemesActions,
+
 
         @InjectBot()
         protected readonly bot: Telegraf,
@@ -290,6 +294,47 @@ export class BusinessMessageUpdate {
                     {
                         // caption: `📄 мемы`
                     })
+
+                return true;
+            }
+
+            // 'https://youtube.com/shorts'
+
+            // || commandText.startsWith('https://youtube.com/shorts'
+
+            case commandText.startsWith('https://www.instagram.com/reel') || commandText.startsWith('https://youtube.com/shorts'): {
+                try {
+
+                    // this.deleteMessage(ctx, msg)
+                    // return
+
+                    const videoInfo: any = await youtubedl(msg.text, {
+                        dumpSingleJson: true,
+                        format: 'best',
+                        skipDownload: true,
+                        ignoreErrors: true,
+                    });
+
+                    console.log('Информация о видео:', videoInfo);
+
+                    const videoUrl = videoInfo.url || videoInfo.formats?.[0]?.url;
+
+                    if (videoUrl) {
+                        await this.bot.telegram.sendVideo(msg.chat.id, videoUrl, {
+                            business_connection_id: msg.business_connection_id,
+                            caption: `📱 ${videoInfo.title || 'Instagram Reel'}`,
+                            reply_to_message_id: msg.message_id,
+                        } as any);
+
+                        console.log("✅ Instagram Reel отправлен в чат!");
+                    } else {
+                        throw new Error('Не удалось получить URL видео');
+                    }
+
+                } catch (error) {
+                    console.error("❌ Ошибка скачивания Instagram Reel:", error);
+                    await this.sendChatTextMessage(ctx, `❌ Ошибка скачивания Instagram Reel: ${error instanceof Error ? error.message : String(error)}`);
+                }
 
                 return true;
             }
@@ -387,6 +432,26 @@ export class BusinessMessageUpdate {
                 }
 
                 return true;
+            }
+
+            case commandText.startsWith('+r'): {
+                if (!this.checkIsUserHasAccess(accessIds, msg)) return false
+                const groupName = commandText.replace('+r', '').trim();
+                if (!groupName) {
+                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы');
+                    return true;
+                }
+
+                const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+                if (!existingGroup) {
+                    await this.sendChatTextMessage(ctx, 'Группа не найдена');
+                    return true;
+                }
+
+
+                await this
+
+                // await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` найдена`);
             }
 
             case commandText === 'мудрый конь': {
@@ -535,13 +600,24 @@ export class BusinessMessageUpdate {
     }
 
     async sendMedia(ctx: Context, source: string, msg: BusinessMessage, caption?: string) {
-        ctx.telegram.sendVideo(msg.chat.id, source, {
+        await ctx.telegram.sendVideo(msg.chat.id, source, {
             business_connection_id: msg.business_connection_id,
             caption: caption,
             link_preview_options: { is_disabled: false },
             reply_to_message_id: msg.message_id,
             parse_mode: 'Markdown',
         } as ExtendedBusinessVideoMessageOptions)
+    }
+
+    async deleteMessage(ctx: BusinessContext, msg: BusinessMessage) {
+        console.log(ctx.update, msg)
+        // await ctx.telegram.callApi('deleteMessage', {
+        //     chat_id: ctx.update.business_message.from.id,
+        //     message_id: msg.message_id,
+        //     // business_connection_id: msg.business_connection_id,
+        // } as any) as any;
+
+        await this.bot.telegram.deleteMessage(ctx.update.business_message.from.id, msg.message_id,)
     }
 
     async sendUserInfo(ctx: BusinessContext, msg: any) {

@@ -20,7 +20,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
- "dependencies": {
+  "dependencies": {
     "@nestjs/axios": "^3.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.4",
@@ -34,10 +34,13 @@
     "@prisma/client": "^6.6.0",
     "@types/puppeteer": "^7.0.4",
     "@types/uuid": "^10.0.0",
+    "@yemreak/yt-dlp": "^1.1.5",
     "argon2": "^0.43.1",
     "axios": "^1.9.0",
     "express": "^4.19.2",
     "https-proxy-agent": "^7.0.6",
+    "instagram-private-api": "^1.46.1",
+    "instagram-scraper": "^1.0.6",
     "multer": "^2.0.1",
     "nestjs-telegraf": "^2.8.1",
     "node-fetch": "^2.7.0",
@@ -48,7 +51,8 @@
     "prisma": "^6.6.0",
     "puppeteer": "^24.8.2",
     "puppeteer-extra": "^3.3.6",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "youtube-dl-exec": "^3.0.25"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
