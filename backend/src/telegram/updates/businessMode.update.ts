@@ -162,9 +162,9 @@ export class BusinessMemesActions implements OnModuleInit {
 
     async onModuleInit() {
         // await this.database.businessMemesGroup.deleteMany();
-        for (const group of BusinessMemes) {
-            await this.addMemesGroup(group.groupName, group.urls);
-        }
+        // for (const group of BusinessMemes) {
+        //     await this.addMemesGroup(group.groupName, group.urls);
+        // }
     }
 
     async findMemesGroups() {
@@ -336,7 +336,7 @@ export class BusinessMessageUpdate {
 
                     const videoInfo: any = await youtubedl(msg.text, {
                         dumpSingleJson: true,
-                        format: 'best',
+                        // format: 'best',
                         skipDownload: true,
                         ignoreErrors: true,
                     });
