@@ -8,7 +8,7 @@ import { UsersService } from '@/users/users.service';
 import { levenshtein, randElemFromArray } from '@/utils';
 import { forwardRef, Inject, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BusinessMemesGroup } from '@prisma/client';
+import { BusinessMeme, BusinessMemesGroup } from '@prisma/client';
 import { Command, Ctx, InjectBot, On, Update } from 'nestjs-telegraf';
 import { Context, Telegraf } from 'telegraf';
 import { Chat, Message, ParseMode, Update as UpdateType } from 'telegraf/typings/core/types/typegram';
@@ -162,9 +162,9 @@ export class BusinessMemesActions implements OnModuleInit {
 
     async onModuleInit() {
         // await this.database.businessMemesGroup.deleteMany();
-        // for (const group of BusinessMemes) {
-        //     await this.addMemesGroup(group.groupName, group.urls);
-        // }
+        for (const group of BusinessMemes) {
+            await this.addMemesGroup(group.groupName, group.urls);
+        }
     }
 
     async findMemesGroups() {
@@ -175,10 +175,13 @@ export class BusinessMemesActions implements OnModuleInit {
         });
     }
 
-    async findMemesGroup(groupName: string): Promise<BusinessMemesGroup | null> {
+    async findMemesGroup(groupName: string): Promise<BusinessMemesGroup & { BusinessMemes: BusinessMeme[] } | null> {
         return await this.database.businessMemesGroup.findUnique({
             where: {
                 groupName: groupName
+            },
+            include: {
+                BusinessMemes: true
             }
         })
     }
@@ -214,6 +217,32 @@ export class BusinessMemesActions implements OnModuleInit {
                         groupName: groupName
                     }
                 }
+            }
+        })
+    }
+
+    async renameMemesGroup(groupName: string, newGroupName: string) {
+        return await this.database.businessMemesGroup.update({
+            where: {
+                groupName: groupName
+            },
+            data: { groupName: newGroupName }
+        })
+    }
+
+    async deleteMemeFromGroupById(groupName: string, id: string) {
+        return await this.database.businessMeme.delete({
+            where: {
+                id: id
+            }
+        })
+
+    }
+
+    async deleteMemesGroup(groupName: string) {
+        return await this.database.businessMemesGroup.delete({
+            where: {
+                groupName: groupName
             }
         })
     }
@@ -272,7 +301,6 @@ export class BusinessMessageUpdate {
         console.log(ctx)
     }
 
-
     async handleBusinessCommands(ctx: BusinessContext, msg: BusinessMessage, chatId: number): Promise<boolean> {
         if (!msg.text) return false;
         if (!telegramIdsWithBusinessBot.has(msg.from.id) || msg.from.id == msg.chat.id) return false;
@@ -298,13 +326,11 @@ export class BusinessMessageUpdate {
                 return true;
             }
 
-            // 'https://youtube.com/shorts'
-
-            // || commandText.startsWith('https://youtube.com/shorts'
-
             case commandText.startsWith('https://www.instagram.com/reel') || commandText.startsWith('https://youtube.com/shorts'): {
                 try {
 
+
+                    this.sendChatTextMessage(ctx, 'Скачиваю видео...')
                     // this.deleteMessage(ctx, msg)
                     // return
 
@@ -346,15 +372,14 @@ export class BusinessMessageUpdate {
 
             case commandText.startsWith('мемы'): {
                 const memesGroups = await this.businessMemesActions.findMemesGroups();
-
                 let memesText: string = 'Выберите мем(просто отправьте название):\n\n';
                 memesGroups.forEach((memeGroup, index) => {
                     let memesUrls = '';
-                    (memeGroup.BusinessMemes).forEach((businessMeme, index) => {
+                    memeGroup.BusinessMemes.length > 0 ? (memeGroup.BusinessMemes).forEach((businessMeme, index) => {
                         const tab = (memeGroup.BusinessMemes).length == index + 1 ? '' : ' ';
                         memesUrls += `[${index + 1}](${businessMeme.url})${tab}`;
-                    });
-                    memesText += `${index + 1}. ${memeGroup.groupName}(${memesUrls})\n`;
+                    }) : memesUrls = 'нет мемов';
+                    memesText += `${index + 1}. \`${memeGroup.groupName}\`(${memesUrls})\n`;
                 });
                 await this.sendChatTextMessage(ctx, memesText);
                 return true;
@@ -362,7 +387,6 @@ export class BusinessMessageUpdate {
 
             case commandText.startsWith('+g'): {
                 if (!this.checkIsUserHasAccess(accessIds, msg)) return false;
-
 
                 const groupName = commandText.replace('+g', '').trim();
                 if (!groupName) {
@@ -436,22 +460,76 @@ export class BusinessMessageUpdate {
 
             case commandText.startsWith('+r'): {
                 if (!this.checkIsUserHasAccess(accessIds, msg)) return false
-                const groupName = commandText.replace('+r', '').trim();
-                if (!groupName) {
-                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы');
+                const [groupName, newGroupName] = commandText.replace('+r', '').trim().toLowerCase().split(' ');
+
+                console.log(groupName, newGroupName)
+
+                if (!groupName || !newGroupName) {
+                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы и новое название');
+                    return true;
+                }
+
+                if (groupName == newGroupName) {
+                    await this.sendChatTextMessage(ctx, 'Название группы и новое название не могут быть одинаковыми');
                     return true;
                 }
 
                 const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+                const existingNewGroup = await this.businessMemesActions.findMemesGroup(newGroupName);
+
                 if (!existingGroup) {
-                    await this.sendChatTextMessage(ctx, 'Группа не найдена');
+                    await this.sendChatTextMessage(ctx, 'Группа не найдена. Напиши `+g<название группы>` для создания новой группы ИЛИ `+r<название группы> <новое название>` для переименования группы');
                     return true;
                 }
 
+                if (existingNewGroup) {
+                    await this.sendChatTextMessage(ctx, 'Группа с таким названием уже существует.');
+                    return true;
+                }
 
-                await this
+                await this.businessMemesActions.renameMemesGroup(groupName, newGroupName);
+                await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` переименована в \`${newGroupName}\``);
+                return true;
+            }
 
-                // await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` найдена`);
+            case commandText.startsWith('+d'): {
+                if (!this.checkIsUserHasAccess(accessIds, msg)) return false
+                const [groupName, memeNumber] = commandText.replace('+d', '').trim().toLowerCase().split(' ');
+
+                if (!groupName) {
+                    await this.sendChatTextMessage(ctx, 'Нужно указать название группы для удаления');
+                    return true;
+                }
+
+                const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+
+                if (!existingGroup) {
+                    await this.sendChatTextMessage(ctx, 'Группа не найдена. Напиши `+g<название группы>` для создания новой группы ИЛИ `+d<название группы> <номер мема>` для удаления мема из группы');
+                    return true;
+                }
+
+                if (memeNumber) {
+                    if (existingGroup.BusinessMemes.length == 0) {
+                        await this.sendChatTextMessage(ctx, 'Группа не содержит мемов');
+                        return true;
+                    }
+
+                    const meme = existingGroup.BusinessMemes[Number(memeNumber) - 1];
+
+                    if (!meme) {
+                        await this.sendChatTextMessage(ctx, 'Мем не найден');
+                        return true;
+                    }
+
+                    await this.businessMemesActions.deleteMemeFromGroupById(groupName, meme.id);
+                    await this.sendChatTextMessage(ctx, `[Мем](${meme.url}) удален из группы \`${groupName}\``);
+                    return true;
+                }   
+                else{
+                    await this.businessMemesActions.deleteMemesGroup(groupName);
+                    await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` удалена`);
+                    return true;
+                }
             }
 
             case commandText === 'мудрый конь': {
@@ -460,7 +538,6 @@ export class BusinessMessageUpdate {
                     'Мудрый конь слушает.\nНапиши: мудрый конь `<твой вопрос>`'
                 );
                 return true;
-
             }
 
             case commandText.includes('мудрый конь'): {
@@ -512,12 +589,17 @@ export class BusinessMessageUpdate {
 
     async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
         const memesGroups = await this.businessMemesActions.findMemesGroups();
-        const commandText = msg.text.toLowerCase();
+
+        const [commandText, memeNumber] = msg.text.toLowerCase().split(' ');
+
+        console.log(commandText, memeNumber)
+
         const threshold = 1;
 
         for (const memeGroup of memesGroups) {
+            const memes = memeGroup.BusinessMemes.map(businessMeme => businessMeme.url);
             if (levenshtein(commandText, memeGroup.groupName) <= threshold) {
-                await this.sendMedia(ctx, randElemFromArray(memeGroup.BusinessMemes.map(businessMeme => businessMeme.url)), msg);
+                await this.sendMedia(ctx, memeNumber ? memes[Number(memeNumber) - 1] : randElemFromArray(memes), msg);
                 break;
             }
         }
@@ -786,7 +868,4 @@ export class BusinessModeUpdate {
 }
 
 
-
 // https://t.me/botmemesbase
-
-
