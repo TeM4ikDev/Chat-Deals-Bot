@@ -341,7 +341,7 @@ export class BusinessMessageUpdate {
                         noCheckCertificates: true,
                         
                         // format: 'best',
-                        // proxy: 'socks5://dfgfg4ghjS:proxysoxybot@45.11.21.40:5501',
+                        proxy: 'socks5://dfgfg4ghjS:proxysoxybot@45.11.21.40:5501',
                         skipDownload: true,
                         ignoreErrors: true,
                         
