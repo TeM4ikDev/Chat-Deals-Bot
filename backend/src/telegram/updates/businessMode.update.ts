@@ -339,7 +339,7 @@ export class BusinessMessageUpdate {
                         cookies: 'cookies.txt',
                         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         // format: 'best',
-                        // proxy: 'http://william0bDAE:e5vg5QGZHu@82.211.9.164:51523',
+                        proxy: 'socks5://dfgfg4ghjS:proxysoxybot@45.11.21.40:5501',
                         skipDownload: true,
                         ignoreErrors: true,
                     });
