@@ -346,7 +346,7 @@ export class BusinessMessageUpdate {
                         ignoreErrors: true,
                         
                     },{
-                        timeout: 10000,
+                        // timeout: 30000,
                     });
 
                     console.log('Информация о видео:', videoInfo);
