@@ -336,6 +336,7 @@ export class BusinessMessageUpdate {
 
                     const videoInfo: any = await youtubedl(msg.text, {
                         dumpSingleJson: true,
+                        cookies: './cookies.txt',
                         // format: 'best',
                         skipDownload: true,
                         ignoreErrors: true,
