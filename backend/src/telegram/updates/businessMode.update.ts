@@ -337,10 +337,10 @@ export class BusinessMessageUpdate {
                     const videoInfo: any = await youtubedl(msg.text, {
                         dumpSingleJson: true,
                         cookies: './cookies.txt',
-                        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        // userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         // format: 'best',
                         skipDownload: true,
-                        ignoreErrors: true,
+                        // ignoreErrors: true,
                     });
 
                     console.log('Информация о видео:', videoInfo);
@@ -362,6 +362,8 @@ export class BusinessMessageUpdate {
                 } catch (error) {
                     console.error("❌ Ошибка скачивания Instagram Reel:", error);
                     await this.sendChatTextMessage(ctx, `❌ Ошибка скачивания Instagram Reel: ${error instanceof Error ? error.message : String(error)}`);
+                
+                    throw error;
                 }
 
                 return true;
