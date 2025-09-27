@@ -37,6 +37,15 @@ interface BusinessContext extends Context {
 
 const accessIds = ['2027571609', '1409479468', '1360482307'];
 
+const helpCommands = {
+    'мемы': { description: 'Список всех групп мемов', format: '' },
+    '+g': { description: 'Создание новой группы мемов.', format: '`+g<название группы>`' },
+    '+m': { description: 'Добавление мема в группу. ', format: '`+m<название группы>` + ответ на видео' },
+    '+r': { description: 'Переименование группы. ', format: '`+r<старое название> - <новое название>`' },
+    '+d': { description: 'Удаление группы\мема из группы. ', format: '`+d<название группы>` \n Или \n `+d<название группы> - <номер мема>`' },
+    'мудрый конь': { description: 'Отвечает на вопросы. ', format: '`мудрый конь <вопрос>`' },
+}
+
 const BusinessMemes = [
     {
         groupName: 'рассказывай',
@@ -176,6 +185,10 @@ export class BusinessMemesActions implements OnModuleInit {
     }
 
     async findMemesGroup(groupName: string): Promise<BusinessMemesGroup & { BusinessMemes: BusinessMeme[] } | null> {
+        console.log(`findMemesGroup:${groupName}`)
+
+        // console.log(groupName === `орешки биг боб`)
+
         return await this.database.businessMemesGroup.findUnique({
             where: {
                 groupName: groupName
@@ -245,6 +258,13 @@ export class BusinessMemesActions implements OnModuleInit {
                 groupName: groupName
             }
         })
+    }
+
+
+    parseCommandData(command: string, splitBy: string = ' ', replaceText: string = '') {
+        const commandText = command.toLowerCase().replace(replaceText, '');
+        const splitedData = commandText.split(splitBy).map(item => item.trim());
+        return splitedData
     }
 }
 
@@ -339,13 +359,13 @@ export class BusinessMessageUpdate {
                         cookies: './cookies.txt',
                         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         noCheckCertificates: true,
-                        
+
                         // format: 'best',
                         proxy: 'socks5://dfgfg4ghjS:proxysoxybot@45.11.21.40:5501',
                         skipDownload: true,
                         ignoreErrors: true,
-                        
-                    },{
+
+                    }, {
                         // timeout: 30000,
                     });
 
@@ -368,7 +388,7 @@ export class BusinessMessageUpdate {
                 } catch (error) {
                     console.error("❌ Ошибка скачивания Instagram Reel:", error);
                     await this.sendChatTextMessage(ctx, `❌ Ошибка скачивания Instagram Reel: ${error instanceof Error ? error.message : String(error)}`);
-                
+
                     throw error;
                 }
 
@@ -392,6 +412,11 @@ export class BusinessMessageUpdate {
                     memesText += `${index + 1}. \`${memeGroup.groupName}\`(${memesUrls})\n`;
                 });
                 await this.sendChatTextMessage(ctx, memesText);
+                return true;
+            }
+
+            case commandText.startsWith('+help'): {
+                await this.sendChatTextMessage(ctx, this.concatHelpCommands());
                 return true;
             }
 
@@ -470,7 +495,7 @@ export class BusinessMessageUpdate {
 
             case commandText.startsWith('+r'): {
                 if (!this.checkIsUserHasAccess(accessIds, msg)) return false
-                const [groupName, newGroupName] = commandText.replace('+r', '').trim().toLowerCase().split(' ');
+                const [groupName, newGroupName] = this.businessMemesActions.parseCommandData(commandText, '-', '+r');
 
                 console.log(groupName, newGroupName)
 
@@ -485,6 +510,7 @@ export class BusinessMessageUpdate {
                 }
 
                 const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
+                console.log(existingGroup)
                 const existingNewGroup = await this.businessMemesActions.findMemesGroup(newGroupName);
 
                 if (!existingGroup) {
@@ -504,7 +530,7 @@ export class BusinessMessageUpdate {
 
             case commandText.startsWith('+d'): {
                 if (!this.checkIsUserHasAccess(accessIds, msg)) return false
-                const [groupName, memeNumber] = commandText.replace('+d', '').trim().toLowerCase().split(' ');
+                const [groupName, memeNumber] = this.businessMemesActions.parseCommandData(commandText, '-', '+d');
 
                 if (!groupName) {
                     await this.sendChatTextMessage(ctx, 'Нужно указать название группы для удаления');
@@ -514,7 +540,7 @@ export class BusinessMessageUpdate {
                 const existingGroup = await this.businessMemesActions.findMemesGroup(groupName);
 
                 if (!existingGroup) {
-                    await this.sendChatTextMessage(ctx, 'Группа не найдена. Напиши `+g<название группы>` для создания новой группы ИЛИ `+d<название группы> <номер мема>` для удаления мема из группы');
+                    await this.sendChatTextMessage(ctx, 'Группа не найдена. Напиши `+g<название группы>` для создания новой группы \n ИЛИ \n `+d<название группы> - <номер мема>` для удаления мема из группы');
                     return true;
                 }
 
@@ -534,8 +560,8 @@ export class BusinessMessageUpdate {
                     await this.businessMemesActions.deleteMemeFromGroupById(groupName, meme.id);
                     await this.sendChatTextMessage(ctx, `[Мем](${meme.url}) удален из группы \`${groupName}\``);
                     return true;
-                }   
-                else{
+                }
+                else {
                     await this.businessMemesActions.deleteMemesGroup(groupName);
                     await this.sendChatTextMessage(ctx, `Группа \`${groupName}\` удалена`);
                     return true;
@@ -598,18 +624,25 @@ export class BusinessMessageUpdate {
     }
 
     async handleBusinessMemes(ctx: BusinessContext, msg: BusinessMessage) {
+        const threshold = 1;
         const memesGroups = await this.businessMemesActions.findMemesGroups();
-
-        const [commandText, memeNumber] = msg.text.toLowerCase().split(' ');
+        const [commandText, memeNumber] = this.businessMemesActions.parseCommandData(msg.text, '-');
 
         console.log(commandText, memeNumber)
-
-        const threshold = 1;
 
         for (const memeGroup of memesGroups) {
             const memes = memeGroup.BusinessMemes.map(businessMeme => businessMeme.url);
             if (levenshtein(commandText, memeGroup.groupName) <= threshold) {
-                await this.sendMedia(ctx, memeNumber ? memes[Number(memeNumber) - 1] : randElemFromArray(memes), msg);
+                if (memeNumber) {
+                    const meme = memes[Number(memeNumber) - 1];
+                    if (!meme) {
+                        await this.sendChatTextMessage(ctx, 'Мем не найден');
+                        return;
+                    }
+                    await this.sendMedia(ctx, meme, msg);
+                } else {
+                    await this.sendMedia(ctx, randElemFromArray(memes), msg);
+                }
                 break;
             }
         }
@@ -729,6 +762,19 @@ Username: @${chat.username || 'нет'}
             text: info,
         } as any);
     }
+
+
+    concatHelpCommands() {
+        let text = ''
+        Object.entries(helpCommands).forEach(([key, value]) => {
+            text += `🔹 \`${key}\`\n`;
+            text += `   • Описание: ${value.description}\n`;
+            text += `   • Формат: ${value.format || 'Без параметров'}\n\n`;
+        });
+    
+        return `\`\`\`${text}\`\`\``;
+    }
+    
 
     checkIsUserHasAccess(accessIds: string[], msg: BusinessMessage) {
         if ((accessIds.includes(msg.from.id.toString()))) return true;
