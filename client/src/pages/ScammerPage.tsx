@@ -28,7 +28,7 @@ const ScammerPage: React.FC = observer(() => {
         totalCount: 0,
         maxPage: 1,
         currentPage: 1,
-        limit: 10,
+        limit: 10
     });
 
     const isAdmin = userRole === UserRoles.Admin || userRole === UserRoles.SuperAdmin

@@ -13,6 +13,21 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { PageContainer } from "../components/layout/PageContainer"
 
+
+const savePaginationToLocalStorage = (pagination: IPagination) => {
+    localStorage.setItem('scamformsPagination', JSON.stringify(pagination))
+}
+
+const getPaginationFromLocalStorage = () => {
+    const pagination = localStorage.getItem('scamformsPagination')
+    return pagination ? JSON.parse(pagination) : {
+        totalCount: 0,
+        maxPage: 1,
+        currentPage: 1,
+        limit: 10
+    }
+}
+
 export const ScamForms: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>()
@@ -22,17 +37,15 @@ export const ScamForms: React.FC = () => {
     const [selectedForm, setSelectedForm] = useState<IScamForm | null>(null)
     const [showModal, setShowModal] = useState(false)
 
-    const [pagination, setPagination] = useState<IPagination>({
-        totalCount: 0,
-        maxPage: 1,
-        currentPage: 1,
-        limit: 10
-    })
+    const [pagination, setPagination] = useState<IPagination>(getPaginationFromLocalStorage())
     const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
     const initialSearch = id || startParam || "";
     const [search, setSearch] = useState<string>(initialSearch);
 
     const [showMarked, setShowMarked] = useState(true)
+
+
+   
 
     const debouncedSearch = useCallback(
         (() => {
@@ -87,8 +100,12 @@ export const ScamForms: React.FC = () => {
     useEffect(() => {
         if (!id && startParam && !search) {
             setSearch(startParam);
+            console.log('save pagination')
             getScamForms(pagination.currentPage, startParam, showMarked);
         } else {
+            savePaginationToLocalStorage(pagination)
+            console.log('save pagination')
+
             getScamForms(pagination.currentPage, search, showMarked)
         }
     }, [pagination.currentPage, showMarked])
