@@ -387,7 +387,15 @@ export class ScamformService {
       }
     });
 
-    return scammer;
+
+    if (!scammer) {
+      return null;
+    }
+
+
+    const mainScamForm = scammer?.scamForms?.length > 0 && scammer.scamForms.filter(form => form.statusChanger).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+    return { ...scammer, mainScamForm };
   }
 
   async updateScammer(id: string, data: Prisma.ScammerUpdateInput) {
@@ -396,11 +404,6 @@ export class ScamformService {
       data: { ...data }
     })
   }
-
-  // async createOrUpdateScammer(data: Prisma.ScammerCreateInput) {
-
-  // }
-
 
   async getScammerByTelegramId(telegramId: string) {
     return await this.database.scammer.findUnique({
@@ -660,6 +663,14 @@ export class ScamformService {
 
       if (data.formId) {
         const form = await this.findById(data.formId)
+
+        await this.database.scamForm.update({
+          where: { id: data.formId },
+          data: {
+            statusChanger: true
+          }
+        })
+
         await this.telegramService.complaintOutcome(form, status)
       }
 

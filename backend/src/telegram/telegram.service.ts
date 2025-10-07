@@ -130,7 +130,7 @@ export class TelegramService {
     return message;
   }
 
-  async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000) {
+  async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000, isDisable: boolean = true) {
 
     const message = mediaType === 'photo' ?
       await ctx.replyWithPhoto(source, {
@@ -147,6 +147,14 @@ export class TelegramService {
       });
 
     // if (await this.checkIsChatPrivate(ctx)) return
+
+    if(await this.checkIsChatPrivate(ctx)) {
+      return
+    }
+
+    // if (isDisable) {
+    //   return
+    // }
 
     setTimeout(async () => {
       try {

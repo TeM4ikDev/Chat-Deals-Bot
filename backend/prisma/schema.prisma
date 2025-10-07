@@ -124,6 +124,9 @@ model ScamForm {
   scammer   Scammer @relation(fields: [scammerId], references: [id])
   scammerId String
 
+  // если true, то эта та жалоба которая привела к изменению статуса пользователя(их может быть несколько, в описании отображается всегда последняя)
+  statusChanger Boolean @default(false)
+
   likes    Int @default(0)
   dislikes Int @default(0)
 
@@ -218,8 +221,8 @@ model BusinesBotConnection {
 }
 
 model BusinessMemesGroup {
-  id            String          @id @default(uuid())
-  groupName     String          @unique
+  id            String         @id @default(uuid())
+  groupName     String         @unique
   BusinessMemes BusinessMeme[]
 }
 
@@ -229,6 +232,5 @@ model BusinessMeme {
   url String
 
   businessMemeGroupId String
-  businessMemesGroup   BusinessMemesGroup @relation(fields: [businessMemeGroupId], references: [id], onDelete: Cascade)
+  businessMemesGroup  BusinessMemesGroup @relation(fields: [businessMemeGroupId], references: [id], onDelete: Cascade)
 }
-

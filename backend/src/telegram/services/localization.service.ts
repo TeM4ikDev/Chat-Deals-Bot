@@ -61,7 +61,6 @@ export class LocalizationService {
   getT(key: string, lang: string = 'ru'): string {
     try {
       
-      console.log(this.translations);
       const translation = this.translations.get(lang);
       if (!translation) {
         this.logger.warn(`No translations found for language: ${lang}`);

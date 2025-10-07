@@ -26,7 +26,6 @@ export class MainMenuUpdate {
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
         const { user, isNew } = await this.userService.findOrCreateUser(ctx.from);
 
-
         const handled = await this.telegramService.checkStartPayload(ctx)
         if (handled) return
 
@@ -56,13 +55,7 @@ export class MainMenuUpdate {
                         [{ text: this.localizationService.getT('mainMenu.buttons.launchApp', language), url: `https://t.me/${BOT_NAME}?startapp` }]
                     ],
                 },
-            });
-
-        // if ('callback_query' in ctx && ctx.callbackQuery?.id) {
-        //     await ctx.answerCbQuery();
-        // }
-
-
+            })
     }
 
     @Command('report')

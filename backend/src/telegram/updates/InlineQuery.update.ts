@@ -19,7 +19,6 @@ export class InlineQueryUpdate {
 
     @InlineQuery(/.*/)
     async onInlineQuery(@Ctx() ctx: Context) {
-        console.log(ctx)
         await this.handleInlineQuery(ctx);
     }
 
@@ -41,10 +40,6 @@ export class InlineQueryUpdate {
             await ctx.answerInlineQuery(results);
             return;
         }
-
-        console.log('Inline query:', query);
-
-        console.log(this.telegramService.checkIsGarant(query))
 
         if (await this.telegramService.checkIsGarant(query)) {
             const results: InlineQueryResult[] = [
@@ -68,6 +63,9 @@ export class InlineQueryUpdate {
 
         const scammer = await this.scamformService.getScammerByQuery(query);
 
+        console.log('scammer testiiiiiing')
+        console.log(scammer)
+
         const results: InlineQueryResult[] = [];
         if (!scammer) {
             results.push({
@@ -88,7 +86,7 @@ export class InlineQueryUpdate {
             const telegramId = scammer.telegramId || '--';
             const formsCount = scammer.scamForms.length;
             const status = this.telegramService.getScammerStatusText(scammer);
-            const description = this.telegramService.escapeMarkdown(scammer.description || 'нет описания');
+            const description = this.telegramService.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания');
             const twinAccounts = this.telegramService.formatTwinAccounts(scammer.twinAccounts);
 
             results.push({

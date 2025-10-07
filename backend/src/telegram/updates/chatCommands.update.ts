@@ -360,7 +360,7 @@ export class ChatCommandsUpdate {
     async onScammerDetail(
         @Ctx() ctx: Context,
         lang: string,
-        scammer: Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true } }> | null,
+        scammer: Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true } }> & { mainScamForm: any } | null,
         query: string
     ) {
         if (!scammer) {
@@ -382,7 +382,7 @@ export class ChatCommandsUpdate {
         const telegramId = scammer.telegramId || '--';
         const formsCount = scammer.scamForms.length;
         let status = scammer.status
-        let description = this.telegramService.escapeMarkdown(scammer.description || 'нет описания')
+        let description = this.telegramService.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
         const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
         let photoStream = fs.createReadStream(IMAGE_PATHS[status]);
         const twinAccounts = this.telegramService.formatTwinAccounts(scammer.twinAccounts)
