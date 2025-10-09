@@ -91,6 +91,17 @@ model TwinAccount {
   scammer   Scammer @relation(fields: [scammerId], references: [id])
 }
 
+model collectionUsername {
+  id       String @id @default(uuid())
+  username String @unique
+
+  Scammer   Scammer? @relation(fields: [scammerId], references: [id])
+  scammerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Scammer {
   id         String  @id @default(uuid())
   username   String?
@@ -101,6 +112,7 @@ model Scammer {
   scamForms ScamForm[]
 
   twinAccounts TwinAccount[]
+  collectionUsernames collectionUsername[]
 
   likes    Int @default(0)
   dislikes Int @default(0)

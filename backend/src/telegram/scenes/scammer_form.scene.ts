@@ -364,14 +364,16 @@ export class ScammerFrom {
             form.step = 2;
             await ctx.reply(
                 this.localizationService.getT('complaint.form.step2', this.language),
-                { reply_markup: { 
-                    keyboard: [
-                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
-                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
-                        ScammerFrom.KEYBOARDS.CANCEL
-                    ], 
-                    resize_keyboard: true 
-                } }
+                {
+                    reply_markup: {
+                        keyboard: [
+                            // ScammerFrom.KEYBOARDS.ADD_TWIN,
+                            ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                            ScammerFrom.KEYBOARDS.CANCEL
+                        ],
+                        resize_keyboard: true
+                    }
+                }
             );
             return;
         }
@@ -389,29 +391,37 @@ export class ScammerFrom {
                 });
             }
             else if (text) {
-                const parts = text.trim().split(/\s+/).slice(0, 2);
-                let hasValidInput = false;
-                const newTwin: IScammerData = {};
+                console.log(text.split(/\n/))
 
-                for (const part of parts) {
-                    if (part.startsWith('@')) {
-                        const username = part.slice(1);
-                        if (ScammerFrom.USERNAME_REGEX.test(username)) {
-                            newTwin.username = username;
+                const lines = text.split(/\n/);
+
+                for (const line of lines) {
+
+                    const parts = line.trim().split(/\s+/).slice(0, 2);
+                    let hasValidInput = false;
+                    const newTwin: IScammerData = {};
+
+                    for (const part of parts) {
+                        if (part.startsWith('@')) {
+                            const username = part.slice(1);
+                            if (ScammerFrom.USERNAME_REGEX.test(username)) {
+                                newTwin.username = username;
+                                hasValidInput = true;
+                            }
+                        }
+                        else if (/^\d+$/.test(part)) {
+                            newTwin.telegramId = part;
                             hasValidInput = true;
                         }
                     }
-                    else if (/^\d+$/.test(part)) {
-                        newTwin.telegramId = part;
-                        hasValidInput = true;
-                    }
-                }
 
-                if (hasValidInput) {
-                    form.scammerData.twinAccounts.push(newTwin);
-                } else {
-                    await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
-                    return;
+
+                    if (hasValidInput) {
+                        form.scammerData.twinAccounts.push(newTwin);
+                    } else {
+                        await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
+                        return;
+                    }
                 }
             }
             else {
@@ -419,23 +429,24 @@ export class ScammerFrom {
                 return;
             }
 
-           
-            const twinsList = form.scammerData.twinAccounts.length > 0 
-                ? form.scammerData.twinAccounts.map((twin, index) => 
+
+            const twinsList = form.scammerData.twinAccounts.length > 0
+                ? form.scammerData.twinAccounts.map((twin, index) =>
                     `${index + 1}. ${twin.username ? '@' + twin.username : ''} ${twin.telegramId ? `(${twin.telegramId})` : ''}`
                 ).join('\n')
                 : 'Пока нет твинков';
 
             await ctx.reply(
-                `✅ Твинк добавлен!\n\n📋 Текущие твинки:\n${twinsList}\n\nОтправьте еще твинков или нажмите "Пропустить твинки"`,
-                { reply_markup: { 
-                    keyboard: [
-                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
-                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
-                        ScammerFrom.KEYBOARDS.CANCEL
-                    ], 
-                    resize_keyboard: true 
-                } }
+                this.localizationService.getT('complaint.form.addedTwin', this.language).replace('{twinsList}', twinsList),
+                {
+                    reply_markup: {
+                        keyboard: [
+                            ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                            ScammerFrom.KEYBOARDS.CANCEL
+                        ],
+                        resize_keyboard: true
+                    }
+                }
             );
             return;
         }
@@ -493,14 +504,16 @@ export class ScammerFrom {
             form.step = 2;
             await ctx.reply(
                 this.localizationService.getT('complaint.form.step2', this.language),
-                { reply_markup: { 
-                    keyboard: [
-                        // ScammerFrom.KEYBOARDS.ADD_TWIN,
-                        ScammerFrom.KEYBOARDS.SKIP_TWINS,
-                        ScammerFrom.KEYBOARDS.CANCEL
-                    ], 
-                    resize_keyboard: true 
-                } }
+                {
+                    reply_markup: {
+                        keyboard: [
+                            // ScammerFrom.KEYBOARDS.ADD_TWIN,
+                            ScammerFrom.KEYBOARDS.SKIP_TWINS,
+                            ScammerFrom.KEYBOARDS.CANCEL
+                        ],
+                        resize_keyboard: true
+                    }
+                }
             );
             return;
         }

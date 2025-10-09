@@ -56,7 +56,10 @@ export class ChatCommandsUpdate {
         const commandData = words.slice(2).join(' ');
 
         if(await this.telegramService.checkIsChatPrivate(ctx)) {
-            this.handleCheckCommand(ctx, words[0], lang);
+            console.log(ctx.message)
+            const query = (ctx.message as any).forward_from?.username || (ctx.message as any).forward_from?.id.toString() || words[0]
+            // const query = words[0]
+            this.handleCheckCommand(ctx, query, lang);
             return;
         }
 

@@ -34,6 +34,11 @@ export class TelegramService {
   private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
 
 
+  async onModuleInit() {
+    // const user  = await this.bot.telegram.('@imagesbase', 1162525174)
+    // console.log(user)
+  }
+
 
   async checkStartPayload(ctx: Context): Promise<boolean> {
     const startPayload = (ctx as any).startPayload

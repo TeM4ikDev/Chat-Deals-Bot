@@ -116,7 +116,7 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
 
     return (
         <Block className="flex p-0.5 !flex-row justify-between">
-            <div className="flex flex-1 flex-col gap-2 justify-between">
+            <div className="flex flex-1 flex-col gap-2">
                 <div className="flex items-center gap-3 ">
                     {getStatusIcon()}
                     <div className="flex flex-col">
@@ -142,28 +142,30 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                     </div>
                 </div>
 
-                <div className="flex flex-col text-sm gap-1 text-gray-400">
+                <div className="flex flex-col justify-start text-sm gap-1 text-gray-400">
                     {scammer.twinAccounts && scammer.twinAccounts.length > 0 && (
-                        <Block variant='lighter' title="Твинки" className="!p-0 !gap-0 !w-auto">
-                            <div className="flex flex-row gap-1 flex-wrap">
+                        <Block variant='lighter' title="Твинки" className="!p-0 !pl-2 !gap-0 mb-auto !w-auto" isCollapsedInitially={scammer.twinAccounts.length > 1} canCollapse>
+                            <div className="grid grid-cols-1 gap-1 flex-wrap">
                                 {scammer.twinAccounts.map((twin) => (
                                     <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
-                                        <span>@{twin.username || twin.telegramId}</span>
+                                        <span>@{twin.username}</span>
+                                        <span>({twin.telegramId})</span>
                                     </div>
                                 ))}
                             </div>
                         </Block>
                     )}
 
-
                     <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
                         <span>Telegram ID: {scammer.telegramId}</span>
                     </div>
+
                     <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
                         <span>Добавлен: {formatDate(scammer.createdAt)}</span>
                     </div>
+
                     {scammer.scamForms > 0 && (
                         <div className="flex items-center gap-2">
                             <span>Жалоб: {scammer.scamForms}</span>
