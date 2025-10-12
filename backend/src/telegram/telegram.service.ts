@@ -230,12 +230,14 @@ export class TelegramService {
 
 
 
-  formatUserInfo(username?: string, telegramId?: string, language: string = 'ru', escapeMarkdown: boolean = true): string {
+  formatUserInfo(userData: IScammerData, language: string = 'ru', escapeMarkdown: boolean = true): string {
+    const { username, telegramId, twinAccounts, collectionUsernames } = userData
     const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
     if (username && telegramId) {
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
         .replace('{username}', escapedUsername)
-        .replace('{telegramId}', telegramId);
+        .replace('{telegramId}', telegramId)
+        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.map(username => `@${this.escapeMarkdown(username)}`).join(', ')}` : ''}`)
     } else if (username) {
       return this.localizationService.getT('userInfo.withUsernameOnly', language)
         .replace('{username}', escapedUsername);
@@ -249,7 +251,7 @@ export class TelegramService {
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
     if (twinAccounts.length === 0) return '—';
-    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin.username, twin.telegramId, 'ru', false))}`).join('\n')
+    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin, 'ru', false))}`).join('\n')
   }
 
   encodeParams(payload: {}) {
@@ -345,9 +347,8 @@ export class TelegramService {
     const channelId = '@qyqly';
     const userInfo = fromUser.username ? `@${this.escapeMarkdown(fromUser.username)}` : `ID: ${fromUser.telegramId}`;
 
-    const { username, telegramId } = scammerData
-    const scammerInfo = this.formatUserInfo(username, telegramId);
-    const encoded = this.encodeParams({ id: telegramId, formId: scamForm.id })
+    const scammerInfo = this.formatUserInfo(scammerData);
+    const encoded = this.encodeParams({ id: scammerData.telegramId, formId: scamForm.id })
     const description = this.escapeMarkdown(scamForm.description)
 
     const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
@@ -403,7 +404,7 @@ export class TelegramService {
     const message = await this.adminService.findChatConfigByUsername(chatUsername)
     if (!message) return
     console.log('message', message)
-    const newUser = await this.scamformService.findOrCreateScammer({ id: newMember.id.toString(), username: newMember.username })
+    const newUser = await this.scamformService.findOrCreateScammer(newMember.username, newMember.id.toString())
 
 
     if (banStatuses.includes(newUser.status)) {

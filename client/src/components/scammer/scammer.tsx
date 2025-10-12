@@ -143,17 +143,34 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                 </div>
 
                 <div className="flex flex-col justify-start text-sm gap-1 text-gray-400">
+
+                    {scammer.collectionUsernames && scammer.collectionUsernames.length > 0 && (
+                        // <div className="mb-2">
+                            <Block variant='lighter' title="Теги пользователя" className="!p-0 !pl-2 !gap-0 !w-auto">
+                                <div className="flex flex-wrap gap-1">
+                                    {scammer.collectionUsernames.map((collection) => (
+                                        <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={collection.id}>
+                                            <span>@{collection.username}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Block>
+                        // </div>
+                    )}
+
                     {scammer.twinAccounts && scammer.twinAccounts.length > 0 && (
-                        <Block variant='lighter' title="Твинки" className="!p-0 !pl-2 !gap-0 mb-auto !w-auto" isCollapsedInitially={scammer.twinAccounts.length > 1} canCollapse>
-                            <div className="grid grid-cols-1 gap-1 flex-wrap">
-                                {scammer.twinAccounts.map((twin) => (
-                                    <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
-                                        <span>@{twin.username}</span>
-                                        <span>({twin.telegramId})</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Block>
+                        <div>
+                            <Block variant='lighter' title="Твинки" className="!p-0 !pl-2 !gap-0 !w-auto" isCollapsedInitially={scammer.twinAccounts.length > 1} canCollapse>
+                                <div className="grid grid-cols-1 gap-1 flex-wrap">
+                                    {scammer.twinAccounts.map((twin) => (
+                                        <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
+                                            <span>@{twin.username}</span>
+                                            <span>({twin.telegramId})</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Block>
+                        </div>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -190,7 +207,7 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                         icon={showStatusButtons ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         className="text-xs self-end w-min !px-1 !mr-0 ml-auto py-1 opacity-60 hover:opacity-80"
                     />
-                    
+
                     {showStatusButtons && (
                         <Block className="!gap-1 !p-0 justify-start min-w max-w-min" variant='transparent'>
                             {[ScammerStatus.SCAMMER, ScammerStatus.SUSPICIOUS, ScammerStatus.SPAMMER].map((status) => {

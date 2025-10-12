@@ -71,30 +71,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     <span>Имя:</span>
                     <span className="text-gray-200">{user.firstName}</span>
                 </div>
-                <Block title="Поданные жалобы">
+
+                {user?.ScamForms ? (
+                    <Block title="Поданные жалобы">
+                        <div className="flex flex-col gap-2 text-sm">
+                            <div className="flex justify-between">
+                                <span>Всего подано жалоб:</span>
+                                <span className="text-gray-200 font-semibold">{user.ScamForms.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Подтверждено мошенников:</span>
+                                <span className="text-green-400 font-semibold">
+                                    {user.ScamForms.filter(form =>
+                                        form.scammer.marked && form.scammer.status !== 'UNKNOWN'
+                                    ).length}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Отклонено жалоб:</span>
+                                <span className="text-red-400 font-semibold">
+                                    {user.ScamForms.filter(form =>
+                                        !form.scammer.marked || form.scammer.status === 'UNKNOWN'
+                                    ).length}
+                                </span>
+                            </div>
+                        </div>
+                    </Block>
+                ) : (
                     <div className="flex flex-col gap-2 text-sm">
-                        <div className="flex justify-between">
-                            <span>Всего подано жалоб:</span>
-                            <span className="text-gray-200 font-semibold">{user.ScamForms.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Подтверждено мошенников:</span>
-                            <span className="text-green-400 font-semibold">
-                                {user.ScamForms.filter(form => 
-                                    form.scammer.marked && form.scammer.status !== 'UNKNOWN'
-                                ).length}
-                            </span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Отклонено жалоб:</span>
-                            <span className="text-red-400 font-semibold">
-                                {user.ScamForms.filter(form => 
-                                    !form.scammer.marked || form.scammer.status === 'UNKNOWN'
-                                ).length}
-                            </span>
-                        </div>
+                        <span className="text-gray-400">Жалобы не найдены</span>
                     </div>
-                </Block>
+                )}
             </div>
         </Block>
     )

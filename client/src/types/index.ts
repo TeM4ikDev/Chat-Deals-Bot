@@ -32,16 +32,25 @@ export interface IPagination {
     limit: number
 }
 
-interface ITelegramUserInfo{
+interface ITelegramUserInfo {
     username: string
     telegramId: string
+}
+
+
+export interface ICollectionUsername {
+    id: string
+    username: string,
+    createdAt: string
+
 }
 
 export interface IScammer {
     id: string
     telegramId: string
     username?: string
-    twinAccounts: ITelegramUserInfo[]
+    twinAccounts: ITelegramUserInfo[]   
+    collectionUsernames: ICollectionUsername[]
     status: ScammerStatus
     scamForms: number
     marked: boolean
@@ -91,7 +100,7 @@ export interface IChatData {
     autoMessageIntervalSec?: number
 
     autoMessageKeyboardUrls?: string[]
-    
+
     banWords: string[]
 }
 

@@ -64,7 +64,7 @@ export const Block = ({
             className={cn(
                 getBackgroundColor(),
                 `flex w-full max-w-2xl lg:max-w-6xl h-full min-h-0 flex-col relative shadow-lg rounded-lg border border-[#28204a] p-2 backdrop-blur-sm `,
-                isCollapsed ? 'gap-1' : 'gap-2',
+                // isCollapsed ? 'gap-1' : 'gap-2',
                 overflowHidden && '!overflow-hidden',
                 className,
                 onClick && 'cursor-pointer'
@@ -78,7 +78,7 @@ export const Block = ({
                     onClick={() => canCollapse && handleCollapse(!isCollapsed)}>
 
                     <div className="flex flex-col items-start gap-2 w-full h-min">
-                        <div className="flex w-full h-min gap-2">
+                        <div className="flex w-full h-auto gap-2">
                             <div className={cn("flex h-full w-full items-center", titleCenter && '!justify-center text-center')}>
                                 <div className={cn("flex items-center justify-center", Icons && Icons.length > 0 && 'mr-2')}>
                                     {Icons && Icons.map((Icon, index) => (
@@ -116,7 +116,7 @@ export const Block = ({
                                 handleCollapse(!isCollapsed);
                             }}
                             className="p-1 rounded-md hover:bg-gray-600/50 transition-colors"
-                            aria-expanded={!isCollapsed}
+                            // aria-expanded={!isCollapsed}
                             aria-label={isCollapsed ? 'Развернуть блок' : 'Свернуть блок'}
                         >
                             <motion.div

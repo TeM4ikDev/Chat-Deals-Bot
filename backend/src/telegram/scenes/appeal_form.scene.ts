@@ -127,8 +127,8 @@ export class AppealForm {
 
         await ctx.replyWithMediaGroup(mediaGroup);
 
-        const { username, telegramId } = form.userData
-        const userInfo = this.telegramService.formatUserInfo(username, telegramId, this.language);
+        // const { username, telegramId } = form.userData
+        const userInfo = this.telegramService.formatUserInfo(form.userData, this.language);
 
         await ctx.reply(
             this.localizationService.getT('appeal.form.confirmation', this.language)
@@ -460,8 +460,8 @@ export class AppealForm {
         const channelId = '@giftsstate';
         const userInfo = ctx.from?.username ? `@${this.telegramService.escapeMarkdown(ctx.from.username)}` : `ID: ${ctx.from?.id}`;
 
-        const { username, telegramId } = ctx.session.appealForm.userData
-        const appealUserInfo = this.telegramService.formatUserInfo(username, telegramId);
+        const { telegramId } = ctx.session.appealForm.userData
+        const appealUserInfo = this.telegramService.formatUserInfo(ctx.session.appealForm.userData);
         const encoded = this.telegramService.encodeParams({ id: telegramId })
         const description = this.telegramService.escapeMarkdown(ctx.session.appealForm.description)
 

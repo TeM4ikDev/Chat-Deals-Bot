@@ -14,24 +14,19 @@ import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
 import { TelegramService } from "../telegram.service";
 import { PollingService } from "../services/polling.service";
-
-
-
+import { TelegramClient } from "./TelegramClient";
 
 @UseGuards(UserCheckMiddleware)
 @Update()
 export class ChatCommandsUpdate {
-
     constructor(
         protected readonly telegramService: TelegramService,
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly scamformService: ScamformService,
         private readonly localizationService: LocalizationService,
-
         private readonly pollingService: PollingService,
-        private readonly adminService: AdminService,
-
+        private readonly telegramClient: TelegramClient
     ) { }
 
     @On('message')
@@ -48,21 +43,16 @@ export class ChatCommandsUpdate {
             return;
         }
 
-       
-
         const words = message.split(/\s+/).filter(word => word.length > 0);
         const command = words[0].toLowerCase();
-
         const commandData = words.slice(2).join(' ');
 
-        if(await this.telegramService.checkIsChatPrivate(ctx)) {
+        if (await this.telegramService.checkIsChatPrivate(ctx)) {
             console.log(ctx.message)
             const query = (ctx.message as any).forward_from?.username || (ctx.message as any).forward_from?.id.toString() || words[0]
-            // const query = words[0]
             this.handleCheckCommand(ctx, query, lang);
             return;
         }
-
 
         if ('reply_to_message' in ctx.message && ctx.message.reply_to_message) {
             const repliedMessage = ctx.message.reply_to_message;
@@ -180,10 +170,7 @@ export class ChatCommandsUpdate {
     private async checkUserAndSendInfo(ctx: Context, query: string, lang: string) {
         const isGarant = await this.checkAndSendGarantInfo(ctx, query, lang);
         if (isGarant) return
-
         const scammer = await this.scamformService.getScammerByQuery(query);
-        console.log(scammer)
-
         await this.onScammerDetail(ctx, lang, scammer, query);
     }
 
@@ -268,7 +255,6 @@ export class ChatCommandsUpdate {
         await this.checkUserAndSendInfo(ctx, query, lang);
     }
 
-    
     private async handleStatus(ctx: Context, repliedUser: IUser, statusText: string, query?: string) {
         let status: ScammerStatus;
         const user = await this.userService.findUserByTelegramId(ctx.from.id.toString())
@@ -306,7 +292,12 @@ export class ChatCommandsUpdate {
 
         console.log(queryFind, 'queryFind')
 
-        const scammer = await this.scamformService.findOrCreateScammer(queryFind);
+        let info = null
+        if (queryFind.username) {
+          info = await this.telegramClient.getUserData(queryFind.username)
+        }
+
+        const scammer = await this.scamformService.findOrCreateScammer(queryFind.username, queryFind.id, info?.collectionUsernames);
         if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
         if (!statusText) {
@@ -314,7 +305,7 @@ export class ChatCommandsUpdate {
                 await this.telegramService.replyWithAutoDelete(ctx, 'Пользователь не найден.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр, спам');
                 return;
             }
-            const scammerInfo = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username'    )
+            const scammerInfo = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username')
 
             await this.telegramService.replyWithAutoDelete(ctx, `Статус @${scammerInfo} ${scammer.status}.\n\nЧтобы задать статус, выберите из списка: скам, неизв, подозр, спам`);
             return;
@@ -338,9 +329,9 @@ export class ChatCommandsUpdate {
                 break;
 
             default:
-               await this.telegramService.replyWithAutoDelete(ctx, 'Неизвестный статус. Выберите из списка:\n`скам`, `неизв`, `подозр`, `спам`');
-               return;
-               break;
+                await this.telegramService.replyWithAutoDelete(ctx, 'Неизвестный статус. Выберите из списка:\n`скам`, `неизв`, `подозр`, `спам`');
+                return;
+                break;
         }
 
         if (!scammer) {
@@ -363,7 +354,7 @@ export class ChatCommandsUpdate {
     async onScammerDetail(
         @Ctx() ctx: Context,
         lang: string,
-        scammer: Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true } }> & { mainScamForm: any } | null,
+        scammer: Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true, collectionUsernames: true } }> & { mainScamForm: any } | null,
         query: string
     ) {
         if (!scammer) {
@@ -381,7 +372,8 @@ export class ChatCommandsUpdate {
 
         if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
-        const escapedUsername = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
+        let escapedUsername = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
+        escapedUsername = `${escapedUsername} ${scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map(username => `@${this.telegramService.escapeMarkdown(username.username)}`).join(', ')})` : ''}`;
         const telegramId = scammer.telegramId || '--';
         const formsCount = scammer.scamForms.length;
         let status = scammer.status
@@ -418,9 +410,6 @@ export class ChatCommandsUpdate {
         );
     }
 
-
-    // ______________
-
     async checkCustomUserInfo(ctx: Context, username?: string): Promise<boolean> {
         if (!username) return false;
         username = username.replace('@', '');
@@ -438,7 +427,6 @@ export class ChatCommandsUpdate {
                 return false;
         }
     }
-
 
     async handleCustomInfo(ctx: Context, info: string, streamPath?: string, mediaType?: 'photo' | 'video') {
         const stream = streamPath ? fs.createReadStream(streamPath) : undefined;
@@ -470,6 +458,4 @@ export class ChatCommandsUpdate {
             );
         }
     }
-
-
 }

@@ -36,7 +36,7 @@ export class LocalizationService {
         if (file.endsWith('.json')) {
           const lang = file.replace('.json', '');
           const filePath = path.join(localesPath, file);
-          console.log(`Checking if file exists: ${filePath}`);
+          // console.log(`Checking if file exists: ${filePath}`);
           this.logger.debug(`Loading ${lang} from ${filePath}`);
           
           if (!fs.existsSync(filePath)) {

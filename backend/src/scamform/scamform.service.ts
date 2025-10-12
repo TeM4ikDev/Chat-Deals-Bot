@@ -1,12 +1,13 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
-import { banStatuses, IMediaData, IScammerData, IUser } from '@/types/types';
+import { banStatuses, IMediaData, IScammerData, IUser, ITgUser } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, ScammerStatus, VoteType } from '@prisma/client';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
+import { TelegramClient } from '@/telegram/updates/TelegramClient';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
@@ -30,6 +31,9 @@ export class ScamformService {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => TelegramService))
     private readonly telegramService: TelegramService,
+
+    @Inject(forwardRef(() => TelegramClient))
+    private readonly telegramClient: TelegramClient
   ) { }
 
   async create(data: CreateScamFormData) {
@@ -102,7 +106,13 @@ export class ScamformService {
                 username: twin.username,
                 telegramId: twin.telegramId,
               })),
+             
             },
+            collectionUsernames: {
+              create: data.scammerData.collectionUsernames.map(username => ({
+                username: username
+              }))
+            }
 
           },
         });
@@ -129,6 +139,39 @@ export class ScamformService {
 
     return scamForm;
   }
+
+
+  // async create(data: CreateScamFormData) {
+  //   if (!data.scammerData.username && !data.scammerData.telegramId) {
+  //     throw new Error('Необходимо указать либо username, либо telegramId мошенника');
+  //   }
+
+  //   const scammer = await this.findOrCreateScammer(data.scammerData.username, data.scammerData.telegramId, data.scammerData.twinAccounts, data.scammerData.collectionUsernames)
+
+  //   const scamForm = await this.database.scamForm.create({
+  //     data: {
+  //       description: data.description,
+  //       userId: data?.userTelegramId || null,
+  //       scammerId: scammer.id,
+  //       media: {
+  //         create: data.media.map((media) => ({
+  //           type: media.type,
+  //           fileId: media.file_id,
+  //         })),
+  //       },
+  //     },
+  //     include: {
+  //       media: true,
+  //       user: true,
+  //     },
+  //   });
+
+  //   return scamForm
+
+
+  // }
+
+  // ______________________________
 
   async createAppeal(data: CreateAppealFormData) {
 
@@ -273,6 +316,13 @@ export class ScamformService {
                       ]
                     }
                   }
+                },
+                {
+                  collectionUsernames: {
+                    some: {
+                      username: { contains: search }
+                    }
+                  }
                 }
               ]
             }
@@ -289,7 +339,8 @@ export class ScamformService {
         take: limit,
         include: {
           scamForms: true,
-          twinAccounts: true
+          twinAccounts: true,
+          collectionUsernames: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -311,7 +362,7 @@ export class ScamformService {
     };
   }
 
-  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: Prisma.TwinAccountCreateInput[]) {
+  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: ITgUser[], collectionUsernames?: string[]) {
     const exsScammer = await this.getScammerByQuery(data.username || data.telegramId)
 
     if (exsScammer) {
@@ -333,6 +384,15 @@ export class ScamformService {
         ...(twinAccounts ? {
           twinAccounts: {
             create: twinAccounts
+          }
+        } : {}),
+
+
+        ...(collectionUsernames ? {
+          collectionUsernames: {
+            create: collectionUsernames.map(username => ({
+              username: username
+            }))
           }
         } : {})
       },
@@ -378,12 +438,20 @@ export class ScamformService {
                 ]
               }
             }
+          },
+          {
+            collectionUsernames: {
+              some: {
+                username: query
+              }
+            }
           }
         ]
       },
       include: {
         scamForms: true,
-        twinAccounts: true
+        twinAccounts: true,
+        collectionUsernames: true
       }
     });
 
@@ -414,13 +482,42 @@ export class ScamformService {
     })
   }
 
-  async findOrCreateScammer(user: { username: string, id: string }) {
-    const scammer = await this.getScammerByQuery(user.username || user.id.toString())
+  async findOrCreateScammer(username: string, telegramId: string, twinAccounts?: ITgUser[], collectionUsernames?: string[]) {
+    const scammer = await this.getScammerByQuery(username || telegramId.toString())
     if (scammer) return scammer
-    return await this.createScammer({
-      username: user.username,
-      telegramId: user.id.toString()
-    })
+
+    const info = await this.telegramClient.getUserData(username)
+    if (!info) return null
+
+
+    const createdScammer = await this.createScammer(
+      {
+        username: username,
+        telegramId: telegramId.toString(),
+      }, twinAccounts, collectionUsernames)
+
+
+    return createdScammer
+
+    // return await this.createScammer({
+    //   username: username,
+    //   telegramId: telegramId.toString(),
+    //   ...(twinAccounts ? {
+    //     twinAccounts: {
+    //       create: twinAccounts.map(twin => ({
+    //         username: twin.username,
+    //         telegramId: twin.telegramId.toString()
+    //       }))
+    //     }
+    //   } : {}),
+    //   ...(collectionUsernames ? {
+    //     collectionUsernames: {
+    //       create: collectionUsernames.map(username => ({
+    //         username: username
+    //       }))
+    //     }
+    //   } : {})
+
   }
 
   async findScammerById(id: string) {

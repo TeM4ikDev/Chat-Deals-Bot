@@ -129,6 +129,7 @@ export const ScamForms: React.FC = () => {
                     setSearch('');
                     setPagination(prev => ({ ...prev, currentPage: 1 }));
                 }}
+                showTopPlaceholder={false}
             />
 
             <ListPagination

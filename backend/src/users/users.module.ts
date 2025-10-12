@@ -28,7 +28,6 @@ import {
   providers: [UsersService],
   exports: [
     UsersService,
-
   ],
 })
 export class UsersModule { }

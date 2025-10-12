@@ -164,6 +164,7 @@ const ScammerPage: React.FC = observer(() => {
                     setPagination(prev => ({ ...prev, currentPage: 1 }));
                 }}
                 showClearButton={true}
+                showTopPlaceholder={false}
             />
 
             <Pagination

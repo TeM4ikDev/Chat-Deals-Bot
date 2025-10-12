@@ -26,10 +26,18 @@ export enum BotScenes {
 }
 
 
+export interface ITgUser {
+  username?: string;
+  telegramId?: string;
+}
+
+
+
 export interface IScammerData {
   username?: string
   telegramId?: string
-  twinAccounts?: IScammerData[];
+  twinAccounts?: ITgUser[];
+  collectionUsernames?: string[];
 }
 
 export interface IMediaData {

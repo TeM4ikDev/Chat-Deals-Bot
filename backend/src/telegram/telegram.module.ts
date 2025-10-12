@@ -21,6 +21,7 @@ import { GarantsUpdate } from './updates/garants.update';
 import { InlineQueryUpdate } from './updates/InlineQuery.update';
 import { LanguageUpdate } from './updates/language.update';
 import { MainMenuUpdate } from './updates/main-menu.update';
+import { TelegramClient } from './updates/TelegramClient';
 
 @Module({
 
@@ -71,9 +72,7 @@ import { MainMenuUpdate } from './updates/main-menu.update';
 
     PollingService,
 
-
-   
-    
+    TelegramClient,
     BusinessMessageUpdate,
     BusinessModeUpdate,
     BusinessMemesActions,
@@ -85,6 +84,6 @@ import { MainMenuUpdate } from './updates/main-menu.update';
 
 
   ],
-  exports: [TelegramService, LocalizationService, BusinessModeUpdate, BusinessMessageUpdate]
+  exports: [TelegramService, LocalizationService, BusinessModeUpdate, BusinessMessageUpdate, TelegramClient]
 })
 export class TelegramModule { }

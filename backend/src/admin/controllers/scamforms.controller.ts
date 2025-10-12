@@ -31,14 +31,15 @@ export class ScamformController {
         // return
 
         const user = await this.usersService.findUserById(userId);
-        const scammer = await this.scamformService.createScammer(body.scammerData, body.twinAccounts);
+        const {username, telegramId} = await this.scamformService.createScammer(body.scammerData, body.twinAccounts);
         const mediaData = await this.telegramService.uploadFilesGroup(files);
 
 
         const scamForm = await this.scamformService.create({
             scammerData: {
-                username: scammer.username,
-                telegramId: scammer.telegramId
+                username: username,
+                telegramId: telegramId,
+                // collectionUsernames: body.scammerData.collectionUsernames
             },
             description: body.scammerData.description,
             media: mediaData,
@@ -52,8 +53,8 @@ export class ScamformController {
             },
             scamForm,
             scammerData: {
-                username: scammer.username,
-                telegramId: scammer.telegramId
+                username: username,
+                telegramId: telegramId
             },
             media: mediaData,
         })

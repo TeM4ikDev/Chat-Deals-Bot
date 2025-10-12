@@ -1,13 +1,17 @@
 import { DatabaseService } from '@/database/database.service';
+import { TelegramClient } from '@/telegram/updates/TelegramClient';
 import { IUser, superAdminsTelegramIds } from '@/types/types';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ScammerStatus, UserLanguage, UserRoles } from '@prisma/client';
 import { User } from 'telegraf/typings/core/types/typegram';
 
 
 @Injectable()
 export class UsersService {
-  constructor(private database: DatabaseService) { }
+  constructor(
+    private database: DatabaseService,
+    @Inject(forwardRef(() => TelegramClient))
+    private telegramClient: TelegramClient) { }
 
   async getChatConfig() {
     return await this.database.chatConfig.findMany()
@@ -103,6 +107,8 @@ export class UsersService {
       }
       return { user: existingUser, isNew: false };
     }
+
+  
 
     const newUser = await this.database.user.create({
       data: {

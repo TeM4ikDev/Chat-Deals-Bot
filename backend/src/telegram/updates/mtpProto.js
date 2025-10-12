@@ -5,10 +5,9 @@ const input = require("input"); // npm i input
 
 const apiId = 29514923;         // возьми на https://my.telegram.org
 const apiHash = "95def91b17083ec9e21c34065ed00508";
-const session = new StringSession("1AgAOMTQ5LjE1NC4xNjcuNTABu8Zle85/z5OK7gUEOPLMYdNWEpyMWad3/88UmPCbdi337orriWqpDbge3xOuCQcWY8gHu2YHW+NEpHO8NpZKtRKKYzd/AidATNdgL+c70zWf7aVy0JeueqSizYntV84R76AoYQC5ZRk6+YzilyJEy6YxQn6OsmgWt7E/qDXbRCp0uXVnOHtLjJKuqoqUGNWPzbCB2ApW4+uUbyMPcQ9vLzgsyDMLzS5Sd/hrjZYho+MvRta+pDjfKUPP4o5fLKxY7iLDQT5iaKVxTi01w7F81AK62s4umw8kq7mDCckm2sErrCaLC80ckvJGZOk3bg2IlvFKMextS9LDlRjOGDRZoe8="); // сюда можно потом вставить строку сессии после логина
+const session = new StringSession("1AgAOMTQ5LjE1NC4xNjcuNTABu8Zle85/z5OK7gUEOPLMYdNWEpyMWad3/88UmPCbdi337orriWqpDbge3xOuCQcWY8gHu2YHW+NEpHO8NpZKtRKKYzd/AidATNdgL+c70zWf7aVy0JeueqSizYntV84R76AoYQC5ZRk6+YzilyJEy6YxQn6OsmgWt7E/qDXbRCp0uXVnOHtLjJKuqoqUGNWPzbCB2ApW4+uUbyMPcQ9vLzgsyDMLzS5Sd/hrjZYho+MvRta+pDjfKUPP4o5fLKxY7iLDQT5iaKVxTi01w7F81AK62s4umw8kq7mDCckm2sErrCaLC80ckvJGZOk3bg2IlvFKMextS9LDlRjOGDRZoe8=");
 
 async function main() {
-  console.log("Запуск клиента...");
   const client = new TelegramClient(session, apiId, apiHash, {
     connectionRetries: 5,
   });
