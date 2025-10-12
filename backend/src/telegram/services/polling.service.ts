@@ -42,7 +42,7 @@ export class PollingService implements OnModuleInit {
             }
         }
 
-        console.log(this.chatsBanWords)
+        // console.log(this.chatsBanWords)
     }
 
     checkIsChatBanWord(chatUsername: string, message: string): boolean {

@@ -82,19 +82,14 @@ export class InlineQueryUpdate {
                 description: 'Пользователь не найден в базе',
             });
         } else {
-            const username = scammer.username ? `@${(scammer.username)}` : 'Без username';
-            const telegramId = scammer.telegramId || '--';
-            const formsCount = scammer.scamForms.length;
-            const status = this.telegramService.getScammerStatusText(scammer);
-            const description = this.telegramService.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания');
-            const twinAccounts = this.telegramService.formatTwinAccounts(scammer.twinAccounts);
+            const { textInfo, formsCount, status } = this.telegramService.formatScammerData(scammer, false);
 
             results.push({
                 type: 'article',
                 id: 'scammer_found',
                 title: `${status} найден`,
                 input_message_content: {
-                    message_text: `*${username}*\n\nID: \`${telegramId}\`\nСтатус: *${scammer.status}*\nЖалоб: *${formsCount}*\nОписание: ${this.telegramService.escapeMarkdown(description)}\n\nТвинки:\n${twinAccounts}\n\n[🔍 Посмотреть в приложении](https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId})`,
+                    message_text: textInfo,
                     parse_mode: 'Markdown',
                     link_preview_options: {
                         is_disabled: true,

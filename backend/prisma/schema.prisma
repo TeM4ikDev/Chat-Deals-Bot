@@ -109,6 +109,8 @@ model Scammer {
 
   description String?
 
+  registrationDate DateTime?
+
   scamForms ScamForm[]
 
   twinAccounts TwinAccount[]

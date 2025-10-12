@@ -97,10 +97,12 @@ export class ScamformService {
       }
 
       if (!scammerToUse) {
+        const registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.scammerData.telegramId)
         scammerToUse = await this.database.scammer.create({
           data: {
             username: data.scammerData.username,
             telegramId: data.scammerData.telegramId,
+            registrationDate: registrationDate,
             twinAccounts: {
               create: data.scammerData.twinAccounts.map(twin => ({
                 username: twin.username,
@@ -109,9 +111,9 @@ export class ScamformService {
              
             },
             collectionUsernames: {
-              create: data.scammerData.collectionUsernames.map(username => ({
+              create: data?.scammerData?.collectionUsernames?.map(username => ({
                 username: username
-              }))
+              })) || []
             }
 
           },
@@ -376,11 +378,17 @@ export class ScamformService {
       throw new BadRequestException('User already exists and banned again')
     }
 
+    let registrationDate = null
+    if (data.telegramId) {
+      registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.telegramId)
+    }
+
     const createdScammer = await this.database.scammer.create({
       data: {
         ...data,
         username: data.username,
         marked: true,
+        registrationDate: registrationDate,
         ...(twinAccounts ? {
           twinAccounts: {
             create: twinAccounts

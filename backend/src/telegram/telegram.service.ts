@@ -1,6 +1,6 @@
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
-import { banStatuses, IMessageDataScamForm, IScammerData } from '@/types/types';
+import { banStatuses, IMessageDataScamForm, IScammerData, IScammerPayload } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -8,10 +8,12 @@ import { ChatConfig, Prisma, Scammer, ScammerStatus } from '@prisma/client';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineKeyboardButton, InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
-import { BOT_NAME } from './constants/telegram.constants';
+import { BOT_NAME, IMAGE_PATHS } from './constants/telegram.constants';
 import { LocalizationService } from './services/localization.service';
 import { AdminService } from '@/admin/admin.service';
 import { BusinessModeUpdate } from './updates/businessMode.update';
+import * as fs from 'fs';
+
 
 @Injectable()
 export class TelegramService {
@@ -228,8 +230,6 @@ export class TelegramService {
     );
   }
 
-
-
   formatUserInfo(userData: IScammerData, language: string = 'ru', escapeMarkdown: boolean = true): string {
     const { username, telegramId, twinAccounts, collectionUsernames } = userData
     const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
@@ -345,6 +345,9 @@ export class TelegramService {
   async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
     const { fromUser, scamForm, scammerData } = messageData
     const channelId = '@qyqly';
+
+
+    // const { textInfo } = this.formatScammerData(scammerData as IScammerPayload, false, "ru")
     const userInfo = fromUser.username ? `@${this.escapeMarkdown(fromUser.username)}` : `ID: ${fromUser.telegramId}`;
 
     const scammerInfo = this.formatUserInfo(scammerData);
@@ -453,5 +456,46 @@ export class TelegramService {
     await this.bot.telegram.editMessageReplyMarkup(chatCopyFrom, message.message_id, undefined, {
       inline_keyboard: JSON.parse(autoMessageKeyboardUrls as string) as InlineKeyboardButton[][]
     })
+  }
+
+  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru'){
+    let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
+    username = `${username} ${scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map(username => `@${this.escapeMarkdown(username.username)}`).join(', ')})` : ''}`;
+    const telegramId = scammer.telegramId || '--';
+    const registrationDate = this.formatRegistrationDate(scammer.registrationDate, lang);
+    const formsCount = scammer.scamForms.length;
+    let status = scammer.status
+    let description = this.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
+    const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
+    let photoStream = photo ? fs.createReadStream(IMAGE_PATHS[status]) : null;
+    const twinAccounts = this.formatTwinAccounts(scammer.twinAccounts)
+
+    const textInfo = this.localizationService.getT('userCheck.userDetails', lang)
+    .replace('{username}', username)
+    .replace('{telegramId}', telegramId)
+    .replace('{registrationDate}', registrationDate || '--')
+    .replace('{status}', status)
+    .replace('{formsCount}', formsCount.toString())
+    .replace('{description}', description)
+    .replace('{twinAccounts}', twinAccounts)
+    .replace('{link}', link)
+
+    return {
+      textInfo,
+      username,
+      telegramId,
+      registrationDate,
+      formsCount,
+      status,
+      description,
+      link,
+      photoStream,
+      twinAccounts
+    }
+  }
+
+  formatRegistrationDate(date: Date, language: string = 'ru'): string | null {
+    if (!date) return null
+    return date.toLocaleString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric' })
   }
 }

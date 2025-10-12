@@ -39,8 +39,8 @@ export class ScammerFrom {
 
     private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
 
-    private language: string = 'ru';
-    private min_media = 0
+    private language: string = 'ru'
+    private min_media = 1
     private max_media = 10
 
     private static readonly KEYBOARDS = {
@@ -134,11 +134,7 @@ export class ScammerFrom {
 
         if (mediaGroup.length > 0) {
             await ctx.replyWithMediaGroup(mediaGroup);
-
         }
-
-
-        // const { username, telegramId } = form.scammerData
 
         const userInfo = this.telegramService.formatUserInfo(form.scammerData, this.language);
 
@@ -258,29 +254,29 @@ export class ScammerFrom {
     async restartForm(@Ctx() ctx: ScammerFormSession) {
         await ctx.answerCbQuery();
 
-            ctx.session.scamForm = {
-                step: 1,
-                scammerData: {
-                    twinAccounts: []
-                },
-                description: null,
-                media: [],
-                processedMediaGroups: new Set()
-            };
+        ctx.session.scamForm = {
+            step: 1,
+            scammerData: {
+                twinAccounts: []
+            },
+            description: null,
+            media: [],
+            processedMediaGroups: new Set()
+        };
 
 
-            const message = await ctx.reply(
-                this.localizationService.getT('complaint.form.step1', this.language), {
-                reply_markup: {
-                    keyboard: [
-                        ScammerFrom.KEYBOARDS.NO_USERNAME,
-                        ScammerFrom.KEYBOARDS.CANCEL,
-                    ],
-                    resize_keyboard: true,
-                }
-            });
+        const message = await ctx.reply(
+            this.localizationService.getT('complaint.form.step1', this.language), {
+            reply_markup: {
+                keyboard: [
+                    ScammerFrom.KEYBOARDS.NO_USERNAME,
+                    ScammerFrom.KEYBOARDS.CANCEL,
+                ],
+                resize_keyboard: true,
+            }
+        });
 
-            ctx.session.scamForm.lastInstructionMessageId = message.message_id;
+        ctx.session.scamForm.lastInstructionMessageId = message.message_id;
     }
 
     @Action('confirm_submission')
@@ -327,48 +323,37 @@ export class ScammerFrom {
             const text = msg?.text;
             const forwardedMessage = msg?.forward_from;
 
-            // console.log(text)
-
-            console.log(forwardedMessage)
+            console.log('forwardedMessage', forwardedMessage)
             if (forwardedMessage) {
                 form.scammerData.telegramId = forwardedMessage.id.toString();
                 form.scammerData.username = forwardedMessage.username;
             }
             else if (text) {
-                const parts = text.trim().split(/\s+/).slice(0, 2);
+                const part = text.split(' ')[0].trim()
                 let hasValidInput = false;
-                console.log(parts)
 
-                for (const part of parts) {
-                    if (part.startsWith('@')) {
-                        const username = part.slice(1);
+                if (part.startsWith('@')) {
+                    const username = part.replace('@', '')
 
-                        if (!ScammerFrom.USERNAME_REGEX.test(username)) continue
+                    if (!ScammerFrom.USERNAME_REGEX.test(username)) return
 
-                        const info = await this.telegramClient.getUserData(username);
-                        console.log(info)
+                    const info = await this.telegramClient.getUserData(username);
 
-                        if (!info) {
-                            ctx.reply("Такого юзернейма не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.");
-                            return
-                        }
-                        else {
-                            form.scammerData.username = username;
-                            form.scammerData.telegramId = info?.id;
-                            form.scammerData.collectionUsernames = info?.collectionUsernames;
-                            hasValidInput = true;
-                        }
-
+                    if (!info) {
+                        ctx.reply("Такого юзернейма не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.");
+                        return
                     }
-                    else if (/^\d+$/.test(part)) {
-                        form.scammerData.telegramId = part;
+                    else {
+                        form.scammerData.username = username;
+                        form.scammerData.telegramId = info?.id;
+                        form.scammerData.collectionUsernames = info?.collectionUsernames;
                         hasValidInput = true;
                     }
                 }
-
-
-
-                console.log(form.scammerData)
+                else if (/^\d+$/.test(part)) {
+                    form.scammerData.telegramId = part;
+                    hasValidInput = true;
+                }
 
                 if (!hasValidInput) {
                     await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
@@ -378,6 +363,17 @@ export class ScammerFrom {
             else {
                 await ctx.reply(this.localizationService.getT('complaint.errors.invalidInput', this.language));
                 return;
+            }
+
+            const existingScammer = await this.scamformService.getScammerByQuery(form.scammerData.username || form.scammerData.telegramId);
+            if (existingScammer) {
+                const { textInfo } = this.telegramService.formatScammerData(existingScammer, false);
+                await ctx.reply(`Существующий пользователь.\n\n${textInfo}`, {
+                    parse_mode: 'Markdown',
+                    link_preview_options: {
+                        is_disabled: true,
+                    },
+                })
             }
 
             form.step = 2;
@@ -403,6 +399,8 @@ export class ScammerFrom {
             const msg = ctx.message as any;
             const text = msg?.text;
             const forwardedMessage = msg?.forward_from;
+
+
 
             if (forwardedMessage) {
                 form.scammerData.twinAccounts.push({
@@ -527,6 +525,9 @@ export class ScammerFrom {
                     form.scammerData.telegramId = text;
                 }
             }
+
+
+
 
             form.step = 2;
             await ctx.reply(

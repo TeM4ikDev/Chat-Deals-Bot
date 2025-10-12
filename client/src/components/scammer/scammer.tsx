@@ -1,5 +1,5 @@
 import { IScammer, ScammerStatus } from "@/types"
-import { AlertTriangle, Calendar, ChevronDown, ChevronUp, Mail, Shield, User, XCircle } from "lucide-react"
+import { AlertTriangle, Calendar, Calendar1, ChevronDown, ChevronUp, Mail, Shield, User, XCircle } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Block } from "../ui/Block"
@@ -177,6 +177,13 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
                         <User className="w-4 h-4" />
                         <span>Telegram ID: {scammer.telegramId}</span>
                     </div>
+
+                    {scammer.registrationDate && (
+                        <div className="flex items-center gap-2">
+                            <Calendar1 className="w-4 h-4" />
+                            <span>Примерная дата регистрации: {new Date(scammer.registrationDate).toLocaleString('ru-RU', { month: 'long', year: 'numeric' })}</span>
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />

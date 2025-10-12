@@ -1,19 +1,18 @@
-import { AdminService } from "@/admin/admin.service";
 import { UserCheckMiddleware } from "@/auth/strategies/telegram.strategy";
 import { ScamformService } from "@/scamform/scamform.service";
-import { IUser } from "@/types/types";
+import { IScammerPayload, IUser } from "@/types/types";
 import { UsersService } from "@/users/users.service";
 import { UseGuards } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Prisma, ScammerStatus, UserRoles } from "@prisma/client";
+import { ScammerStatus, UserRoles } from "@prisma/client";
 import * as fs from 'fs';
 import { Ctx, On, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { CUSTOM_INFO, IMAGE_PATHS } from "../constants/telegram.constants";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
-import { TelegramService } from "../telegram.service";
 import { PollingService } from "../services/polling.service";
+import { TelegramService } from "../telegram.service";
 import { TelegramClient } from "./TelegramClient";
 
 @UseGuards(UserCheckMiddleware)
@@ -48,8 +47,27 @@ export class ChatCommandsUpdate {
         const commandData = words.slice(2).join(' ');
 
         if (await this.telegramService.checkIsChatPrivate(ctx)) {
-            console.log(ctx.message)
-            const query = (ctx.message as any).forward_from?.username || (ctx.message as any).forward_from?.id.toString() || words[0]
+            console.log('message', ctx.message)
+
+            if((ctx.message as any)?.forward_origin?.type == 'hidden_user') {
+                await ctx.reply('Этот пользователь скрыт. Вы не можете проверить его информацию. Пришлите в чат его Username или ID');
+                return;
+            }
+
+            let query = words[0]
+            const forwardFrom = (ctx.message as any).forward_from
+
+            
+            if (forwardFrom) {
+
+                console.log('forwardFrom', forwardFrom)
+
+               
+
+                query = forwardFrom.username || forwardFrom.id.toString()
+            }
+
+            
             this.handleCheckCommand(ctx, query, lang);
             return;
         }
@@ -294,7 +312,7 @@ export class ChatCommandsUpdate {
 
         let info = null
         if (queryFind.username) {
-          info = await this.telegramClient.getUserData(queryFind.username)
+            info = await this.telegramClient.getUserData(queryFind.username)
         }
 
         const scammer = await this.scamformService.findOrCreateScammer(queryFind.username, queryFind.id, info?.collectionUsernames);
@@ -354,7 +372,7 @@ export class ChatCommandsUpdate {
     async onScammerDetail(
         @Ctx() ctx: Context,
         lang: string,
-        scammer: Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true, collectionUsernames: true } }> & { mainScamForm: any } | null,
+        scammer: IScammerPayload | null,
         query: string
     ) {
         if (!scammer) {
@@ -372,27 +390,13 @@ export class ChatCommandsUpdate {
 
         if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
 
-        let escapedUsername = this.telegramService.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
-        escapedUsername = `${escapedUsername} ${scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map(username => `@${this.telegramService.escapeMarkdown(username.username)}`).join(', ')})` : ''}`;
-        const telegramId = scammer.telegramId || '--';
-        const formsCount = scammer.scamForms.length;
-        let status = scammer.status
-        let description = this.telegramService.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
-        const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
-        let photoStream = fs.createReadStream(IMAGE_PATHS[status]);
-        const twinAccounts = this.telegramService.formatTwinAccounts(scammer.twinAccounts)
+        const { textInfo, photoStream } = this.telegramService.formatScammerData(scammer, true, lang);
 
         await this.telegramService.replyMediaWithAutoDelete(ctx,
             { source: photoStream },
             {
-                caption: this.localizationService.getT('userCheck.userDetails', lang)
-                    .replace('{username}', escapedUsername)
-                    .replace('{telegramId}', telegramId)
-                    .replace('{status}', status)
-                    .replace('{formsCount}', formsCount.toString())
-                    .replace('{description}', description)
-                    .replace('{twinAccounts}', twinAccounts)
-                    .replace('{link}', link),
+                caption: textInfo,
+
                 reply_markup: {
                     inline_keyboard: [
                         [{

@@ -51,6 +51,7 @@ export interface IScammer {
     username?: string
     twinAccounts: ITelegramUserInfo[]   
     collectionUsernames: ICollectionUsername[]
+    registrationDate?: Date
     status: ScammerStatus
     scamForms: number
     marked: boolean
