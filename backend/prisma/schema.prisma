@@ -228,6 +228,20 @@ model ChatConfig {
   updatedAt DateTime @updatedAt
 }
 
+
+// ______________
+
+
+model BotNewsHistory {
+  id String @id @default(uuid())
+
+  messageId String
+  chatId String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ________
 
 model BusinesBotConnection {

@@ -12,7 +12,8 @@ export const IMAGE_PATHS = {
 
 export enum SCENES {
   SCAMMER_FORM = 'SCAMMERFORM',
-  APPEAL_FORM = 'APPEALFORM'
+  APPEAL_FORM = 'APPEALFORM',
+  NEWS = 'NEWS'
 }
 
 export const BOT_NAME = 'svdbasebot';

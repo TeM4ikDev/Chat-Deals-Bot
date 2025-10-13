@@ -458,6 +458,9 @@ export class TelegramService {
     })
   }
 
+
+
+
   formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru'){
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
     username = `${username} ${scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map(username => `@${this.escapeMarkdown(username.username)}`).join(', ')})` : ''}`;

@@ -12,6 +12,7 @@ import { TelegramService } from './telegram.service';
 import { AdminModule } from '@/admin/admin.module';
 import { ScamformModule } from '@/scamform/scamform.module';
 import { AppealForm } from './scenes/appeal_form.scene';
+import { BotNewsScene } from './scenes/bot_news.scene';
 import { ScammerFrom } from './scenes/scammer_form.scene';
 import { PollingService } from './services/polling.service';
 import { TelegramUpdate } from './telegram.update';
@@ -69,6 +70,7 @@ import { TelegramClient } from './updates/TelegramClient';
     LocalizationService,
     ScammerFrom,
     AppealForm,
+    BotNewsScene,
 
     PollingService,
 

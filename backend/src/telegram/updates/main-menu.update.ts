@@ -9,6 +9,8 @@ import { BOT_NAME, SCENES } from '../constants/telegram.constants';
 import { Language } from '../decorators/language.decorator';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
+import { UserRoles } from '@prisma/client';
+import { SceneContext } from 'telegraf/typings/scenes';
 
 
 @UseGuards(UserCheckMiddleware)
@@ -47,15 +49,25 @@ export class MainMenuUpdate {
                             { text: this.localizationService.getT('mainMenu.buttons.catalog', language), url: 'https://t.me/nftcatalog' },
                             { text: this.localizationService.getT('mainMenu.buttons.tags', language), url: 'https://t.me/svdteg' },
                         ],
+                        
                         [
                             { text: this.localizationService.getT('mainMenu.buttons.addToGroup', language), url: 'https://t.me/svdbasebot?startgroup=true' },
                             { text: this.localizationService.getT('mainMenu.buttons.allProjects', language), url: 'https://t.me/giftthread' }
                         ],
 
-                        [{ text: this.localizationService.getT('mainMenu.buttons.launchApp', language), url: `https://t.me/${BOT_NAME}?startapp` }]
+                        [{ text: this.localizationService.getT('mainMenu.buttons.launchApp', language), url: `https://t.me/${BOT_NAME}?startapp` }],
+
+                        ...(user.role === UserRoles.SUPER_ADMIN ? [
+                            [{ text: '📰 Менеджер новостей', callback_data: 'bot_news' }]
+                        ] : [])
                     ],
                 },
             })
+    }
+
+    @Action('bot_news')
+    async onBotNews(@Ctx() ctx: SceneContext) {
+        await ctx.scene.enter(SCENES.NEWS)
     }
 
     @Command('report')

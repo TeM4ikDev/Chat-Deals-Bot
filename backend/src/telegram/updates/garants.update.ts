@@ -7,17 +7,29 @@ import { Context } from "telegraf";
 import { Language } from "../decorators/language.decorator";
 import { LocalizationService } from "../services/localization.service";
 import { TelegramService } from "../telegram.service";
+import { SCENES } from "../constants/telegram.constants";
+import { SceneContext } from "telegraf/typings/scenes";
 
 @UseGuards(UserCheckMiddleware)
 @Update()
 export class GarantsUpdate {
     constructor(
         private readonly database: DatabaseService,
-        
+
         private readonly localizationService: LocalizationService,
         private readonly userService: UsersService,
         private readonly telegramService: TelegramService
     ) { }
+
+    // @Command('news')
+    // async onNews(@Ctx() ctx: SceneContext, @Language() lang: string) {
+
+    //     // if (!await this.guardCommandRoles([UserRoles.SUPER_ADMIN], ctx, user)) return
+    //     // await this.telegramService.sendNewsMessage(ctx, lang)
+    //     console.log('onNews')
+    //     await ctx.reply('News')
+    //     await ctx.scene.enter(SCENES.NEWS)
+    // }
 
     @Command('garants')
     async showGarants(@Ctx() ctx: Context, @Language() lang: string) {
@@ -39,7 +51,7 @@ export class GarantsUpdate {
         const header = this.localizationService.getT('garant.header', lang)
             .replace('{count}', totalCount.toString())
 
-            console.log(header)
+        console.log(header)
 
         const message = `${header}${garantsList}\n\n [Artem](https://t.me/TeM4ik20) - разраб`
 
