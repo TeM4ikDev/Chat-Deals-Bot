@@ -27,7 +27,7 @@ export class TelegramClient {
   async onModuleInit() {
     await this.createClient();
     // console.log(this.session)
-    // this.updatePrevUsersCollectionUsernames();
+    this.updatePrevUsersCollectionUsernames();
     // this.updateScammersRegistrationDate();
   }
 
