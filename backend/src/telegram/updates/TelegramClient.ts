@@ -27,8 +27,8 @@ export class TelegramClient {
   async onModuleInit() {
     await this.createClient();
     // console.log(this.session)
-    this.updatePrevUsersCollectionUsernames();
-    // this.updateScammersRegistrationDate();
+    // this.updatePrevUsersCollectionUsernames();
+    this.updateScammersRegistrationDate();
   }
 
   async createClient() {
@@ -92,10 +92,7 @@ export class TelegramClient {
         collectionUsernames: {
           none: {}
         }
-      },
-
-      take: 10,
-     
+      },     
     })
 
     console.log(`Найдено scammers для обновления: ${scammers.length}`)
