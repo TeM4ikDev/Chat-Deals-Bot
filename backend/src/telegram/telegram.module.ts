@@ -37,9 +37,7 @@ import { TelegramClient } from './updates/TelegramClient';
       imports: [ConfigModule, forwardRef(() => UsersModule)],
       useFactory: (configService: ConfigService, usersService: UsersService) => ({
         token: configService.get<string>('BOT_TOKEN'),
-        middlewares: [session()
-          
-        ],
+        middlewares: [session()],
         launchOptions: {
           allowedUpdates: [
             'message',

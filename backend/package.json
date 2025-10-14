@@ -6,8 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build:locales": "xcopy src\\telegram\\locales dist\\src\\telegram\\locales /E /I /Y",
-    "build": "nest build && npm run build:locales",
+    "build:locales": "xcopy src\\telegram\\locales dist\\src\\telegram\\locales /E /I /Y && npm run build:locales",
+    "build": "nest build ",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

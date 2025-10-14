@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getTokenFromLocalStorage } from "@/utils/localstorage";
 
-const prefix = import.meta.env.DEV ? 'http://localhost:8080' : ''
+const prefix = import.meta.env.DEV ? 'http://localhost:3030' : ''
 
 console.log(import.meta.env)
 
