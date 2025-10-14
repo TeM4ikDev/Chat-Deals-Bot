@@ -108,7 +108,7 @@ export class ScamformService {
                 username: twin.username,
                 telegramId: twin.telegramId,
               })),
-             
+
             },
             collectionUsernames: {
               create: data?.scammerData?.collectionUsernames?.map(username => ({
@@ -463,13 +463,24 @@ export class ScamformService {
       }
     });
 
-
     if (!scammer) {
-      return null;
+     return null
     }
 
+    let mainScamForm = null
 
-    const mainScamForm = scammer?.scamForms?.length > 0 && scammer.scamForms.filter(form => form.statusChanger).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+    console.log(scammer.scamForms)
+
+    if (scammer?.scamForms?.length > 0) {
+      if (scammer.scamForms.length == 1) {
+        mainScamForm = scammer.scamForms[0]
+
+        return { ...scammer, mainScamForm };
+      }
+      mainScamForm = scammer.scamForms.filter(form => form.statusChanger).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+    }
+
 
     return { ...scammer, mainScamForm };
   }

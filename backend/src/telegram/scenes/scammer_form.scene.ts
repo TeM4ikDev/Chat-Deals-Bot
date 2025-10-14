@@ -37,7 +37,7 @@ export class ScammerFrom {
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
     private static readonly SKIP_TWINS_TEXT = '⏭️ Пропустить твинки — Skip twins';
 
-    private static readonly USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
+   
 
     private language: string = 'ru'
     private min_media = 1
@@ -335,7 +335,7 @@ export class ScammerFrom {
                 if (part.startsWith('@')) {
                     const username = part.replace('@', '')
 
-                    if (!ScammerFrom.USERNAME_REGEX.test(username)) return
+                    if (!this.telegramService.testIsUsername(username)) return
 
                     const info = await this.telegramClient.getUserData(username);
 
@@ -345,7 +345,7 @@ export class ScammerFrom {
                     }
                     else {
                         form.scammerData.username = username;
-                        form.scammerData.telegramId = info?.id;
+                        form.scammerData.telegramId = info?.telegramId;
                         form.scammerData.collectionUsernames = info?.collectionUsernames;
                         hasValidInput = true;
                     }
@@ -422,7 +422,7 @@ export class ScammerFrom {
                     for (const part of parts) {
                         if (part.startsWith('@')) {
                             const username = part.slice(1);
-                            if (ScammerFrom.USERNAME_REGEX.test(username)) {
+                            if (this.telegramService.testIsUsername(username)) {
                                 newTwin.username = username;
                                 hasValidInput = true;
                             }

@@ -1,6 +1,7 @@
 import { DatabaseService } from "@/database/database.service";
 import { Inject, Injectable, forwardRef } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { ScammerStatus } from "@prisma/client";
 import input from "input"; // npm i input
 import { TelegramClient as TelegramClientClass } from "telegram";
 import { StringSession } from "telegram/sessions";
@@ -18,20 +19,23 @@ export class TelegramClient {
 
   client: TelegramClientClass
 
-  apiId = 1360482307
+  apiId = 29514923
   apiHash = "95def91b17083ec9e21c34065ed00508"
-  session = new StringSession(this.configService.get('TELEGRAM_SESSION'))
+  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTEBuxssZWZvNcX3nW5aONlnXlHZfLbN3MbJ9M8BJ5v+NEsAKSPOIowG608B0FjiSCpcppRqHBteU3L612dc3CV4GtJjPbhTTdOapgjZqKs2dxCXy9QANwHy8rFxqXSNMQ4O861njo8+bTvvm4KqbiJ3Bmgu93C9ZxERdhBAa7fVJZ4zXWOErPTs6TmhGu6uTMTd+952PH6VOc3Jq72VvszlIfQO8ShoOwTkbakVBWwnnl3ed4u1mPmxpCOd4FOALuBIM+2AvtI8JZUgdMylyci9hPP5BGpUFEoq2zh/qNPt74ztx8Bj0Ojkuao/7cBgUJsW49nPdUHFkBcnPgb4bZV/P2s=')
+
 
   async onModuleInit() {
     await this.createClient();
-    // await this.updatePrevUsersCollectionUsernames();
-    // await this.updateScammersRegistrationDate();
+    // console.log(this.session)
+    // this.updatePrevUsersCollectionUsernames();
+    // this.updateScammersRegistrationDate();
   }
 
   async createClient() {
     try {
       this.client = new TelegramClientClass(this.session, this.apiId, this.apiHash, {
         connectionRetries: 5,
+        // useWSS: false,
       });
 
       await this.client.start({
@@ -42,7 +46,8 @@ export class TelegramClient {
       });
 
       // console.log("Твоя session string:");
-      // console.log(client.session.save());
+      // console.log(this.client.session.save());
+      // this.client.session.save()
 
       // const mainUsername = "fometa";
       // await this.getUserData('sdjcnjksdncjknskjdcnkjsdck');
@@ -65,6 +70,8 @@ export class TelegramClient {
       }
     })
 
+    console.log(`Найдено scammers для обновления: ${scammers.length}`)
+
     for (let i = 0; i < scammers.length; i++) {
       const scammer = scammers[i];
       const registrationDate = this.getRegistrationDateByTelegramId(scammer.telegramId)
@@ -78,6 +85,7 @@ export class TelegramClient {
   async updatePrevUsersCollectionUsernames() {
     const scammers = await this.database.scammer.findMany({
       where: {
+        status: ScammerStatus.SCAMMER,
         username: {
           not: null
         },
@@ -112,7 +120,7 @@ export class TelegramClient {
         await this.database.scammer.update({
           where: { id: scammer.id },
           data: {
-            telegramId: info?.id,
+            telegramId: info?.telegramId,
             // about: info?.about,
 
             collectionUsernames: {
@@ -244,7 +252,7 @@ export class TelegramClient {
   }
 
   async getUserData(id: string | number): Promise<{
-    id: string;
+    telegramId: string;
     about: string;
     username: string | null;
     collectionUsernames: string[];
@@ -271,7 +279,7 @@ export class TelegramClient {
       // console.log('Полный объект user:', JSON.stringify(user, null, 2))
 
       return {
-        id: userId,
+        telegramId: userId,
         username: (user as any)?.users[0]?.username || (user as any)?.users[0]?.usernames[0]?.username || null,
         about: user.fullUser.about,
         collectionUsernames: (user as any)?.users[0]?.usernames?.slice(1).map((username: any) => username.username) || null,

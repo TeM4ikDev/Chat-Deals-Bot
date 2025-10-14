@@ -155,7 +155,7 @@ export class TelegramService {
 
     // if (await this.checkIsChatPrivate(ctx)) return
 
-    if(await this.checkIsChatPrivate(ctx)) {
+    if (await this.checkIsChatPrivate(ctx)) {
       return
     }
 
@@ -250,7 +250,7 @@ export class TelegramService {
   }
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
-    if (twinAccounts.length === 0) return '—';
+    if (!twinAccounts || twinAccounts?.length === 0) return '—';
     return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin, 'ru', false))}`).join('\n')
   }
 
@@ -458,30 +458,42 @@ export class TelegramService {
     })
   }
 
-
-
-
-  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru'){
+  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', shortTextInfo: boolean = false) {
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
-    username = `${username} ${scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map(username => `@${this.escapeMarkdown(username.username)}`).join(', ')})` : ''}`;
+    username = `${username} ${scammer.collectionUsernames && scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map((username: any) => `@${this.escapeMarkdown(username.username || username)}`).join(', ')})` : ''}`;
     const telegramId = scammer.telegramId || '--';
     const registrationDate = this.formatRegistrationDate(scammer.registrationDate, lang);
-    const formsCount = scammer.scamForms.length;
+    const formsCount = scammer?.scamForms?.length || 0;
     let status = scammer.status
+
+    console.log(scammer.mainScamForm)
     let description = this.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
     let photoStream = photo ? fs.createReadStream(IMAGE_PATHS[status]) : null;
     const twinAccounts = this.formatTwinAccounts(scammer.twinAccounts)
 
-    const textInfo = this.localizationService.getT('userCheck.userDetails', lang)
-    .replace('{username}', username)
-    .replace('{telegramId}', telegramId)
-    .replace('{registrationDate}', registrationDate || '--')
-    .replace('{status}', status)
-    .replace('{formsCount}', formsCount.toString())
-    .replace('{description}', description)
-    .replace('{twinAccounts}', twinAccounts)
-    .replace('{link}', link)
+
+    let textInfo = ''
+
+    if (shortTextInfo) {
+      textInfo = this.localizationService.getT('userCheck.userDetailsShort', lang)
+        .replace('{username}', username)
+        .replace('{telegramId}', telegramId)
+        .replace('{registrationDate}', registrationDate || '--')
+    }
+    else{
+      textInfo = this.localizationService.getT('userCheck.userDetails', lang)
+      .replace('{username}', username)
+      .replace('{telegramId}', telegramId)
+      .replace('{registrationDate}', registrationDate || '--')
+      .replace('{status}', status)
+      .replace('{formsCount}', formsCount.toString())
+      .replace('{description}', description)
+      .replace('{twinAccounts}', twinAccounts)
+      .replace('{link}', link)
+    }
+
+    
 
     return {
       textInfo,
@@ -500,5 +512,14 @@ export class TelegramService {
   formatRegistrationDate(date: Date, language: string = 'ru'): string | null {
     if (!date) return null
     return date.toLocaleString(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long', year: 'numeric' })
+  }
+
+  testIsUsername(username: string): boolean {
+    const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
+    return USERNAME_REGEX.test(username.replace('@', ''));
+  }
+
+  testIsTelegramId(telegramId: string): boolean {
+    return /^\d+$/.test(telegramId.toString());
   }
 }

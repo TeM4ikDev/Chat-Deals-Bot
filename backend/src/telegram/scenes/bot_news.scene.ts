@@ -420,6 +420,8 @@ export class BotNewsScene {
             let successCount = 0;
             let errorCount = 0;
 
+            const successUsers = [];
+
             for (const user of users) {
                 if (!user) continue;
                 
@@ -432,6 +434,7 @@ export class BotNewsScene {
                             disable_notification: true,
                         }
                     );
+                    successUsers.push(user.telegramId);
                     successCount++;
 
                     // Небольшая задержка между отправками
@@ -455,6 +458,8 @@ export class BotNewsScene {
                     console.error('Error saving to history:', error);
                 }
             }
+
+            console.log(successUsers);
 
             await ctx.reply(
                 `✅ *Рассылка завершена!*\n\n` +

@@ -49,7 +49,7 @@ export class ChatCommandsUpdate {
         if (await this.telegramService.checkIsChatPrivate(ctx)) {
             console.log('message', ctx.message)
 
-            if((ctx.message as any)?.forward_origin?.type == 'hidden_user') {
+            if ((ctx.message as any)?.forward_origin?.type == 'hidden_user') {
                 await ctx.reply('Этот пользователь скрыт. Вы не можете проверить его информацию. Пришлите в чат его Username или ID');
                 return;
             }
@@ -57,17 +57,12 @@ export class ChatCommandsUpdate {
             let query = words[0]
             const forwardFrom = (ctx.message as any).forward_from
 
-            
             if (forwardFrom) {
-
                 console.log('forwardFrom', forwardFrom)
-
-               
-
                 query = forwardFrom.username || forwardFrom.id.toString()
             }
 
-            
+
             this.handleCheckCommand(ctx, query, lang);
             return;
         }
@@ -188,6 +183,7 @@ export class ChatCommandsUpdate {
     private async checkUserAndSendInfo(ctx: Context, query: string, lang: string) {
         const isGarant = await this.checkAndSendGarantInfo(ctx, query, lang);
         if (isGarant) return
+
         const scammer = await this.scamformService.getScammerByQuery(query);
         await this.onScammerDetail(ctx, lang, scammer, query);
     }
@@ -376,11 +372,39 @@ export class ChatCommandsUpdate {
         query: string
     ) {
         if (!scammer) {
+            let queryData: any = query
+
+            if (this.telegramService.testIsUsername(query)) {
+                console.log('testIsUsername')
+                queryData = await this.telegramClient.getUserData(query)
+
+                if(!queryData){
+                    await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
+                    return
+                }
+
+                if(await this.checkAndSendGarantInfo(ctx, queryData.username, lang)){
+                    return
+                }
+            }
+            else if (this.telegramService.testIsTelegramId(query)) {
+                queryData = {
+                    telegramId: query,
+                    registrationDate: this.telegramClient.getRegistrationDateByTelegramId(query)
+                }
+            }
+            else {
+                await ctx.reply('Неверный формат. Попробуйте ввести другой юзернейм или ID.')
+                return
+            }
+
+            console.log(queryData)
+
             const photoStream = fs.createReadStream(IMAGE_PATHS.UNKNOWN);
             await this.telegramService.replyMediaWithAutoDelete(ctx,
                 { source: photoStream },
                 {
-                    caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.telegramService.escapeMarkdown(query)),
+                    caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.telegramService.formatScammerData(queryData, false, lang, true).textInfo),
                 },
                 'photo'
             );
