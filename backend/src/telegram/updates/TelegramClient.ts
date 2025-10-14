@@ -4,9 +4,17 @@ import { ConfigService } from "@nestjs/config";
 import { ScammerStatus } from "@prisma/client";
 import input from "input"; // npm i input
 import { TelegramClient as TelegramClientClass } from "telegram";
+import { SocksProxyType } from "telegram/network/connection/TCPMTProxy";
 import { StringSession } from "telegram/sessions";
 import { Api } from "telegram/tl";
 
+const proxy: SocksProxyType = {
+  ip: "82.211.3.250",
+  port: 50101,
+  username: "mrmaks_win",
+  password: "ubZK6bHcPW",
+  socksType: 4, // важно!
+} as any;
 @Injectable()
 export class TelegramClient {
 
@@ -31,10 +39,14 @@ export class TelegramClient {
     await this.updateScammersRegistrationDate();
   }
 
+
+
+
   async createClient() {
     try {
       this.client = new TelegramClientClass(this.session, this.apiId, this.apiHash, {
         connectionRetries: 5,
+        proxy: proxy,
         // useWSS: false,
       });
 
@@ -93,7 +105,7 @@ export class TelegramClient {
         collectionUsernames: {
           none: {}
         }
-      },     
+      },
     })
 
     console.log(`Найдено scammers для обновления: ${scammers.length}`)
@@ -102,10 +114,10 @@ export class TelegramClient {
 
     for (let i = 0; i < scammers.length; i++) {
       const scammer = scammers[i];
-      
+
       try {
         console.log(`Обрабатываю ${i + 1}/${scammers.length}: ${scammer.username}`)
-        
+
         const info = await this.getUserData(scammer.username)
         console.log(info)
 
@@ -133,7 +145,7 @@ export class TelegramClient {
 
         // Задержка 1.5 секунды между запросами (безопасный интервал)
         await this.delay(1500);
-        
+
       } catch (error) {
         // console.error(`Ошибка при обработке ${scammer.username}:`, error);
         // // При ошибке FloodWait увеличиваем задержку
@@ -156,7 +168,7 @@ export class TelegramClient {
 
   getRegistrationDateByTelegramId(telegramId: number | string): Date {
     const id = typeof telegramId === 'string' ? parseInt(telegramId) : telegramId;
-    
+
     // Реперные точки: известные ID и их примерные даты регистрации
     // Обновленные более точные данные
     const referencePoints = [
@@ -207,7 +219,7 @@ export class TelegramClient {
       { id: 5900000000, date: new Date('2025-10-01') },
       { id: 8003158848, date: new Date('2025-10-01') }
     ];
-    
+
 
     // Найти две ближайшие реперные точки для интерполяции
     let lowerPoint = referencePoints[0];
@@ -269,10 +281,10 @@ export class TelegramClient {
       const userId = user.fullUser.id.toString();
       const registrationDate = this.getRegistrationDateByTelegramId(userId);
       const registrationDateString = this.getRegistrationDateString(userId);
-      
+
       console.log('User ID:', userId);
       console.log('Дата регистрации:', registrationDateString);
-      
+
       // Раскомментируй для отладки и поиска полей с датами:
       // console.log('Полный объект user:', JSON.stringify(user, null, 2))
 
