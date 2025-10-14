@@ -28,7 +28,7 @@ export class TelegramClient {
     await this.createClient();
     // console.log(this.session)
     // this.updatePrevUsersCollectionUsernames();
-    this.updateScammersRegistrationDate();
+    await this.updateScammersRegistrationDate();
   }
 
   async createClient() {
@@ -74,6 +74,7 @@ export class TelegramClient {
 
     for (let i = 0; i < scammers.length; i++) {
       const scammer = scammers[i];
+      console.log(scammer.username)
       const registrationDate = this.getRegistrationDateByTelegramId(scammer.telegramId)
       await this.database.scammer.update({
         where: { id: scammer.id },
