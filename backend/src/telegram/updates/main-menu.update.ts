@@ -68,6 +68,7 @@ export class MainMenuUpdate {
     @Action('bot_news')
     async onBotNews(@Ctx() ctx: SceneContext) {
         await ctx.scene.enter(SCENES.NEWS)
+        await ctx.answerCbQuery();
     }
 
     @Command('report')

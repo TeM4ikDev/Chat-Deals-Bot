@@ -25,7 +25,7 @@ export class TelegramClient {
   async onModuleInit() {
     await this.createClient();
     // await this.updatePrevUsersCollectionUsernames();
-    // await this.updateScammersRegistrationDate();
+    await this.updateScammersRegistrationDate();
   }
 
   async createClient() {
@@ -58,7 +58,7 @@ export class TelegramClient {
   async updateScammersRegistrationDate() {
     const scammers = await this.database.scammer.findMany({
       where: {
-        // registrationDate: null,
+        registrationDate: null,
         telegramId: {
           not: null
         }

@@ -106,12 +106,13 @@ export class BotNewsScene {
     @Hears(BotNewsScene.CANCEL_TEXT)
     async onCancel(@Ctx() ctx: NewsSceneSession) {
         ctx.session.newsData = undefined;
+        await ctx.scene.leave();
+
         await ctx.reply('❌ Отправка новостей отменена', {
             reply_markup: {
                 remove_keyboard: true,
             },
         });
-        await ctx.scene.leave();
     }
 
     @Hears(BotNewsScene.NEW_MESSAGE_TEXT)
@@ -261,8 +262,8 @@ export class BotNewsScene {
                 reply_markup: {
                     keyboard: [
                         [{ text: '✅ Отправить выбранным' }],
-                        [{ text: '🔙 Назад' }],
-                        [{ text: '🔴 Отменить' }]
+                        [{ text: BotNewsScene.BACK_TEXT }],
+                        [{ text: BotNewsScene.CANCEL_TEXT }]
                     ],
                     resize_keyboard: true
                 }
@@ -300,8 +301,8 @@ export class BotNewsScene {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     keyboard: [
-                        [{ text: '🔙 Назад' }],
-                        [{ text: '🔴 Отменить' }]
+                        [{ text: BotNewsScene.BACK_TEXT }],
+                        [{ text: BotNewsScene.CANCEL_TEXT }]
                     ],
                     resize_keyboard: true
                 }
