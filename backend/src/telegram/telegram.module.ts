@@ -36,21 +36,21 @@ import { TelegramClient } from './updates/TelegramClient';
     TelegrafModule.forRootAsync({
       imports: [ConfigModule, forwardRef(() => UsersModule)],
       useFactory: (configService: ConfigService, usersService: UsersService) => {
-        const proxyUrl = configService.get<string>('PROXY_URL');
-        let agent = undefined;
+        // const proxyUrl = configService.get<string>('PROXY_URL');
+        // let agent = undefined;
         
-        if (proxyUrl) {
-          agent = new SocksProxyAgent(proxyUrl, {
+        // if (proxyUrl) {
+        //   agent = new SocksProxyAgent(proxyUrl, {
            
-          });
-        }
+        //   });
+        // }
 
         return {
           token: configService.get<string>('BOT_TOKEN'),
           middlewares: [session()],
-          telegram: {
-            agent: agent,
-          },
+          // telegram: {
+          //   agent: agent,
+          // },
           launchOptions: {
             allowedUpdates: [
               'message',

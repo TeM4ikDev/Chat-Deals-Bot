@@ -46,7 +46,7 @@ export class TelegramClient {
     try {
       this.client = new TelegramClientClass(this.session, this.apiId, this.apiHash, {
         connectionRetries: 5,
-        proxy: proxy,
+        // proxy: proxy,
         // useWSS: false,
       });
 
