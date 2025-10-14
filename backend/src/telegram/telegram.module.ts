@@ -40,7 +40,9 @@ import { TelegramClient } from './updates/TelegramClient';
         let agent = undefined;
         
         if (proxyUrl) {
-          agent = new SocksProxyAgent(proxyUrl);
+          agent = new SocksProxyAgent(proxyUrl, {
+           
+          });
         }
 
         return {

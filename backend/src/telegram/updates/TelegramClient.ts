@@ -13,7 +13,7 @@ const proxy: SocksProxyType = {
   port: 50101,
   username: "mrmaks_win",
   password: "ubZK6bHcPW",
-  socksType: 4, // важно!
+  socksType: 5,
 } as any;
 @Injectable()
 export class TelegramClient {
