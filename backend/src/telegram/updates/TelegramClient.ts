@@ -23,7 +23,7 @@ export class TelegramClient {
   session = new StringSession(this.configService.get('TELEGRAM_SESSION'))
 
   async onModuleInit() {
-    await this.createClient();
+    // await this.createClient();
     // await this.updatePrevUsersCollectionUsernames();
     // await this.updateScammersRegistrationDate();
   }
