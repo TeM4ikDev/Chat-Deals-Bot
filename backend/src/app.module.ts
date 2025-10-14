@@ -8,11 +8,10 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseService } from './database/database.service';
 
+import { ScamformModule } from './scamform/scamform.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { UsersModule } from './users/users.module';
 import { UsersService } from './users/users.service';
-import { ScamformModule } from './scamform/scamform.module';
-import { PollingService } from './telegram/services/polling.service';
 
 @Module({
   imports: [
