@@ -23,14 +23,14 @@ export class TelegramClient {
 
   apiId = 29514923
   apiHash = "95def91b17083ec9e21c34065ed00508"
-  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTEBuxssZWZvNcX3nW5aONlnXlHZfLbN3MbJ9M8BJ5v+NEsAKSPOIowG608B0FjiSCpcppRqHBteU3L612dc3CV4GtJjPbhTTdOapgjZqKs2dxCXy9QANwHy8rFxqXSNMQ4O861njo8+bTvvm4KqbiJ3Bmgu93C9ZxERdhBAa7fVJZ4zXWOErPTs6TmhGu6uTMTd+952PH6VOc3Jq72VvszlIfQO8ShoOwTkbakVBWwnnl3ed4u1mPmxpCOd4FOALuBIM+2AvtI8JZUgdMylyci9hPP5BGpUFEoq2zh/qNPt74ztx8Bj0Ojkuao/7cBgUJsW49nPdUHFkBcnPgb4bZV/P2s=')
+  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTABuw0IpuuFstTu0cPIkeFCHVgXbnT+x83xtn598pn2QLrp1Dxbj2L61Rz5uinQ1cmYF5YixzjM8c77mDAEZ8wNNGWhu2ecv/WPyWPNk0sFSR78SSr7iy0o6zZE3VfOem4UeyuODS3auXXWOUwn0dd6REZOqShthFcF/m0CoX4zsXdFfeb2KEJ5oqA52BgPuXnj3zb9IhfTj0fST07wL2RTpArb16nR6gI/qyhqPX+uXlyEJkLjOp1au444OxiNRvhxYzL6yuI9HaGAzYkpfuqZHc0CXMnwxldD13HGBTkVtwyep/coobIBsJgmRT6cqRpD+ePI5BDSKlTg7zy1RUFJ6yE=')
 
 
   async onModuleInit() {
     await this.createClient();
     // console.log(this.session)
     // this.updatePrevUsersCollectionUsernames();
-    await this.updateScammersRegistrationDate();
+    // await this.updateScammersRegistrationDate();
     // console.log("data", this.getRegistrationDateByTelegramId(7226605952))
 
   }
@@ -54,7 +54,7 @@ export class TelegramClient {
       });
 
       // console.log("Твоя session string:");
-      // console.log(this.client.session.save());
+      console.log(this.client.session.save());
       // this.client.session.save()
 
       // const mainUsername = "fometa";
