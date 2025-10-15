@@ -4,6 +4,7 @@ import { UsersService } from "@/users/users.service";
 import { Ctx, InjectBot, InlineQuery, Update } from "nestjs-telegraf";
 import { Context, Telegraf } from "telegraf";
 import { InlineQueryResult } from "telegraf/typings/core/types/typegram";
+import { GarantsUpdate } from "./garants.update";
 
 @Update()
 
@@ -12,6 +13,7 @@ export class InlineQueryUpdate {
     constructor(
         private readonly telegramService: TelegramService,
         private readonly usersService: UsersService,
+        private readonly garantsUpdateService: GarantsUpdate,
         private readonly scamformService: ScamformService,
         @InjectBot() private readonly bot: Telegraf,
     ) { }
@@ -29,13 +31,35 @@ export class InlineQueryUpdate {
             const results: InlineQueryResult[] = [
                 {
                     type: 'article',
+                    id: 'garants',
+                    // url:'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+                    thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=kd2v67urhs&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+                    // photo_url: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+                    
+                    title: ' проверенные исполнители',
+                    input_message_content: {
+
+                        message_text: await this.garantsUpdateService.showGarants(ctx, 'ru', true),
+                        parse_mode: 'Markdown',
+                        link_preview_options: {
+                            is_disabled: true,
+                        },
+                    },
+
+                    description: 'Список всех проверенных пользователей'
+                },
+                {
+                    type: 'article',
                     id: 'instruction',
+                    thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+
                     title: 'Введите @username для поиска',
                     input_message_content: {
                         message_text: '🔍 Введите @username для поиска в базе',
                     },
                     description: 'Начните вводить username',
                 },
+
             ];
             await ctx.answerInlineQuery(results);
             return;
@@ -67,6 +91,18 @@ export class InlineQueryUpdate {
         console.log(scammer)
 
         const results: InlineQueryResult[] = [];
+
+
+        // results.push({
+        //     type: 'article',
+        //     id: 'garants',
+        //     title: ' проверенные исполнители',
+        //     input_message_content: {
+        //         message_text: 'гаранты'
+        //     }
+        // })
+
+
         if (!scammer) {
             results.push({
                 type: 'article',
@@ -74,7 +110,7 @@ export class InlineQueryUpdate {
                 title: 'Пользователь не найден',
                 input_message_content: {
                     message_text: `🔍 Пользователь не найден в базе.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.`,
-                    parse_mode: 'Markdown', 
+                    parse_mode: 'Markdown',
                     link_preview_options: {
                         is_disabled: true,
                     },

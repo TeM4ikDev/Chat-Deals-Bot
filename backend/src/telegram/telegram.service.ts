@@ -362,13 +362,13 @@ export class TelegramService {
       .replace('{encoded}', encoded)
       .replace('{userInfo}', userInfo);
 
-    const reply_markup = {
-      inline_keyboard:
-        [[
-          { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
-          { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
-        ]]
-    }
+    // const reply_markup = {
+    //   inline_keyboard:
+    //     [[
+    //       { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
+    //       { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
+    //     ]]
+    // }
 
     try {
       let replyToMessageId: number | undefined;
@@ -389,7 +389,7 @@ export class TelegramService {
 
       await this.sendMessageToChannelLayer(channelId, channelMessage, {
         parse_mode: 'Markdown',
-        reply_markup,
+        // reply_markup,
         reply_to_message_id: replyToMessageId,
         link_preview_options: {
           is_disabled: true,
@@ -401,19 +401,19 @@ export class TelegramService {
   }
 
   async sendNewUserMessage(ctx: Context, newMember: User) {
-    console.log('sendNewUserMessage', ctx.chat)
+    // console.log('sendNewUserMessage', ctx.chat)
     const chatUsername = (ctx as any).chat.username
 
     const message = await this.adminService.findChatConfigByUsername(chatUsername)
     if (!message) return
-    console.log('message', message)
+    // console.log('message', message)
     const newUser = await this.scamformService.findOrCreateScammer(newMember.username, newMember.id.toString())
 
 
     if (banStatuses.includes(newUser.status)) {
       this.banScammerFromGroup(newUser)
     }
-    console.log(newUser)
+    // console.log(newUser)
 
     const userLink = newUser.username
       ? `[${this.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
@@ -458,13 +458,15 @@ export class TelegramService {
     })
   }
 
-  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', shortTextInfo: boolean = false) {
+  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false) {
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
     username = `${username} ${scammer.collectionUsernames && scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map((username: any) => `@${this.escapeMarkdown(username.username || username)}`).join(', ')})` : ''}`;
     const telegramId = scammer.telegramId || '--';
     const registrationDate = this.formatRegistrationDate(scammer.registrationDate, lang);
     const formsCount = scammer?.scamForms?.length || 0;
-    let status = scammer.status
+    const status = scammer.status
+    const views = scammer.views?.length || 0;
+
 
     console.log(scammer.mainScamForm)
     let description = this.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
@@ -475,11 +477,17 @@ export class TelegramService {
 
     let textInfo = ''
 
-    if (shortTextInfo) {
-      textInfo = this.localizationService.getT('userCheck.userDetailsShort', lang)
-        .replace('{username}', username)
-        .replace('{telegramId}', telegramId)
-        .replace('{registrationDate}', registrationDate || '--')
+    if (withWarning) {
+      textInfo = this.localizationService.getT('userCheck.userDetailsWithWarning', lang)
+      .replace('{username}', username)
+      .replace('{telegramId}', telegramId)
+      .replace('{registrationDate}', registrationDate || '--')
+      .replace('{status}', status)
+      .replace('{formsCount}', formsCount.toString())
+      .replace('{description}', description)
+      .replace('{twinAccounts}', twinAccounts)
+      .replace('{link}', link)
+      .replace('{views}', views.toString())
     }
     else{
       textInfo = this.localizationService.getT('userCheck.userDetails', lang)
@@ -491,6 +499,7 @@ export class TelegramService {
       .replace('{description}', description)
       .replace('{twinAccounts}', twinAccounts)
       .replace('{link}', link)
+      .replace('{views}', views.toString())
     }
 
     
@@ -505,7 +514,8 @@ export class TelegramService {
       description,
       link,
       photoStream,
-      twinAccounts
+      twinAccounts,
+      views
     }
   }
 

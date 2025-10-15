@@ -32,7 +32,7 @@ export interface ITgUser {
 }
 
 
-export type IScammerPayload = Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true, collectionUsernames: true } }> & { mainScamForm: any }
+export type IScammerPayload = Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true, collectionUsernames: true, views: true } }> & { mainScamForm: any }
 
 
 

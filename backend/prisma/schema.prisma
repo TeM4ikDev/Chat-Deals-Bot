@@ -50,8 +50,9 @@ model User {
 
   UsersConfig UsersConfig?
 
-  ScamForms   ScamForm[]
-  AppealForms AppealForm[]
+  ScamForms    ScamForm[]
+  AppealForms  AppealForm[]
+  ScammerViews ScammerView[]
 
   UserFormVote    UserFormVote[]
   UserScammerVote UserScammerVote[]
@@ -102,6 +103,18 @@ model collectionUsername {
   updatedAt DateTime @updatedAt
 }
 
+model ScammerView {
+  id        String  @id @default(uuid())
+  scammerId String
+  scammer   Scammer @relation(fields: [scammerId], references: [id])
+
+  userTelegramId String
+  user           User   @relation(fields: [userTelegramId], references: [telegramId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Scammer {
   id         String  @id @default(uuid())
   username   String?
@@ -113,11 +126,13 @@ model Scammer {
 
   scamForms ScamForm[]
 
-  twinAccounts TwinAccount[]
+  twinAccounts        TwinAccount[]
   collectionUsernames collectionUsername[]
 
   likes    Int @default(0)
   dislikes Int @default(0)
+
+  views ScammerView[]
 
   userVotes UserScammerVote[]
 
@@ -228,16 +243,14 @@ model ChatConfig {
   updatedAt DateTime @updatedAt
 }
 
-
 // ______________
-
 
 model BotNewsHistory {
   id String @id @default(uuid())
 
   messageId String
-  chatId String
-  
+  chatId    String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

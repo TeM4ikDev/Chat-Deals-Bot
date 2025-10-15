@@ -32,7 +32,7 @@ export class GarantsUpdate {
     // }
 
     @Command('garants')
-    async showGarants(@Ctx() ctx: Context, @Language() lang: string) {
+    async showGarants(@Ctx() ctx: Context, @Language() lang: string, onlyInfo: boolean = false) {
         const garants = await this.userService.findGarants()
 
         if (garants.length === 0) {
@@ -55,7 +55,10 @@ export class GarantsUpdate {
 
         const message = `${header}${garantsList}\n\n [Artem](https://t.me/TeM4ik20) - разраб`
 
-        this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
+        if (onlyInfo) return message
+
+
+        await this.telegramService.replyWithAutoDelete(ctx, message, undefined, 30000)
     }
 
     @Command('stat')

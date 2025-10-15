@@ -1,7 +1,7 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
-import { banStatuses, IMediaData, IScammerData, IUser, ITgUser } from '@/types/types';
+import { banStatuses, IMediaData, IScammerData, IUser, ITgUser, IScammerPayload } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -364,7 +364,7 @@ export class ScamformService {
     };
   }
 
-  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: ITgUser[], collectionUsernames?: string[]) {
+  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: ITgUser[], collectionUsernames?: string[]): Promise<IScammerPayload> {
     const exsScammer = await this.getScammerByQuery(data.username || data.telegramId)
 
     if (exsScammer) {
@@ -406,7 +406,9 @@ export class ScamformService {
       },
       include: {
         scamForms: true,
-        twinAccounts: true
+        twinAccounts: true,
+        collectionUsernames: true,
+        views: true
       }
     })
     if (banStatuses.includes(createdScammer.status)) {
@@ -414,11 +416,10 @@ export class ScamformService {
     }
 
 
-    return createdScammer
+    return { ...createdScammer, mainScamForm: null }
   }
 
-  async getScammerByQuery(query: string) {
-
+  async getScammerByQuery(query: string, viewUserTelegramId?: string) {
     if (!query) {
       console.log('query is undefined or empty');
       return null;
@@ -456,21 +457,38 @@ export class ScamformService {
           }
         ]
       },
+
       include: {
         scamForms: true,
         twinAccounts: true,
-        collectionUsernames: true
+        collectionUsernames: true,
+        views: true
       }
     });
 
     if (!scammer) {
-     return null
+      return null
+    }
+
+    let newView = null
+    if (viewUserTelegramId) {
+      const existingView = await this.database.scammerView.findFirst({
+        where: {
+          userTelegramId: viewUserTelegramId,
+          scammerId: scammer.id
+        }
+      })
+      if (!existingView) {
+        newView = await this.database.scammerView.create({
+          data: {
+            userTelegramId: viewUserTelegramId,
+            scammerId: scammer.id
+          }
+        })
+      }
     }
 
     let mainScamForm = null
-
-    console.log(scammer.scamForms)
-
     if (scammer?.scamForms?.length > 0) {
       if (scammer.scamForms.length == 1) {
         mainScamForm = scammer.scamForms[0]
@@ -481,8 +499,7 @@ export class ScamformService {
 
     }
 
-
-    return { ...scammer, mainScamForm };
+    return { ...scammer, views: newView ? [...scammer.views, newView] : scammer.views, mainScamForm };
   }
 
   async updateScammer(id: string, data: Prisma.ScammerUpdateInput) {
@@ -496,7 +513,8 @@ export class ScamformService {
     return await this.database.scammer.findUnique({
       where: { telegramId },
       include: {
-        scamForms: true
+        scamForms: true,
+        views: true
       }
     })
   }
@@ -545,7 +563,8 @@ export class ScamformService {
         id
       },
       include: {
-        scamForms: true
+        scamForms: true,
+        views: true
       }
     })
   }

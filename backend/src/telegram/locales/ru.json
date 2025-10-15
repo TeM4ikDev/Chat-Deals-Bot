@@ -141,7 +141,8 @@
     "garantFound": "✅ **Гарант найден!**\n\n👤 **Пользователь:** @{username}\n\n",
     "garantUser": "✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @{username}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.\n\n📁 *Полезные ссылки:*\n╟ [Каталог](https://t.me/nftcatalog)\n╟ [Теги](https://t.me/svdteg)\n╟ [Добавить бота в группу](https://t.me/svdbasebot?startgroup=true)",
     "searchResults": "🔍 *Найдено {count} совпадений*\nСтраница {page} из {maxPage}",
-    "userDetails": "👤 @{username}\n\n🆔 ID: `{telegramId}`\n📅 Примерная дата регистрации: `{registrationDate}`\n📊 Статус: *{status}*\n🚨 Жалоб: *{formsCount}*\n\n👥 Твинки:\n *{twinAccounts}*\n\n📝 Описание: *{description}*\n\n[🔍 Посмотреть в приложении]({link})",
+    "userDetails": "👤 @{username}\n\n🆔 ID: `{telegramId}`\n📅 Примерная дата регистрации: `{registrationDate}`\n📊 Статус: *{status}*\n🚨 Жалоб: *{formsCount}*\n\n👀 Просмотры: *{views}*\n\n👥 Твинки:\n *{twinAccounts}*\n\n📝 Описание: *{description}*\n\n[🔍 Посмотреть в приложении]({link})",
+    "userDetailsWithWarning": "👤 @{username}\n\n🆔 ID: `{telegramId}`\n📅 Примерная дата регистрации: `{registrationDate}`\n📊 Статус: *{status}*\n🚨 Жалоб: *{formsCount}*\n\n👀 Просмотры: *{views}*\n\n👥 Твинки:\n *{twinAccounts}*\n\n📝 Описание: *{description}*\n\n[🔍 Посмотреть в приложении]({link})\n\n ⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.\n\nГаранты - /garants\n\n📁 *Полезные ссылки:*\n╟ [Каталог](https://t.me/nftcatalog)\n╟ [Теги](https://t.me/svdteg)\n╟ [Добавить бота в группу](https://t.me/svdbasebot?startgroup=true)\n╟ [Наши чаты](https://t.me/svdscambasechats)",
     "userDetailsShort": "👤 @{username}\n\n🆔 ID: `{telegramId}`\n📅 Примерная дата регистрации: `{registrationDate}`",
     "noUsername": "Без username"
   },

@@ -8,13 +8,7 @@ import { SocksProxyType } from "telegram/network/connection/TCPMTProxy";
 import { StringSession } from "telegram/sessions";
 import { Api } from "telegram/tl";
 
-const proxy: SocksProxyType = {
-  ip: "82.211.3.250",
-  port: 50101,
-  username: "mrmaks_win",
-  password: "ubZK6bHcPW",
-  socksType: 5,
-} as any;
+
 @Injectable()
 export class TelegramClient {
 
@@ -37,6 +31,8 @@ export class TelegramClient {
     // console.log(this.session)
     // this.updatePrevUsersCollectionUsernames();
     await this.updateScammersRegistrationDate();
+    // console.log("data", this.getRegistrationDateByTelegramId(7226605952))
+
   }
 
 
@@ -63,6 +59,9 @@ export class TelegramClient {
 
       // const mainUsername = "fometa";
       // await this.getUserData('sdjcnjksdncjknskjdcnkjsdck');
+
+
+
     } catch (err) {
       console.error("Ошибка при получении информации:", err);
     }
@@ -75,7 +74,7 @@ export class TelegramClient {
   async updateScammersRegistrationDate() {
     const scammers = await this.database.scammer.findMany({
       where: {
-        registrationDate: null,
+        // registrationDate: null,
         telegramId: {
           not: null
         }
@@ -167,64 +166,58 @@ export class TelegramClient {
   }
 
   getRegistrationDateByTelegramId(telegramId: number | string): Date {
-    const id = typeof telegramId === 'string' ? parseInt(telegramId) : telegramId;
-
-    // Реперные точки: известные ID и их примерные даты регистрации
-    // Обновленные более точные данные
+    const id = BigInt(typeof telegramId === 'string' ? parseInt(telegramId) : telegramId);
+  
     const referencePoints = [
-      { id: 1, date: new Date('2015-06-01') },
-      { id: 10000, date: new Date('2015-06-01') },
-      { id: 100000, date: new Date('2015-06-01') },
-      { id: 1000000, date: new Date('2015-06-01') },
-      { id: 10000000, date: new Date('2015-06-01') },
-      { id: 50000000, date: new Date('2015-06-01') },
-      { id: 100000000, date: new Date('2015-06-01') },
-      { id: 150000000, date: new Date('2015-10-01') },
-      { id: 200000000, date: new Date('2016-02-01') },
-      { id: 250000000, date: new Date('2016-06-01') },
-      { id: 300000000, date: new Date('2016-11-01') },
-      { id: 350000000, date: new Date('2017-02-01') },
-      { id: 400000000, date: new Date('2017-06-01') },
-      { id: 450000000, date: new Date('2017-09-01') },
-      { id: 500000000, date: new Date('2017-11-01') },
-      { id: 550000000, date: new Date('2018-02-01') },
-      { id: 600000000, date: new Date('2018-05-01') },
-      { id: 650000000, date: new Date('2018-07-01') },
-      { id: 700000000, date: new Date('2018-10-01') },
-      { id: 750000000, date: new Date('2018-10-01') },
-      { id: 800000000, date: new Date('2019-03-01') },
-      { id: 850000000, date: new Date('2019-03-01') },
-      { id: 900000000, date: new Date('2019-07-01') },
-      { id: 950000000, date: new Date('2019-07-01') },
-      { id: 1000000000, date: new Date('2019-10-01') },
-      { id: 1050000000, date: new Date('2019-10-01') },
-      { id: 1100000000, date: new Date('2020-02-01') },
-      { id: 1150000000, date: new Date('2020-03-01') },
-      { id: 1200000000, date: new Date('2020-03-01') },
-      { id: 1250000000, date: new Date('2020-03-01') },
-      { id: 1300000000, date: new Date('2020-06-01') },
-      { id: 1400000000, date: new Date('2020-10-01') },
-      { id: 1500000000, date: new Date('2021-01-01') },
-      { id: 1600000000, date: new Date('2021-01-01') },
-      { id: 1700000000, date: new Date('2021-03-01') },
-      { id: 1900000000, date: new Date('2021-07-01') },
-      { id: 2000000000, date: new Date('2021-09-01') },
-      { id: 2500000000, date: new Date('2022-03-01') },
-      { id: 3000000000, date: new Date('2022-03-01') },
-      { id: 4500000000, date: new Date('2022-03-01') },
-      { id: 5000000000, date: new Date('2022-03-01') },
-      { id: 5500000000, date: new Date('2022-06-01') },
-      { id: 5550000000, date: new Date('2022-06-01') },
-      { id: 5800000000, date: new Date('2025-10-01') },
-      { id: 5900000000, date: new Date('2025-10-01') },
-      { id: 8003158848, date: new Date('2025-10-01') }
+      { id: 1n, date: new Date('2015-06-01') },
+      { id: 10000n, date: new Date('2015-06-01') },
+      { id: 100000n, date: new Date('2015-06-01') },
+      { id: 1000000n, date: new Date('2015-06-01') },
+      { id: 10000000n, date: new Date('2015-06-01') },
+      { id: 50000000n, date: new Date('2015-06-01') },
+      { id: 100000000n, date: new Date('2015-06-01') },
+      { id: 150000000n, date: new Date('2015-10-01') },
+      { id: 200000000n, date: new Date('2016-02-01') },
+      { id: 250000000n, date: new Date('2016-06-01') },
+      { id: 300000000n, date: new Date('2016-11-01') },
+      { id: 350000000n, date: new Date('2017-02-01') },
+      { id: 400000000n, date: new Date('2017-06-01') },
+      { id: 450000000n, date: new Date('2017-09-01') },
+      { id: 500000000n, date: new Date('2017-11-01') },
+      { id: 550000000n, date: new Date('2018-02-01') },
+      { id: 600000000n, date: new Date('2018-05-01') },
+      { id: 650000000n, date: new Date('2018-07-01') },
+      { id: 700000000n, date: new Date('2018-10-01') },
+      { id: 750000000n, date: new Date('2018-10-01') },
+      { id: 800000000n, date: new Date('2019-03-01') },
+      { id: 850000000n, date: new Date('2019-03-01') },
+      { id: 900000000n, date: new Date('2019-07-01') },
+      { id: 950000000n, date: new Date('2019-07-01') },
+      { id: 1000000000n, date: new Date('2019-10-01') },
+      { id: 1050000000n, date: new Date('2019-10-01') },
+      { id: 1100000000n, date: new Date('2020-02-01') },
+      { id: 1150000000n, date: new Date('2020-03-01') },
+      { id: 1200000000n, date: new Date('2020-03-01') },
+      { id: 1250000000n, date: new Date('2020-03-01') },
+      { id: 1300000000n, date: new Date('2020-06-01') },
+      { id: 1400000000n, date: new Date('2020-10-01') },
+      { id: 1500000000n, date: new Date('2021-01-01') },
+      { id: 1600000000n, date: new Date('2021-01-01') },
+      { id: 1700000000n, date: new Date('2021-03-01') },
+      { id: 1900000000n, date: new Date('2021-07-01') },
+      { id: 2000000000n, date: new Date('2021-09-01') },
+      { id: 2500000000n, date: new Date('2022-03-01') },
+      { id: 3000000000n, date: new Date('2022-03-01') },
+      { id: 4500000000n, date: new Date('2022-03-01') },
+      { id: 5000000000n, date: new Date('2022-03-01') },
+      { id: 5500000000n, date: new Date('2022-06-01') },
+      { id: 5550000000n, date: new Date('2022-06-01') },
+      { id: 8228058902n, date: new Date('2025-09-20') }
     ];
-
-
-    // Найти две ближайшие реперные точки для интерполяции
+  
     let lowerPoint = referencePoints[0];
     let upperPoint = referencePoints[referencePoints.length - 1];
-
+  
     for (let i = 0; i < referencePoints.length - 1; i++) {
       if (id >= referencePoints[i].id && id <= referencePoints[i + 1].id) {
         lowerPoint = referencePoints[i];
@@ -232,25 +225,18 @@ export class TelegramClient {
         break;
       }
     }
-
-    // Если ID меньше минимального
-    if (id < referencePoints[0].id) {
-      return referencePoints[0].date;
-    }
-
-    // Если ID больше максимального
-    if (id > referencePoints[referencePoints.length - 1].id) {
-      return upperPoint.date;
-    }
-
-    // Линейная интерполяция между двумя точками
-    const idDiff = upperPoint.id - lowerPoint.id;
+  
+    if (id < referencePoints[0].id) return referencePoints[0].date;
+    if (id > referencePoints[referencePoints.length - 1].id) return upperPoint.date;
+  
+    const idDiff = Number(upperPoint.id - lowerPoint.id);
     const dateDiff = upperPoint.date.getTime() - lowerPoint.date.getTime();
-    const progress = (id - lowerPoint.id) / idDiff;
-    const estimatedTime = lowerPoint.date.getTime() + (dateDiff * progress);
-
+    const progress = Number(id - lowerPoint.id) / idDiff;
+    const estimatedTime = lowerPoint.date.getTime() + dateDiff * progress;
+  
     return new Date(estimatedTime);
   }
+  
 
   getRegistrationDateString(telegramId: number | string): string {
     const date = this.getRegistrationDateByTelegramId(telegramId);

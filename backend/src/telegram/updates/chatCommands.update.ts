@@ -49,13 +49,24 @@ export class ChatCommandsUpdate {
         if (await this.telegramService.checkIsChatPrivate(ctx)) {
             console.log('message', ctx.message)
 
+            if ((ctx.message as any)?.via_bot?.username) {
+                return
+            }
+
             if ((ctx.message as any)?.forward_origin?.type == 'hidden_user') {
                 await ctx.reply('Этот пользователь скрыт. Вы не можете проверить его информацию. Пришлите в чат его Username или ID');
                 return;
             }
 
+
             let query = words[0]
             const forwardFrom = (ctx.message as any).forward_from
+
+
+            if (forwardFrom && forwardFrom.via_bot.username == 'TEM4iKTESTERBOT') {
+                return
+            }
+
 
             if (forwardFrom) {
                 console.log('forwardFrom', forwardFrom)
@@ -184,7 +195,7 @@ export class ChatCommandsUpdate {
         const isGarant = await this.checkAndSendGarantInfo(ctx, query, lang);
         if (isGarant) return
 
-        const scammer = await this.scamformService.getScammerByQuery(query);
+        const scammer = await this.scamformService.getScammerByQuery(query, ctx.from.id.toString());
         await this.onScammerDetail(ctx, lang, scammer, query);
     }
 
@@ -371,21 +382,19 @@ export class ChatCommandsUpdate {
         scammer: IScammerPayload | null,
         query: string
     ) {
+        let scammerData = scammer
         if (!scammer) {
+            console.log('scammer not found')
             let queryData: any = query
 
             if (this.telegramService.testIsUsername(query)) {
                 console.log('testIsUsername')
-                queryData = await this.telegramClient.getUserData(query)
+                const info = await this.telegramClient.getUserData(query)
 
-                if(!queryData){
-                    await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
-                    return
-                }
+                if (!info) return await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
+                if (await this.checkAndSendGarantInfo(ctx, info.username, lang)) return
 
-                if(await this.checkAndSendGarantInfo(ctx, queryData.username, lang)){
-                    return
-                }
+                scammerData = await this.scamformService.createScammer({ username: info.username, telegramId: info.telegramId }, null, info.collectionUsernames);
             }
             else if (this.telegramService.testIsTelegramId(query)) {
                 queryData = {
@@ -411,31 +420,15 @@ export class ChatCommandsUpdate {
             return;
         }
 
+        if (await this.checkCustomUserInfo(ctx, scammerData?.username)) return
 
-        if (await this.checkCustomUserInfo(ctx, scammer?.username)) return;
-
-        const { textInfo, photoStream } = this.telegramService.formatScammerData(scammer, true, lang);
+        const { textInfo, photoStream } = this.telegramService.formatScammerData(scammerData, true, lang, true)
 
         await this.telegramService.replyMediaWithAutoDelete(ctx,
             { source: photoStream },
-            {
-                caption: textInfo,
-
-                reply_markup: {
-                    inline_keyboard: [
-                        [{
-                            text: `👍 ${scammer.likes}`,
-                            callback_data: `like_user:${scammer.id}`
-                        },
-                        {
-                            text: `👎 ${scammer.dislikes}`,
-                            callback_data: `dislike_user:${scammer.id}`
-                        }]
-                    ]
-                }
-            },
+            { caption: textInfo },
             'photo'
-        );
+        )
     }
 
     async checkCustomUserInfo(ctx: Context, username?: string): Promise<boolean> {
