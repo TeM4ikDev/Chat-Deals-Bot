@@ -30,7 +30,7 @@ export class TelegramClient {
     await this.createClient();
     // console.log(this.session)
     // this.updatePrevUsersCollectionUsernames();
-    await this.updateScammersRegistrationDate();
+    // await this.updateScammersRegistrationDate();
     // console.log("data", this.getRegistrationDateByTelegramId(7226605952))
 
   }
@@ -85,7 +85,7 @@ export class TelegramClient {
 
     for (let i = 0; i < scammers.length; i++) {
       const scammer = scammers[i];
-      console.log(scammer.username)
+      console.log(i, "." ,scammer.username)
       const registrationDate = this.getRegistrationDateByTelegramId(scammer.telegramId)
       await this.database.scammer.update({
         where: { id: scammer.id },
@@ -167,7 +167,7 @@ export class TelegramClient {
 
   getRegistrationDateByTelegramId(telegramId: number | string): Date {
     const id = BigInt(typeof telegramId === 'string' ? parseInt(telegramId) : telegramId);
-  
+
     const referencePoints = [
       { id: 1n, date: new Date('2015-06-01') },
       { id: 10000n, date: new Date('2015-06-01') },
@@ -214,10 +214,10 @@ export class TelegramClient {
       { id: 5550000000n, date: new Date('2022-06-01') },
       { id: 8228058902n, date: new Date('2025-09-20') }
     ];
-  
+
     let lowerPoint = referencePoints[0];
     let upperPoint = referencePoints[referencePoints.length - 1];
-  
+
     for (let i = 0; i < referencePoints.length - 1; i++) {
       if (id >= referencePoints[i].id && id <= referencePoints[i + 1].id) {
         lowerPoint = referencePoints[i];
@@ -225,18 +225,18 @@ export class TelegramClient {
         break;
       }
     }
-  
+
     if (id < referencePoints[0].id) return referencePoints[0].date;
     if (id > referencePoints[referencePoints.length - 1].id) return upperPoint.date;
-  
+
     const idDiff = Number(upperPoint.id - lowerPoint.id);
     const dateDiff = upperPoint.date.getTime() - lowerPoint.date.getTime();
     const progress = Number(id - lowerPoint.id) / idDiff;
     const estimatedTime = lowerPoint.date.getTime() + dateDiff * progress;
-  
+
     return new Date(estimatedTime);
   }
-  
+
 
   getRegistrationDateString(telegramId: number | string): string {
     const date = this.getRegistrationDateByTelegramId(telegramId);
