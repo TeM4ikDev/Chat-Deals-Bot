@@ -30,7 +30,7 @@ export class TelegramClient {
     await this.createClient();
     // console.log(this.session)
     // this.updatePrevUsersCollectionUsernames();
-    // await this.updateScammersRegistrationDate();
+    await this.updateScammersRegistrationDate();
     // console.log("data", this.getRegistrationDateByTelegramId(7226605952))
 
   }
