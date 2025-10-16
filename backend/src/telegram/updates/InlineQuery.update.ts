@@ -7,9 +7,7 @@ import { InlineQueryResult } from "telegraf/typings/core/types/typegram";
 import { GarantsUpdate } from "./garants.update";
 
 @Update()
-
 export class InlineQueryUpdate {
-
     constructor(
         private readonly telegramService: TelegramService,
         private readonly usersService: UsersService,
@@ -17,7 +15,6 @@ export class InlineQueryUpdate {
         private readonly scamformService: ScamformService,
         @InjectBot() private readonly bot: Telegraf,
     ) { }
-
 
     @InlineQuery(/.*/)
     async onInlineQuery(@Ctx() ctx: Context) {
@@ -32,27 +29,21 @@ export class InlineQueryUpdate {
                 {
                     type: 'article',
                     id: 'garants',
-                    // url:'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
                     thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=kd2v67urhs&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
-                    // photo_url: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
-                    
-                    title: ' проверенные исполнители',
+                    title: 'Проверенные исполнители',
                     input_message_content: {
-
                         message_text: await this.garantsUpdateService.showGarants(ctx, 'ru', true),
                         parse_mode: 'Markdown',
                         link_preview_options: {
                             is_disabled: true,
                         },
                     },
-
                     description: 'Список всех проверенных пользователей'
                 },
                 {
                     type: 'article',
                     id: 'instruction',
                     thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
-
                     title: 'Введите @username для поиска',
                     input_message_content: {
                         message_text: '🔍 Введите @username для поиска в базе',
@@ -86,22 +77,7 @@ export class InlineQueryUpdate {
         }
 
         const scammer = await this.scamformService.getScammerByQuery(query);
-
-        console.log('scammer testiiiiiing')
-        console.log(scammer)
-
         const results: InlineQueryResult[] = [];
-
-
-        // results.push({
-        //     type: 'article',
-        //     id: 'garants',
-        //     title: ' проверенные исполнители',
-        //     input_message_content: {
-        //         message_text: 'гаранты'
-        //     }
-        // })
-
 
         if (!scammer) {
             results.push({

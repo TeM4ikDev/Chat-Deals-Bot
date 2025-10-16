@@ -459,6 +459,8 @@ export class TelegramService {
   }
 
   formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false) {
+    console.log('scammer format data', scammer)
+    
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
     username = `${username} ${scammer.collectionUsernames && scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map((username: any) => `@${this.escapeMarkdown(username.username || username)}`).join(', ')})` : ''}`;
     const telegramId = scammer.telegramId || '--';
@@ -477,7 +479,7 @@ export class TelegramService {
 
     let textInfo = ''
 
-    if (withWarning) {
+    if (withWarning && status == 'UNKNOWN') {
       textInfo = this.localizationService.getT('userCheck.userDetailsWithWarning', lang)
       .replace('{username}', username)
       .replace('{telegramId}', telegramId)

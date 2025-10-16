@@ -385,39 +385,36 @@ export class ChatCommandsUpdate {
         let scammerData = scammer
         if (!scammer) {
             console.log('scammer not found')
-            let queryData: any = query
+            // let queryData: any = query
 
             if (this.telegramService.testIsUsername(query)) {
                 console.log('testIsUsername')
                 const info = await this.telegramClient.getUserData(query)
 
-                if (!info) return await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
-                if (await this.checkAndSendGarantInfo(ctx, info.username, lang)) return
+                if (!info) {
+                    await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
+                    return
+                }
+                if (await this.checkAndSendGarantInfo(ctx, info.username, lang)) {
+                    return
+                }
 
                 scammerData = await this.scamformService.createScammer({ username: info.username, telegramId: info.telegramId }, null, info.collectionUsernames);
             }
             else if (this.telegramService.testIsTelegramId(query)) {
-                queryData = {
+                scammerData = {
+                    username: null,
                     telegramId: query,
-                    registrationDate: this.telegramClient.getRegistrationDateByTelegramId(query)
-                }
+                    registrationDate: this.telegramClient.getRegistrationDateByTelegramId(query),
+                    scamForms: [],
+                    twinAccounts: [],
+                    views: []
+                } as IScammerPayload
             }
             else {
                 await ctx.reply('Неверный формат. Попробуйте ввести другой юзернейм или ID.')
                 return
             }
-
-            console.log(queryData)
-
-            const photoStream = fs.createReadStream(IMAGE_PATHS.UNKNOWN);
-            await this.telegramService.replyMediaWithAutoDelete(ctx,
-                { source: photoStream },
-                {
-                    caption: this.localizationService.getT('userCheck.userNotFound', lang).replace('{userinfo}', this.telegramService.formatScammerData(queryData, false, lang, true).textInfo),
-                },
-                'photo'
-            );
-            return;
         }
 
         if (await this.checkCustomUserInfo(ctx, scammerData?.username)) return
