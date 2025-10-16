@@ -251,7 +251,7 @@ export class TelegramService {
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
     if (!twinAccounts || twinAccounts?.length === 0) return '—';
-    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin, 'ru', false))}`).join('\n')
+    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')
   }
 
   encodeParams(payload: {}) {
@@ -288,11 +288,11 @@ export class TelegramService {
     return `${userLink} (ID: \`${id}\`)`;
   }
 
-  async banScammerFromGroup(scammer: Scammer) {
+  async banScammerFromGroup(scammer: | (Prisma.ScammerGetPayload<{ include: { twinAccounts: true } }>) | { username: string, telegramId: string }) {
     try {
 
 
-      console.log('banScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
+      console.log('banScammerFromGroup вызван для:', scammer, 'с telegramId:', scammer.telegramId);
 
       if (!scammer.telegramId || scammer.telegramId === '') {
         console.log('Invalid telegramId for ban:', scammer.telegramId);
@@ -319,15 +319,27 @@ export class TelegramService {
         }
       );
 
+      if (Array.isArray((scammer as any).twinAccounts)) {
+        for (const twin of (scammer as any).twinAccounts) {
+          await this.banScammerFromGroup({
+            telegramId: twin.telegramId,
+            username: twin.username,
+          });
+        }
+      }
+      
+
       console.log('Баним пользователя с ID:', telegramId);
       await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
+
+      
 
     } catch (error) {
       console.error('Error banning scammer:', error);
     }
   }
 
-  async unbanScammerFromGroup(scammer: Scammer) {
+  async unbanScammerFromGroup(scammer: | (Prisma.ScammerGetPayload<{ include: { twinAccounts: true } }>) | { username: string, telegramId: string }) {
     try {
       console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
 
@@ -335,6 +347,17 @@ export class TelegramService {
         console.log('Invalid telegramId for unban:', scammer.telegramId);
         return;
       }
+
+      if (Array.isArray((scammer as any).twinAccounts)) {
+        for (const twin of (scammer as any).twinAccounts) {
+          await this.unbanScammerFromGroup({
+            telegramId: twin.telegramId,
+            username: twin.username,
+          });
+        }
+      }
+
+
       console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
       await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
     } catch (error) {
@@ -460,7 +483,7 @@ export class TelegramService {
 
   formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false) {
     console.log('scammer format data', scammer)
-    
+
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
     username = `${username} ${scammer.collectionUsernames && scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map((username: any) => `@${this.escapeMarkdown(username.username || username)}`).join(', ')})` : ''}`;
     const telegramId = scammer.telegramId || '--';
@@ -481,30 +504,30 @@ export class TelegramService {
 
     if (withWarning && status == 'UNKNOWN') {
       textInfo = this.localizationService.getT('userCheck.userDetailsWithWarning', lang)
-      .replace('{username}', username)
-      .replace('{telegramId}', telegramId)
-      .replace('{registrationDate}', registrationDate || '--')
-      .replace('{status}', status)
-      .replace('{formsCount}', formsCount.toString())
-      .replace('{description}', description)
-      .replace('{twinAccounts}', twinAccounts)
-      .replace('{link}', link)
-      .replace('{views}', views.toString())
+        .replace('{username}', username)
+        .replace('{telegramId}', telegramId)
+        .replace('{registrationDate}', registrationDate || '--')
+        .replace('{status}', status)
+        .replace('{formsCount}', formsCount.toString())
+        .replace('{description}', description)
+        .replace('{twinAccounts}', twinAccounts)
+        .replace('{link}', link)
+        .replace('{views}', views.toString())
     }
-    else{
+    else {
       textInfo = this.localizationService.getT('userCheck.userDetails', lang)
-      .replace('{username}', username)
-      .replace('{telegramId}', telegramId)
-      .replace('{registrationDate}', registrationDate || '--')
-      .replace('{status}', status)
-      .replace('{formsCount}', formsCount.toString())
-      .replace('{description}', description)
-      .replace('{twinAccounts}', twinAccounts)
-      .replace('{link}', link)
-      .replace('{views}', views.toString())
+        .replace('{username}', username)
+        .replace('{telegramId}', telegramId)
+        .replace('{registrationDate}', registrationDate || '--')
+        .replace('{status}', status)
+        .replace('{formsCount}', formsCount.toString())
+        .replace('{description}', description)
+        .replace('{twinAccounts}', twinAccounts)
+        .replace('{link}', link)
+        .replace('{views}', views.toString())
     }
 
-    
+
 
     return {
       textInfo,

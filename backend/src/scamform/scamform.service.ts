@@ -792,7 +792,11 @@ export class ScamformService {
         where: { id: scammerId },
         data: {
           status,
-          marked: true
+          marked: true,
+
+        },
+        include: {
+          twinAccounts: true
         }
       });
 
