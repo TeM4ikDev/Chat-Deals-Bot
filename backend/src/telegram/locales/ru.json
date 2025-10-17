@@ -19,7 +19,7 @@
   "userInfo": {
     "withUsernameAndId": "@{username} ({telegramId}) {collectionUsernames}",
     "withUsernameOnly": "@{username} (ID: не указан)",
-    "withIdOnly": "username не указан ({telegramId})",
+    "withIdOnly": "-- ({telegramId})",
     "noInfo": "Информация не указана"
   },
   "language": {

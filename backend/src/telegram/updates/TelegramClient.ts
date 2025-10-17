@@ -23,7 +23,7 @@ export class TelegramClient {
 
   apiId = 29514923
   apiHash = "95def91b17083ec9e21c34065ed00508"
-  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTABuw0IpuuFstTu0cPIkeFCHVgXbnT+x83xtn598pn2QLrp1Dxbj2L61Rz5uinQ1cmYF5YixzjM8c77mDAEZ8wNNGWhu2ecv/WPyWPNk0sFSR78SSr7iy0o6zZE3VfOem4UeyuODS3auXXWOUwn0dd6REZOqShthFcF/m0CoX4zsXdFfeb2KEJ5oqA52BgPuXnj3zb9IhfTj0fST07wL2RTpArb16nR6gI/qyhqPX+uXlyEJkLjOp1au444OxiNRvhxYzL6yuI9HaGAzYkpfuqZHc0CXMnwxldD13HGBTkVtwyep/coobIBsJgmRT6cqRpD+ePI5BDSKlTg7zy1RUFJ6yE=')
+  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTABu6Mgz01u6w1Jv75csEidzjElPGxtR4iOOXci89INDjSmjDQJRLXUheN0EhbwX4VUD7k469q/LFHEFCLR1fpl9RK/VJtxeNi53SV/hjtd41hzZW22v6C2GlI3nj7kCBDm4vv+rD3O31DxiWMEnXulBt3sOi6kCcZuHHGf8bkp+HSiGyVrK0IEEEsrH4Ye/F06tMDugKXM0JBO6SZ/Kd7rh2MjTB39thINRs5ITzZmbXTwm+VIaLf9M+oHIEt8y69+xt/aSv7v0MVwMEkndyFRTibEluoeUaJfOEc4DdRI7IgWG/xMnyBv1I6Qe9yIyHwnqcLXicmAnuQLqeorRZqtC64=')
 
 
   async onModuleInit() {
@@ -47,7 +47,7 @@ export class TelegramClient {
       });
 
       await this.client.start({
-        phoneNumber: async () => await input.text("Введи номер: "),
+        phoneNumber: '+375296147733',
         password: async () => await input.text("Пароль (если есть 2FA): "),
         phoneCode: async () => await input.text("Код из Telegram: "),
         onError: (err) => console.log(err),

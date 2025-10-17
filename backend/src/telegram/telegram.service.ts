@@ -251,7 +251,9 @@ export class TelegramService {
 
   formatTwinAccounts(twinAccounts: IScammerData[]): string {
     if (!twinAccounts || twinAccounts?.length === 0) return '—';
-    return twinAccounts.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')
+    const slicedTwins = twinAccounts.slice(0, 15)
+    const sliced = twinAccounts.length - slicedTwins.length
+    return (slicedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
   }
 
   encodeParams(payload: {}) {
@@ -327,12 +329,12 @@ export class TelegramService {
           });
         }
       }
-      
+
 
       console.log('Баним пользователя с ID:', telegramId);
       await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
 
-      
+
 
     } catch (error) {
       console.error('Error banning scammer:', error);
@@ -384,14 +386,6 @@ export class TelegramService {
       .replace('{description}', description || '')
       .replace('{encoded}', encoded)
       .replace('{userInfo}', userInfo);
-
-    // const reply_markup = {
-    //   inline_keyboard:
-    //     [[
-    //       { text: '👍 0', callback_data: `like_complaint:${scamForm.id}` },
-    //       { text: '👎 0', callback_data: `dislike_complaint:${scamForm.id}` }
-    //     ]]
-    // }
 
     try {
       let replyToMessageId: number | undefined;

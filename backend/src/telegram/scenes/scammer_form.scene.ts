@@ -447,13 +447,8 @@ export class ScammerFrom {
                 return;
             }
 
-
-            const twinsList = form.scammerData.twinAccounts.length > 0
-                ? form.scammerData.twinAccounts.map((twin, index) =>
-                    `${index + 1}. ${twin.username ? '@' + twin.username : ''} ${twin.telegramId ? `(${twin.telegramId})` : ''}`
-                ).join('\n')
-                : 'Пока нет твинков';
-
+            const twinsList = this.telegramService.formatTwinAccounts(form.scammerData.twinAccounts)
+           
             await ctx.reply(
                 this.localizationService.getT('complaint.form.addedTwin', this.language).replace('{twinsList}', twinsList),
                 {
