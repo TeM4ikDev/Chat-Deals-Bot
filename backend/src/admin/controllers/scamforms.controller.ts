@@ -2,6 +2,7 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserId } from '@/decorators/userid.decorator';
 import { ScamformService } from '@/scamform/scamform.service';
 import { TelegramService } from '@/telegram/telegram.service';
+import { IScammerData } from '@/types/types';
 import { Body, Controller, Delete, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Prisma, ScammerStatus, UserRoles } from '@prisma/client';
@@ -20,7 +21,7 @@ export class ScamformController {
 
     @Post('scammers')
     @UseInterceptors(AnyFilesInterceptor())
-    async createScammer(@UploadedFiles() files: any[], @Body() body: { scammerData: Prisma.ScammerCreateInput, twinAccounts: Prisma.TwinAccountCreateInput[] }, @UserId() userId: string) {
+    async createScammer(@UploadedFiles() files: any[], @Body() body: { scammerData: Prisma.ScammerCreateInput, twinAccounts: IScammerData[] }, @UserId() userId: string) {
         console.log('=== Создание скаммера ===');
         console.log('Scammer Data:', JSON.stringify(body.scammerData, null, 2));
         console.log('Twin Accounts:', JSON.stringify(body.twinAccounts, null, 2));

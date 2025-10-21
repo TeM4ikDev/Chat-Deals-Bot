@@ -85,8 +85,10 @@ model Garants {
 model TwinAccount {
   id String @id @default(uuid())
 
-  username   String?
-  telegramId String?
+  username            String?
+  telegramId          String?
+  registrationDate    DateTime?
+  collectionUsernames collectionUsername[]
 
   scammerId String
   scammer   Scammer @relation(fields: [scammerId], references: [id])
@@ -99,8 +101,12 @@ model collectionUsername {
   Scammer   Scammer? @relation(fields: [scammerId], references: [id])
   scammerId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  TwinAccount   TwinAccount? @relation(fields: [twinAccountId], references: [id])
+  twinAccountId String?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
 }
 
 model ScammerView {

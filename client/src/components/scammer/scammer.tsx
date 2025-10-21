@@ -146,27 +146,45 @@ export const ScammerItem: React.FC<ScammerItemProps> = ({
 
                     {scammer.collectionUsernames && scammer.collectionUsernames.length > 0 && (
                         // <div className="mb-2">
-                            <Block variant='lighter' title="Теги пользователя" className="!p-0 !pl-2 !gap-0 !w-auto">
-                                <div className="flex flex-wrap gap-1">
-                                    {scammer.collectionUsernames.map((collection) => (
-                                        <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={collection.id}>
-                                            <span>@{collection.username}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Block>
+                        <Block variant='lighter' title="Теги пользователя" className="!p-0 !pl-2 !gap-0 !w-auto">
+                            <div className="flex flex-wrap gap-1">
+                                {scammer.collectionUsernames.map((collection) => (
+                                    <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={collection.id}>
+                                        <span>@{collection.username}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Block>
                         // </div>
                     )}
 
                     {scammer.twinAccounts && scammer.twinAccounts.length > 0 && (
                         <div>
-                            <Block variant='lighter' title="Твинки" className="!p-0 !pl-2 !gap-0 !w-auto" isCollapsedInitially={scammer.twinAccounts.length > 1} canCollapse>
+                            <Block variant='lighter' title="Твинки" className="!p-0 !pl-2 !gap-0 !w-auto" isCollapsedInitially={scammer.twinAccounts.length > 3} canCollapse>
                                 <div className="grid grid-cols-1 gap-1 flex-wrap">
                                     {scammer.twinAccounts.map((twin) => (
-                                        <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
+
+                    
+                                        <Block variant='lighter' title={
+                                        <>
                                             <span>@{twin.username}</span>
                                             <span>({twin.telegramId})</span>
-                                        </div>
+                                        </>
+                                        } className="!p-0 !pl-2 !gap-0 !w-auto">
+                                            <div className="flex flex-wrap gap-1">
+                                                {twin.collectionUsernames.map((collection) => (
+                                                    <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={collection.id}>
+                                                        <span>@{collection.username}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </Block>
+
+
+                                        // <div className="flex w-min items-center flex-row gap-1 text-white text-xs" key={twin.telegramId}>
+                                        //     <span>@{twin.username}</span>
+                                        //     <span>({twin.telegramId})</span>
+                                        // </div>
                                     ))}
                                 </div>
                             </Block>

@@ -35,6 +35,8 @@ export interface IPagination {
 interface ITelegramUserInfo {
     username: string
     telegramId: string
+    collectionUsernames:ICollectionUsername[]
+
 }
 
 

@@ -29,19 +29,31 @@ export enum BotScenes {
 export interface ITgUser {
   username?: string;
   telegramId?: string;
+  registrationDate?: Date;
+  collectionUsernames?: string[];
 }
 
 
-export type IScammerPayload = Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: true, collectionUsernames: true, views: true } }> & { mainScamForm: any }
+export type IScammerPayload = Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: {include: {collectionUsernames: true}}, collectionUsernames: true, views: true } }> & { mainScamForm: any }
 
+
+export interface IUserTwink{
+  username?: string
+  telegramId?: string
+  collectionUsernames?: string[];
+  registrationDate?: Date
+}
 
 
 export interface IScammerData {
   username?: string
   telegramId?: string
-  twinAccounts?: ITgUser[];
+  twinAccounts?: IUserTwink[];
   collectionUsernames?: string[];
+  registrationDate?: Date
 }
+
+
 
 export interface IMediaData {
   type: string;

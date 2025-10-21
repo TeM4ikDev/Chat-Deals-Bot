@@ -11,7 +11,6 @@ import { Api } from "telegram/tl";
 
 @Injectable()
 export class TelegramClient {
-
   constructor(
     @Inject(forwardRef(() => DatabaseService))
     private readonly database: DatabaseService,
@@ -21,10 +20,10 @@ export class TelegramClient {
 
   client: TelegramClientClass
 
-  apiId = 29514923
-  apiHash = "95def91b17083ec9e21c34065ed00508"
-  session = new StringSession('1AgAOMTQ5LjE1NC4xNjcuNTABu6Mgz01u6w1Jv75csEidzjElPGxtR4iOOXci89INDjSmjDQJRLXUheN0EhbwX4VUD7k469q/LFHEFCLR1fpl9RK/VJtxeNi53SV/hjtd41hzZW22v6C2GlI3nj7kCBDm4vv+rD3O31DxiWMEnXulBt3sOi6kCcZuHHGf8bkp+HSiGyVrK0IEEEsrH4Ye/F06tMDugKXM0JBO6SZ/Kd7rh2MjTB39thINRs5ITzZmbXTwm+VIaLf9M+oHIEt8y69+xt/aSv7v0MVwMEkndyFRTibEluoeUaJfOEc4DdRI7IgWG/xMnyBv1I6Qe9yIyHwnqcLXicmAnuQLqeorRZqtC64=')
-
+  apiId = this.configService.get('API_ID')
+  apiHash = this.configService.get('API_HASH')
+  
+  session = new StringSession(this.configService.get('TELEGRAM_SESSION'))
 
   async onModuleInit() {
     await this.createClient();
@@ -32,29 +31,25 @@ export class TelegramClient {
     // this.updatePrevUsersCollectionUsernames();
     // await this.updateScammersRegistrationDate();
     // console.log("data", this.getRegistrationDateByTelegramId(7226605952))
-
   }
-
-
-
 
   async createClient() {
     try {
-      this.client = new TelegramClientClass(this.session, this.apiId, this.apiHash, {
+      this.client = new TelegramClientClass(this.session, Number(this.apiId), this.apiHash, {
         connectionRetries: 5,
         // proxy: proxy,
         // useWSS: false,
       });
 
       await this.client.start({
-        phoneNumber: '+375296147733',
+        phoneNumber: async () => await input.text("Номер телефона: "),
         password: async () => await input.text("Пароль (если есть 2FA): "),
         phoneCode: async () => await input.text("Код из Telegram: "),
         onError: (err) => console.log(err),
       });
 
       // console.log("Твоя session string:");
-      console.log(this.client.session.save());
+      // console.log(this.client.session.save());
       // this.client.session.save()
 
       // const mainUsername = "fometa";

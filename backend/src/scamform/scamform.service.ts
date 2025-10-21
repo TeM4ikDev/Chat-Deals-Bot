@@ -1,13 +1,13 @@
 import { DatabaseService } from '@/database/database.service';
 import { IAppealUserData } from '@/telegram/scenes/appeal_form.scene';
 import { TelegramService } from '@/telegram/telegram.service';
-import { banStatuses, IMediaData, IScammerData, IUser, ITgUser, IScammerPayload } from '@/types/types';
+import { TelegramClient } from '@/telegram/updates/TelegramClient';
+import { banStatuses, IMediaData, IScammerData, IScammerPayload, ITgUser, IUserTwink } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, ScammerStatus, VoteType } from '@prisma/client';
+import { Prisma, VoteType } from '@prisma/client';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
-import { TelegramClient } from '@/telegram/updates/TelegramClient';
 
 interface CreateScamFormData {
   scammerData: IScammerData;
@@ -97,27 +97,37 @@ export class ScamformService {
       }
 
       if (!scammerToUse) {
-        const registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.scammerData.telegramId)
-        scammerToUse = await this.database.scammer.create({
-          data: {
+        // const registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.scammerData.telegramId)
+
+        scammerToUse = await this.createScammer(
+          {
             username: data.scammerData.username,
             telegramId: data.scammerData.telegramId,
-            registrationDate: registrationDate,
-            twinAccounts: {
-              create: data.scammerData.twinAccounts.map(twin => ({
-                username: twin.username,
-                telegramId: twin.telegramId,
-              })),
-
-            },
-            collectionUsernames: {
-              create: data?.scammerData?.collectionUsernames?.map(username => ({
-                username: username
-              })) || []
-            }
-
+            registrationDate: data.scammerData.registrationDate,
           },
-        });
+          data.scammerData.twinAccounts, data?.scammerData?.collectionUsernames)
+
+          console.log('created', scammerToUse)
+        // scammerToUse = await this.database.scammer.create({
+        //   data: {
+        //     username: data.scammerData.username,
+        //     telegramId: data.scammerData.telegramId,
+        //     registrationDate: registrationDate,
+        //     twinAccounts: {
+        //       create: data.scammerData.twinAccounts.map(twin => ({
+        //         username: twin.username,
+        //         telegramId: twin.telegramId,
+        //       })),
+
+        //     },
+        //     collectionUsernames: {
+        //       create: data?.scammerData?.collectionUsernames?.map(username => ({
+        //         username: username
+        //       })) || []
+        //     }
+
+        //   },
+        // });
       }
     }
 
@@ -314,7 +324,14 @@ export class ScamformService {
                     some: {
                       OR: [
                         { username: { contains: search } },
-                        { telegramId: { contains: search } }
+                        { telegramId: { contains: search } },
+                        {
+                          collectionUsernames: {
+                            some: {
+                              username: { contains: search }
+                            }
+                          }
+                        }
                       ]
                     }
                   }
@@ -341,7 +358,11 @@ export class ScamformService {
         take: limit,
         include: {
           scamForms: true,
-          twinAccounts: true,
+          twinAccounts: {
+            include:{
+              collectionUsernames: true
+            }
+          },
           collectionUsernames: true
         },
         orderBy: {
@@ -364,7 +385,7 @@ export class ScamformService {
     };
   }
 
-  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: ITgUser[], collectionUsernames?: string[]): Promise<IScammerPayload> {
+  async createScammer(data: Prisma.ScammerCreateInput, twinAccounts?: IUserTwink[], collectionUsernames?: string[]): Promise<IScammerPayload> {
     const exsScammer = await this.getScammerByQuery(data.username || data.telegramId)
 
     if (exsScammer) {
@@ -379,7 +400,7 @@ export class ScamformService {
     }
 
     let registrationDate = null
-    if (data.telegramId) {
+    if (data.telegramId && !data?.registrationDate) {
       registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.telegramId)
     }
 
@@ -389,9 +410,21 @@ export class ScamformService {
         username: data.username,
         marked: true,
         registrationDate: registrationDate,
+
         ...(twinAccounts ? {
           twinAccounts: {
-            create: twinAccounts
+            create: twinAccounts.map(twin => ({
+              username: twin.username,
+              telegramId: twin.telegramId,
+              registrationDate: twin.registrationDate,
+              ...(twin.collectionUsernames ? {
+                collectionUsernames: {
+                  create: twin.collectionUsernames.map(username => ({
+                    username: username
+                  }))
+                }
+              } : {})
+            }))
           }
         } : {}),
 
@@ -399,14 +432,19 @@ export class ScamformService {
         ...(collectionUsernames ? {
           collectionUsernames: {
             create: collectionUsernames.map(username => ({
-              username: username
+              username: username,
+
             }))
           }
         } : {})
       },
       include: {
         scamForms: true,
-        twinAccounts: true,
+        twinAccounts: {
+          include: {
+            collectionUsernames: true
+          }
+        },
         collectionUsernames: true,
         views: true
       }
@@ -418,7 +456,7 @@ export class ScamformService {
 
     return { ...createdScammer, mainScamForm: null }
   }
-
+// Promise<IScammerPayload>
   async getScammerByQuery(query: string, viewUserTelegramId?: string) {
     if (!query) {
       console.log('query is undefined or empty');
@@ -432,26 +470,29 @@ export class ScamformService {
     let scammer = await this.database.scammer.findFirst({
       where: {
         OR: [
+          { username: query },
+          { telegramId: query },
           {
-            username: query
-          },
-          {
-            telegramId: query
+            collectionUsernames: {
+              some: {
+                username: query
+              }
+            }
           },
           {
             twinAccounts: {
               some: {
                 OR: [
                   { username: query },
-                  { telegramId: query }
+                  { telegramId: query },
+                  {
+                    collectionUsernames: {
+                      some: {
+                        username: query
+                      }
+                    }
+                  },
                 ]
-              }
-            }
-          },
-          {
-            collectionUsernames: {
-              some: {
-                username: query
               }
             }
           }
@@ -460,7 +501,11 @@ export class ScamformService {
 
       include: {
         scamForms: true,
-        twinAccounts: true,
+        twinAccounts: {
+          include: {
+            collectionUsernames: true
+          }
+        },
         collectionUsernames: true,
         views: true
       }

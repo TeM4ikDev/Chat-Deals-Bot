@@ -1,18 +1,18 @@
+import { AdminService } from '@/admin/admin.service';
 import { DatabaseService } from '@/database/database.service';
 import { ScamformService } from '@/scamform/scamform.service';
-import { banStatuses, IMessageDataScamForm, IScammerData, IScammerPayload } from '@/types/types';
+import { banStatuses, IMessageDataScamForm, IScammerData, IScammerPayload, IUserTwink } from '@/types/types';
 import { UsersService } from '@/users/users.service';
-import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ChatConfig, Prisma, Scammer, ScammerStatus } from '@prisma/client';
+import { ChatConfig, Prisma, ScammerStatus } from '@prisma/client';
+import * as fs from 'fs';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
-import { InlineKeyboardButton, InlineQueryResult, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
+import { InlineKeyboardButton, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
 import { BOT_NAME, IMAGE_PATHS } from './constants/telegram.constants';
 import { LocalizationService } from './services/localization.service';
-import { AdminService } from '@/admin/admin.service';
 import { BusinessModeUpdate } from './updates/businessMode.update';
-import * as fs from 'fs';
 
 
 @Injectable()
@@ -232,12 +232,21 @@ export class TelegramService {
 
   formatUserInfo(userData: IScammerData, language: string = 'ru', escapeMarkdown: boolean = true): string {
     const { username, telegramId, twinAccounts, collectionUsernames } = userData
-    const escapedUsername = escapeMarkdown ? this.escapeMarkdown(username) : username
+
+
+
+    const escapedUsername = username && typeof username === 'string' ? (escapeMarkdown ? this.escapeMarkdown(username) : username) : ''
     if (username && telegramId) {
+
+      // let formatCollectionUsernames = []
+      // if()
+
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
         .replace('{username}', escapedUsername)
         .replace('{telegramId}', telegramId)
-        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.map(username => `@${this.escapeMarkdown(username)}`).join(', ')}` : ''}`)
+        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.filter(username => username && typeof username === 'string').map(username => `@${this.escapeMarkdown(username)}`).join(', ')}` : ''}`)
+
+        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.map(username => `@${this.escapeMarkdown(username || (username as any).username)}`).join(', ')}` : ''}`)
     } else if (username) {
       return this.localizationService.getT('userInfo.withUsernameOnly', language)
         .replace('{username}', escapedUsername);
@@ -249,11 +258,24 @@ export class TelegramService {
     }
   }
 
-  formatTwinAccounts(twinAccounts: IScammerData[]): string {
+  formatTwinAccounts(twinAccounts: any[]): string {
     if (!twinAccounts || twinAccounts?.length === 0) return '—';
-    const slicedTwins = twinAccounts.slice(0, 15)
+    let slicedTwins = twinAccounts.slice(0, 15)
     const sliced = twinAccounts.length - slicedTwins.length
-    return (slicedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
+
+    // Transform twin accounts to match IUserTwink interface
+    const transformedTwins: IUserTwink[] = slicedTwins.map(twin => ({
+      username: twin.username,
+      telegramId: twin.telegramId,
+      registrationDate: twin.registrationDate,
+      collectionUsernames: twin.collectionUsernames?.map((cu: any) => 
+        typeof cu === 'string' ? cu : cu.username
+      ) || []
+    }));
+
+    console.log(transformedTwins)
+
+    return (transformedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
   }
 
   encodeParams(payload: {}) {
@@ -276,14 +298,14 @@ export class TelegramService {
   }
 
   escapeMarkdown(text: string): string {
-    if (!text) return text;
+    if (!text) return '';
     return text.replace(/[_*[\]()~`>#+=|{}.]/g, '\\$&');
   }
 
   formatUserLink(id: number | string, firstName: string, username?: string): string {
 
     const escapedUsername = this.escapeMarkdown(username)
-    const userLink = username
+    const userLink = username && typeof username === 'string'
       ? `[${firstName}](https://t.me/${escapedUsername})`
       : `[${firstName}](tg://user?id=${id})`;
 
