@@ -22,6 +22,8 @@ const ScammerPage: React.FC = observer(() => {
     const { id: idParam, formId: formIdParam } = routeParams
     const [showMarked, setShowMarked] = useState(true)
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const [scammers, setScammers] = useState<IScammer[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [pagination, setPagination] = useState<IPagination>({
@@ -107,6 +109,7 @@ const ScammerPage: React.FC = observer(() => {
     }
 
     const getScammers = async (page: number, searchValue = search, showMarked: boolean) => {
+        setIsLoading(true);
         const data = await onRequest(ScamformsService.getScammers({
             page,
             limit: pagination.limit,
@@ -120,6 +123,7 @@ const ScammerPage: React.FC = observer(() => {
             setScammers(data.scammers || [])
             setPagination(data.pagination || pagination)
         }
+        setIsLoading(false);
     }
 
 
@@ -207,6 +211,7 @@ const ScammerPage: React.FC = observer(() => {
 
                 isProcessing={isProcessing}
                 showConfirmButtons={isAdmin}
+                isLoading={isLoading}
             />
         </PageContainer>
     )

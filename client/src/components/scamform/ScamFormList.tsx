@@ -1,19 +1,26 @@
 import { AlertTriangle } from "lucide-react"
 import { ScamFormItem } from "./ScamFormItem"
 import { IScamForm } from "@/types"
+import { Loader } from "../layout/Loader"
 
 interface ScamFormListProps {
     scamForms: IScamForm[]
     onViewForm: (form: IScamForm) => void
     showHeader?: boolean
+    isLoading?: boolean
 }
 
 export const ScamFormList: React.FC<ScamFormListProps> = ({
     scamForms,
     onViewForm,
-    showHeader = true
+    showHeader = true,
+    isLoading = false
 }) => {
     // console.log(scamForms)
+
+    if(isLoading) {
+        return <Loader text="Загрузка жалоб..." className="!m-0 !min-h-0 !p-0" />
+    }
 
     if (scamForms.length === 0) {
         return (

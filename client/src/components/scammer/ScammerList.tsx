@@ -1,20 +1,27 @@
 import { IScammer, ScammerStatus } from "@/types"
-import { AlertTriangle } from "lucide-react"
 import { ScammerItem } from "./scammer"
+import { Loader } from "../layout/Loader"
+import { AlertTriangle } from "lucide-react"
 
 interface ScammerListProps {
     scammers: IScammer[]
     onUpdateScammerStatus?: (scammerId: string, status: ScammerStatus) => void
     isProcessing?: boolean
     showConfirmButtons?: boolean
+    isLoading?: boolean
 }
 
 export const ScammerList: React.FC<ScammerListProps> = ({
     scammers,
     onUpdateScammerStatus,
     isProcessing = false,
-    showConfirmButtons = false
+    showConfirmButtons = false,
+    isLoading = false
 }) => {
+
+    if(isLoading) {
+        return <Loader text="Загрузка пользователей..." className="!m-0 !min-h-0 !p-0" />
+    }   
 
     if (scammers.length === 0) {
         return (

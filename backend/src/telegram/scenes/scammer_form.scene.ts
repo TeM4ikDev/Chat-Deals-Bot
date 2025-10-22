@@ -37,8 +37,6 @@ export class ScammerFrom {
     private static readonly RESEND_TEXT = '🔄 Отправить заново — Resend';
     private static readonly SKIP_TWINS_TEXT = '⏭️ Пропустить твинки — Skip twins';
 
-
-
     private language: string = 'ru'
     private min_media = 1
     private max_media = 10

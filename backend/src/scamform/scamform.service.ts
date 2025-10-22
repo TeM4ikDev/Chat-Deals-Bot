@@ -6,11 +6,11 @@ import { banStatuses, IMediaData, IScammerData, IScammerPayload, ITgUser, IUserT
 import { UsersService } from '@/users/users.service';
 import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, VoteType } from '@prisma/client';
+import { Prisma, ScammerStatus, VoteType } from '@prisma/client';
 import { IUpdateScamFormDto } from './dto/update-scamform.dto';
 
 interface CreateScamFormData {
-  scammerData: IScammerData;
+  scammerData: IScammerData & { existingScammerId?: string };
   description: string;
   media: Array<IMediaData>;
   userTelegramId: string
@@ -31,7 +31,6 @@ export class ScamformService {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => TelegramService))
     private readonly telegramService: TelegramService,
-
     @Inject(forwardRef(() => TelegramClient))
     private readonly telegramClient: TelegramClient
   ) { }
@@ -41,101 +40,31 @@ export class ScamformService {
       throw new Error('Необходимо указать либо username, либо telegramId мошенника');
     }
 
+    console.log('data', data)
+
     const user = await this.usersService.findUserByTelegramId(data.userTelegramId);
+    let scammer = null;
 
-    let scammerWithTelegramId: any = null;
-    let scammerWithoutTelegramId: any = null;
-
-    if (data.scammerData.telegramId) {
-      scammerWithTelegramId = await this.database.scammer.findUnique({
-        where: { telegramId: data.scammerData.telegramId },
-      });
-    }
-
-    if (data.scammerData.username) {
-      scammerWithoutTelegramId = await this.database.scammer.findFirst({
-        where: {
+    if (!data.scammerData.existingScammerId) {
+      scammer = await this.createScammer(
+        {
           username: data.scammerData.username,
-          telegramId: null,
+          telegramId: data.scammerData.telegramId,
+          registrationDate: data.scammerData.registrationDate,
         },
-      });
+        data.scammerData.twinAccounts, data?.scammerData?.collectionUsernames)
+    } else {
+      scammer = await this.findScammerById(data.scammerData.existingScammerId);
     }
 
-    if (scammerWithTelegramId) {
-      if (scammerWithoutTelegramId) {
-        await this.database.scamForm.updateMany({
-          where: {
-            scammerId: scammerWithoutTelegramId.id,
-          },
-          data: {
-            scammerId: scammerWithTelegramId.id,
-          },
-        });
-
-        await this.database.scammer.delete({
-          where: { id: scammerWithoutTelegramId.id },
-        });
-      }
-
-      if (data.scammerData.username && data.scammerData.username !== scammerWithTelegramId.username) {
-        scammerWithTelegramId = await this.database.scammer.update({
-          where: { id: scammerWithTelegramId.id },
-          data: { username: data.scammerData.username },
-        });
-      }
-    }
-
-    let scammerToUse = scammerWithTelegramId;
-
-    console.log(data.scammerData.twinAccounts, 'twinAccounts')
-
-    if (!scammerToUse) {
-      if (data.scammerData.username) {
-        scammerToUse = await this.database.scammer.findFirst({
-          where: { username: data.scammerData.username },
-        });
-      }
-
-      if (!scammerToUse) {
-        // const registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.scammerData.telegramId)
-
-        scammerToUse = await this.createScammer(
-          {
-            username: data.scammerData.username,
-            telegramId: data.scammerData.telegramId,
-            registrationDate: data.scammerData.registrationDate,
-          },
-          data.scammerData.twinAccounts, data?.scammerData?.collectionUsernames)
-
-          console.log('created', scammerToUse)
-        // scammerToUse = await this.database.scammer.create({
-        //   data: {
-        //     username: data.scammerData.username,
-        //     telegramId: data.scammerData.telegramId,
-        //     registrationDate: registrationDate,
-        //     twinAccounts: {
-        //       create: data.scammerData.twinAccounts.map(twin => ({
-        //         username: twin.username,
-        //         telegramId: twin.telegramId,
-        //       })),
-
-        //     },
-        //     collectionUsernames: {
-        //       create: data?.scammerData?.collectionUsernames?.map(username => ({
-        //         username: username
-        //       })) || []
-        //     }
-
-        //   },
-        // });
-      }
-    }
+    // const registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.scammerData.telegramId)
 
     const scamForm = await this.database.scamForm.create({
       data: {
         description: data.description,
         userId: user?.id || null,
-        scammerId: scammerToUse.id,
+        scammerId: scammer.id,
+
         media: {
           create: data.media.map((media) => ({
             type: media.type,
@@ -150,40 +79,8 @@ export class ScamformService {
     });
 
     return scamForm;
+
   }
-
-
-  // async create(data: CreateScamFormData) {
-  //   if (!data.scammerData.username && !data.scammerData.telegramId) {
-  //     throw new Error('Необходимо указать либо username, либо telegramId мошенника');
-  //   }
-
-  //   const scammer = await this.findOrCreateScammer(data.scammerData.username, data.scammerData.telegramId, data.scammerData.twinAccounts, data.scammerData.collectionUsernames)
-
-  //   const scamForm = await this.database.scamForm.create({
-  //     data: {
-  //       description: data.description,
-  //       userId: data?.userTelegramId || null,
-  //       scammerId: scammer.id,
-  //       media: {
-  //         create: data.media.map((media) => ({
-  //           type: media.type,
-  //           fileId: media.file_id,
-  //         })),
-  //       },
-  //     },
-  //     include: {
-  //       media: true,
-  //       user: true,
-  //     },
-  //   });
-
-  //   return scamForm
-
-
-  // }
-
-  // ______________________________
 
   async createAppeal(data: CreateAppealFormData) {
 
@@ -302,6 +199,8 @@ export class ScamformService {
   async getScammers(page: number = 1, limit: number = 10, search: string = '', showMarked: boolean = true) {
     const skip = (page - 1) * limit;
 
+    search = search.replace('@', '')
+
     const garants = await this.database.garants.findMany();
     const garantsUsernames = garants.map(g => g.username);
 
@@ -359,7 +258,7 @@ export class ScamformService {
         include: {
           scamForms: true,
           twinAccounts: {
-            include:{
+            include: {
               collectionUsernames: true
             }
           },
@@ -408,7 +307,7 @@ export class ScamformService {
       data: {
         ...data,
         username: data.username,
-        marked: true,
+        marked: false,
         registrationDate: registrationDate,
 
         ...(twinAccounts ? {
@@ -456,7 +355,7 @@ export class ScamformService {
 
     return { ...createdScammer, mainScamForm: null }
   }
-// Promise<IScammerPayload>
+
   async getScammerByQuery(query: string, viewUserTelegramId?: string) {
     if (!query) {
       console.log('query is undefined or empty');
@@ -533,15 +432,15 @@ export class ScamformService {
       }
     }
 
+    // const checkedForms = scammer.scamForms.filter(form => form.statusChanger).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     let mainScamForm = null
     if (scammer?.scamForms?.length > 0) {
-      if (scammer.scamForms.length == 1) {
+      if (scammer.scamForms.length == 1 && ![ScammerStatus.UNKNOWN as string].includes(scammer.status)) {
         mainScamForm = scammer.scamForms[0]
 
         return { ...scammer, mainScamForm };
       }
       mainScamForm = scammer.scamForms.filter(form => form.statusChanger).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
-
     }
 
     return { ...scammer, views: newView ? [...scammer.views, newView] : scammer.views, mainScamForm };

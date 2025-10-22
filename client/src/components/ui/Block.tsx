@@ -79,7 +79,7 @@ export const Block = ({
 
                     <div className="flex flex-col items-start gap-2 w-full h-min">
                         <div className="flex w-full h-auto gap-2">
-                            <div className={cn("flex h-full w-full items-center", titleCenter && '!justify-center text-center')}>
+                            <div className={cn("flex pl-2 h-full w-full items-center", titleCenter && '!justify-center text-center')}>
                                 <div className={cn("flex items-center justify-center", Icons && Icons.length > 0 && 'mr-2')}>
                                     {Icons && Icons.map((Icon, index) => (
                                         <div key={index} className="flex items-center justify-center">{Icon}</div>

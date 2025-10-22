@@ -152,6 +152,7 @@ export const ScamForms: React.FC = () => {
             <ScamFormList
                 scamForms={forms}
                 onViewForm={handleViewForm}
+                isLoading={isLoading}
             />
 
             <ScamFormModal

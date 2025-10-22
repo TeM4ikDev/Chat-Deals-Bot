@@ -31,8 +31,8 @@ export class ChatCommandsUpdate {
     @On('message')
     async findUser(@Ctx() ctx: Context, @Language() lang: string) {
         const message = ctx.text?.trim().replace('@', '');
-        console.log(message)
-        console.log(ctx.message.chat)
+        // console.log(message)
+        // console.log(ctx.message.chat)
         if (!message) return;
 
         const isChatBanWord = this.pollingService.checkIsChatBanWord((ctx as any).chat.username, message);
@@ -47,7 +47,7 @@ export class ChatCommandsUpdate {
         const commandData = words.slice(2).join(' ');
 
         if (await this.telegramService.checkIsChatPrivate(ctx)) {
-            console.log('message', ctx.message)
+            // console.log('message', ctx.message)
 
             if ((ctx.message as any)?.via_bot?.username) {
                 return
@@ -63,7 +63,7 @@ export class ChatCommandsUpdate {
             const forwardFrom = (ctx.message as any).forward_from
 
 
-            if (forwardFrom && forwardFrom.via_bot.username == 'TEM4iKTESTERBOT') {
+            if (forwardFrom && forwardFrom.via_bot.username == 'svdbasebot') {
                 return
             }
 
@@ -391,6 +391,8 @@ export class ChatCommandsUpdate {
                 console.log('testIsUsername')
                 const info = await this.telegramClient.getUserData(query)
 
+                console.log(info)
+
                 if (!info) {
                     await ctx.reply(`Такого юзернейма(@${query}) не существует. Возможно это канал или группа. Попробуйте ввести другой юзернейм.`)
                     return
@@ -404,6 +406,7 @@ export class ChatCommandsUpdate {
             else if (this.telegramService.testIsTelegramId(query)) {
                 scammerData = {
                     username: null,
+                    status: 'UNKNOWN',
                     telegramId: query,
                     registrationDate: this.telegramClient.getRegistrationDateByTelegramId(query),
                     scamForms: [],

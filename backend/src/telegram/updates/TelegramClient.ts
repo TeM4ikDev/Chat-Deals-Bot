@@ -4,7 +4,6 @@ import { ConfigService } from "@nestjs/config";
 import { ScammerStatus } from "@prisma/client";
 import input from "input"; // npm i input
 import { TelegramClient as TelegramClientClass } from "telegram";
-import { SocksProxyType } from "telegram/network/connection/TCPMTProxy";
 import { StringSession } from "telegram/sessions";
 import { Api } from "telegram/tl";
 
@@ -49,11 +48,10 @@ export class TelegramClient {
       });
 
       // console.log("Твоя session string:");
-      // console.log(this.client.session.save());
+      console.log(this.client.session.save());
       // this.client.session.save()
 
-      // const mainUsername = "fometa";
-      // await this.getUserData('sdjcnjksdncjknskjdcnkjsdck');
+      // await this.getUserData('cold');
 
 
 
@@ -232,7 +230,6 @@ export class TelegramClient {
     return new Date(estimatedTime);
   }
 
-
   getRegistrationDateString(telegramId: number | string): string {
     const date = this.getRegistrationDateByTelegramId(telegramId);
     const month = date.toLocaleString('ru-RU', { month: 'long' });
@@ -242,7 +239,7 @@ export class TelegramClient {
     return `${monthCapitalized} ${year}`;
   }
 
-  async getUserData(id: string | number): Promise<{
+  async getUserData(username: string): Promise<{
     telegramId: string;
     about: string;
     username: string | null;
@@ -252,14 +249,14 @@ export class TelegramClient {
   } | null> {
     try {
       const user = await this.client.invoke(
-        new Api.users.GetFullUser({
-          id: id,
+        new Api.contacts.ResolveUsername({
+          username: username.replace('@', ''),
         })
       );
 
       if (!user) return;
 
-      const userId = user.fullUser.id.toString();
+      const userId = (user as any).peer.userId.toString();
       const registrationDate = this.getRegistrationDateByTelegramId(userId);
       const registrationDateString = this.getRegistrationDateString(userId);
 
@@ -269,16 +266,17 @@ export class TelegramClient {
       // Раскомментируй для отладки и поиска полей с датами:
       // console.log('Полный объект user:', JSON.stringify(user, null, 2))
 
+      
       return {
         telegramId: userId,
-        username: (user as any)?.users[0]?.username || (user as any)?.users[0]?.usernames[0]?.username || null,
-        about: user.fullUser.about,
+        username: (user as any)?.users[0]?.username || (user as any)?.users[0]?.usernames?.[0]?.username || null,
+        about: '',
         collectionUsernames: (user as any)?.users[0]?.usernames?.slice(1).map((username: any) => username.username) || null,
         registrationDate: registrationDate,
         registrationDateString: registrationDateString,
       }
     } catch (error) {
-      console.error(`Ошибка при получении информации пользователя ${id}:`);
+      console.error(`Ошибка при получении информации пользователя ${username}:`);
       return null;
     }
   }

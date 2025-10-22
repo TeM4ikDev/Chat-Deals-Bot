@@ -1,8 +1,14 @@
 import { motion } from 'framer-motion';
 import { PageContainer } from './PageContainer';
+import { cn } from '@/utils/cn';
 
-export const Loader = () => (
-    <PageContainer className="flex relative justify-center h-screen items-center w-full min-h-[200px]">
+interface LoaderProps {
+    text?: string
+    className?: string
+}
+
+export const Loader: React.FC<LoaderProps> = ({ text = 'Загрузка страницы...', className }) => (
+    <PageContainer className={cn("flex relative justify-center h-screen items-center w-full min-h-[200px]", className)}>
         {/* <></> */}
         <div className="flex flex-col gap-2 items-center">
             <div className="flex gap-2">
@@ -23,7 +29,7 @@ export const Loader = () => (
 
                 ))}
             </div>
-            <span className="ml-4 text-cyan-300 font-semibold text-lg">Загрузка страницы...</span>
+            <span className="ml-4 text-cyan-300 font-semibold text-lg">{text}</span>
         </div>
     </PageContainer>
 );

@@ -36,6 +36,9 @@ export class GarantsUpdate {
         const garants = await this.userService.findGarants()
 
         if (garants.length === 0) {
+            if(onlyInfo) {
+                return this.localizationService.getT('garant.notFound', lang)
+            }
             ctx.reply(this.localizationService.getT('garant.notFound', lang))
             return
         }

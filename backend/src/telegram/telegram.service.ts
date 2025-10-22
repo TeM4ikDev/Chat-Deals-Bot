@@ -174,7 +174,12 @@ export class TelegramService {
   }
 
   async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
-    return await this.bot.telegram.sendMessage(channelId, message, options)
+    try {
+      return await this.bot.telegram.sendMessage(channelId, message, options)
+    } catch (error: any) {
+      console.log('Не удалось отправить сообщение:', error.message);
+      return null;
+    }
   }
 
   async forwardMessage(channelId: string, fromChatId: string, messageId: number) {
@@ -233,14 +238,8 @@ export class TelegramService {
   formatUserInfo(userData: IScammerData, language: string = 'ru', escapeMarkdown: boolean = true): string {
     const { username, telegramId, twinAccounts, collectionUsernames } = userData
 
-
-
     const escapedUsername = username && typeof username === 'string' ? (escapeMarkdown ? this.escapeMarkdown(username) : username) : ''
     if (username && telegramId) {
-
-      // let formatCollectionUsernames = []
-      // if()
-
       return this.localizationService.getT('userInfo.withUsernameAndId', language)
         .replace('{username}', escapedUsername)
         .replace('{telegramId}', telegramId)
@@ -385,7 +384,7 @@ export class TelegramService {
       console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
       await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
     } catch (error) {
-      console.error('Error unbanning scammer:', error);
+      console.error('Error unbanning scammer:');
     }
   }
 
@@ -566,7 +565,7 @@ export class TelegramService {
   }
 
   testIsUsername(username: string): boolean {
-    const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/;
+    const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{3,31}$/;
     return USERNAME_REGEX.test(username.replace('@', ''));
   }
 

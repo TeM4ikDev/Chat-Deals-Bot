@@ -73,20 +73,20 @@ export class MainMenuUpdate {
 
     @Command('report')
     async reportUser(@Ctx() ctx: Context, @Language() language: string) {
-        (ctx as any).scene.enter(SCENES.SCAMMER_FORM)
+        // (ctx as any).scene.enter(SCENES.SCAMMER_FORM)
 
-        // await ctx.reply(
-        //     this.localizationService.getT('complaint.fullInstructions', language), {
-        //     parse_mode: 'HTML',
-        //     reply_markup: {
-        //         inline_keyboard: [
-        //             [
-        //                 { text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_scammer_form' }
-        //             ],
-        //         ]
-        //     }
-        // }
-        // );
+        await ctx.reply(
+            this.localizationService.getT('complaint.fullInstructions', language), {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_scammer_form' }
+                    ],
+                ]
+            }
+        }
+        );
     }
 
     @Command('appeal')
