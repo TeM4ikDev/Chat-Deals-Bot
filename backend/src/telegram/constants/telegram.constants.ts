@@ -10,6 +10,15 @@ export const IMAGE_PATHS = {
   BOT: path.join(__dirname, '../../../public/bot.png')
 };
 
+export const INLINE_QUERY_PATHS = {
+  GARANTS: 'https://fv5-4.files.fm/thumb_show.php?i=kd2v67urhs&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+  USERNAME_SEARCH: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+  UNKNOWN:"https://fv5-2.files.fm/thumb_show.php?i=ykc4shveng&view&v=1&PHPSESSID=abaa0272f29702db984c638202ba075179b809fc",
+  SCAMMER:"https://fv5-2.files.fm/thumb_show.php?i=m7jpsgpmk9&view&v=1&PHPSESSID=abaa0272f29702db984c638202ba075179b809fc",
+  SUSPICIOUS:"https://fv5-2.files.fm/thumb_show.php?i=e5qcq6grj8&view&v=1&PHPSESSID=abaa0272f29702db984c638202ba075179b809fc",
+  SPAMMER:"https://fv5-2.files.fm/thumb_show.php?i=8zyz2jaqx2&view&v=1&PHPSESSID=abaa0272f29702db984c638202ba075179b809fc"
+}
+
 export enum SCENES {
   SCAMMER_FORM = 'SCAMMERFORM',
   APPEAL_FORM = 'APPEALFORM',

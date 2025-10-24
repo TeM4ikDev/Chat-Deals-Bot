@@ -5,6 +5,10 @@ import { Ctx, InjectBot, InlineQuery, Update } from "nestjs-telegraf";
 import { Context, Telegraf } from "telegraf";
 import { InlineQueryResult } from "telegraf/typings/core/types/typegram";
 import { GarantsUpdate } from "./garants.update";
+import { INLINE_QUERY_PATHS } from "../constants/telegram.constants";
+
+
+
 
 @Update()
 export class InlineQueryUpdate {
@@ -29,7 +33,7 @@ export class InlineQueryUpdate {
                 {
                     type: 'article',
                     id: 'garants',
-                    thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=kd2v67urhs&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+                    thumbnail_url: INLINE_QUERY_PATHS.GARANTS,
                     title: 'Проверенные исполнители',
                     input_message_content: {
                         message_text: await this.garantsUpdateService.showGarants(ctx, 'ru', true),
@@ -43,7 +47,7 @@ export class InlineQueryUpdate {
                 {
                     type: 'article',
                     id: 'instruction',
-                    thumbnail_url: 'https://fv5-4.files.fm/thumb_show.php?i=95n6dk8msx&view&v=1&PHPSESSID=71225c7fa9a6a03132a91f930137035ead17371d',
+                    thumbnail_url: INLINE_QUERY_PATHS.USERNAME_SEARCH,
                     title: 'Введите @username для поиска',
                     input_message_content: {
                         message_text: '🔍 Введите @username для поиска в базе',
@@ -99,6 +103,7 @@ export class InlineQueryUpdate {
             results.push({
                 type: 'article',
                 id: 'scammer_found',
+                thumbnail_url: INLINE_QUERY_PATHS[status],
                 title: `${status} найден`,
                 input_message_content: {
                     message_text: textInfo,
