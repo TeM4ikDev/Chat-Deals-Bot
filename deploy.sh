@@ -8,7 +8,7 @@ PM2_APP_NAME="basebotv2"
 
 # === 2. Обновляем и перезапускаем на сервере ===
 echo "🔁 Обновляю и перезапускаю на сервере..."
-cd backend && npm run env:prod
+# cd backend && npm run env:prod
 ssh $SERVER_USER@$SERVER_IP bash -c "'
   cd $SERVER_PATH || exit 1
   
