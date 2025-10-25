@@ -303,10 +303,11 @@ export class ScamformService {
       registrationDate = this.telegramClient.getRegistrationDateByTelegramId(data.telegramId)
     }
 
-    const createdScammer = await this.database.scammer.create({
+    try {
+      const createdScammer = await this.database.scammer.create({
       data: {
         ...data,
-        username: data.username,
+    
         marked: false,
         registrationDate: registrationDate,
 
@@ -348,12 +349,17 @@ export class ScamformService {
         views: true
       }
     })
+    
     if (banStatuses.includes(createdScammer.status)) {
       this.telegramService.banScammerFromGroup(createdScammer)
     }
 
-
     return { ...createdScammer, mainScamForm: null }
+    
+    } catch (error: any) {
+      console.log(error)
+      throw error
+    }
   }
 
   async getScammerByQuery(query: string, viewUserTelegramId?: string) {

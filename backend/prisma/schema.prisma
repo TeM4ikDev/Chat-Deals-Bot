@@ -96,7 +96,7 @@ model TwinAccount {
 
 model collectionUsername {
   id       String @id @default(uuid())
-  username String @unique
+  username String 
 
   Scammer   Scammer? @relation(fields: [scammerId], references: [id])
   scammerId String?
@@ -106,6 +106,8 @@ model collectionUsername {
 
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@unique([scammerId, username])
   
 }
 

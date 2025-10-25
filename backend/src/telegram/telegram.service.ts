@@ -28,12 +28,11 @@ export class TelegramService {
     private readonly localizationService: LocalizationService,
     @Inject(forwardRef(() => AdminService))
     private readonly adminService: AdminService,
-
-    // @Inject(forwardRef(() => BusinessModeUpdate))
     private readonly businessModeUpdate: BusinessModeUpdate
   ) { }
 
   private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
+  private scamFormsChannel = this.configService.get<string>('SCAM_FORMS_CHANNEL')
 
 
   async onModuleInit() {
@@ -257,7 +256,7 @@ export class TelegramService {
     }
   }
 
-  formatTwinAccounts(twinAccounts: any[]): string {
+  formatTwinAccounts(twinAccounts: any[], escapeMarkdown: boolean = true): string {
     if (!twinAccounts || twinAccounts?.length === 0) return '—';
     let slicedTwins = twinAccounts.slice(0, 15)
     const sliced = twinAccounts.length - slicedTwins.length
@@ -274,7 +273,7 @@ export class TelegramService {
 
     console.log(transformedTwins)
 
-    return (transformedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', true))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
+    return (transformedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', escapeMarkdown))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
   }
 
   encodeParams(payload: {}) {
@@ -390,15 +389,14 @@ export class TelegramService {
 
   async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
     const { fromUser, scamForm, scammerData } = messageData
-    const channelId = '@qyqly';
-
+    const channelId = this.scamFormsChannel;
 
     // const { textInfo } = this.formatScammerData(scammerData as IScammerPayload, false, "ru")
     const userInfo = fromUser.username ? `@${this.escapeMarkdown(fromUser.username)}` : `ID: ${fromUser.telegramId}`;
 
     const scammerInfo = this.formatUserInfo(scammerData);
     const encoded = this.encodeParams({ id: scammerData.telegramId, formId: scamForm.id })
-    const description = this.escapeMarkdown(scamForm.description)
+    const description = (scamForm.description)
 
     const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
       .replace('{botName}', BOT_NAME)
@@ -434,7 +432,7 @@ export class TelegramService {
         },
       });
     } catch (error) {
-      console.error('Error sending to channel:', error);
+      console.error('Error sending to channel: ' + channelId, error);
     }
   }
 
@@ -496,7 +494,7 @@ export class TelegramService {
     })
   }
 
-  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false) {
+  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false, escapeMarkdown: boolean = true) {
     console.log('scammer format data', scammer)
 
     let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
@@ -512,7 +510,7 @@ export class TelegramService {
     let description = this.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
     const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
     let photoStream = photo ? fs.createReadStream(IMAGE_PATHS[status]) : null;
-    const twinAccounts = this.formatTwinAccounts(scammer.twinAccounts)
+    const twinAccounts = this.formatTwinAccounts(scammer.twinAccounts, escapeMarkdown)
 
 
     let textInfo = ''

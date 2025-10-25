@@ -5,7 +5,7 @@ import { Loader } from "../layout/Loader"
 
 interface ScamFormListProps {
     scamForms: IScamForm[]
-    onViewForm: (form: IScamForm) => void
+    onViewForm?: (form: IScamForm) => void
     showHeader?: boolean
     isLoading?: boolean
 }
@@ -22,7 +22,7 @@ export const ScamFormList: React.FC<ScamFormListProps> = ({
         return <Loader text="Загрузка жалоб..." className="!m-0 !min-h-0 !p-0" />
     }
 
-    if (scamForms.length === 0) {
+    if (scamForms && scamForms?.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                 <AlertTriangle className="w-16 h-16 mb-4 opacity-50" />

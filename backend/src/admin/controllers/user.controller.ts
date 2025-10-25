@@ -28,7 +28,7 @@ export class UserManagementController {
 
     @Get(":id")
     async getUserDetails(@Param('id') userId: string) {
-        return await this.usersService.findUserById(userId)
+        return await this.usersService.getUserDetailedProfile(userId)
     }
 
     @Patch('update-role')

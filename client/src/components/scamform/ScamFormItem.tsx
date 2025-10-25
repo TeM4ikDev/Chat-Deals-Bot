@@ -12,7 +12,7 @@ import { Button } from "../ui/Button"
 interface ScamFormItemProps {
     showHeader: boolean
     form: IScamForm
-    onViewForm: (form: IScamForm) => void
+    onViewForm?: (form: IScamForm) => void
 }
 
 export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
@@ -28,7 +28,7 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
     const currentForm = scamformsStore.getFormById(form.id) || form
 
     const handleViewForm = useCallback(() => {
-        onViewForm(form)
+        onViewForm && onViewForm(form)
     }, [onViewForm, form])
 
     const handleVote = async (voteT: voteType) => {
@@ -91,7 +91,7 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
     }, [form.createdAt])
 
     const mediaInfo = useMemo(() => {
-        if (form.media.length === 0) return null
+        if (!form.media || form?.media?.length === 0) return null
 
         const hasPhotos = form.media.some(m => m.type === 'photo')
         const hasVideos = form.media.some(m => m.type === 'video')
@@ -106,7 +106,7 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
     }, [form.media])
 
     return (
-        <Block className={!showHeader ? 'gap-0' : '!p-0.5'} icons={!showHeader ? [] : [<User className="w-4 h-4 text-red-500"  />]} title={headerTitle}>
+        <Block className={`!min-h-10 ${!showHeader ? 'gap-0' : '!p-0.5'}`} icons={!showHeader ? [] : [<User className="w-4 h-4 text-red-500" />]} title={headerTitle}>
             <div className="flex absolute right-2 flex-col items-center gap-0 text-xs text-gray-400 flex-nowrap">
                 <span>{createdAt}</span>
                 {mediaInfo}
@@ -116,9 +116,9 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
                 {description}
             </p>
 
-            <div className="flex flex-row gap-2 justify-between">
-                <div className="flex justify-between w-full gap-1">
-                    <div className="flex flex-row">
+            <div className="flex flex-row gap-2 justify-end">
+                {/* <div className="flex justify-between w-full gap-1"> */}
+                    {/* <div className="flex flex-row">
                         <button
                             onClick={() => handleVote(voteType.Like)}
                             disabled={isProcessing}
@@ -141,16 +141,17 @@ export const ScamFormItem: React.FC<ScamFormItemProps> = memo(({
                             <ThumbsDown className="w-6 h-6" />
                             <span className="text-xs">{currentForm.dislikes}</span>
                         </button>
-                    </div>
-                </div>
-                <Button
+                    </div> */}
+                {/* </div> */}
+
+                {onViewForm && <Button
                     text=" "
                     icon={<Eye className="w-4 h-4" />}
                     FC={handleViewForm}
                     color="blue"
                     className="!p-2.5"
                     widthMin
-                />
+                />}
             </div>
         </Block>
     );

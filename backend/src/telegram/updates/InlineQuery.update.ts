@@ -98,7 +98,7 @@ export class InlineQueryUpdate {
                 description: 'Пользователь не найден в базе',
             });
         } else {
-            const { textInfo, formsCount, status } = this.telegramService.formatScammerData(scammer, false);
+            const { textInfo, formsCount, status } = this.telegramService.formatScammerData(scammer, false, 'ru', false, false);
 
             results.push({
                 type: 'article',

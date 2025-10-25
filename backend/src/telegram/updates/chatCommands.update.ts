@@ -63,7 +63,7 @@ export class ChatCommandsUpdate {
             const forwardFrom = (ctx.message as any).forward_from
 
 
-            if (forwardFrom && forwardFrom.via_bot.username == 'svdbasebot') {
+            if (forwardFrom && forwardFrom?.via_bot?.username == 'svdbasebot') {
                 return
             }
 

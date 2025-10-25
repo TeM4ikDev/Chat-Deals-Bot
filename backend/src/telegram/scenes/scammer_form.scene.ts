@@ -321,8 +321,13 @@ export class ScammerFrom {
             const msg = ctx.message as any;
             const text = msg?.text;
             const forwardedMessage = msg?.forward_from;
+            let forwardedQuery = null
 
-            const existingScammer = await this.scamformService.getScammerByQuery(text.split(' ')[0].trim());
+            if (forwardedMessage) {
+                forwardedQuery = forwardedMessage?.username || (forwardedMessage?.id).toString();
+            }
+
+            const existingScammer = await this.scamformService.getScammerByQuery(forwardedQuery || text.split(' ')[0].trim());
             
             console.log(existingScammer, "exs")
             if (existingScammer) {
@@ -334,7 +339,6 @@ export class ScammerFrom {
                     },
                 })
 
-
                 form.scammerData = {
                     username: existingScammer.username,
                     telegramId: existingScammer.telegramId,
@@ -345,10 +349,7 @@ export class ScammerFrom {
                 }
             }
 
-            else if (forwardedMessage) {
-                form.scammerData.telegramId = forwardedMessage.id.toString();
-                form.scammerData.username = forwardedMessage.username;
-            }
+            
             else if (text) {
                 const part = text.split(' ')[0].trim()
                 let hasValidInput = false;
@@ -534,13 +535,35 @@ export class ScammerFrom {
 
         if (form.step === 1) {
             const text = (ctx.message as any)?.text;
-            const userSharedId = (ctx.message as any)?.user_shared?.user_id;
+            const userSharedId: string = ((ctx.message as any)?.user_shared?.user_id).toString();
 
-            console.log((ctx.message as any)?.user_shared)
+            console.log('userShared', userSharedId)
 
+            const existingScammer = await this.scamformService.getScammerByQuery(userSharedId);
+
+
+            if (existingScammer) {
+                const { textInfo } = this.telegramService.formatScammerData(existingScammer, false);
+                await ctx.reply(`Существующий пользователь.\n\n${textInfo}`, {
+                    parse_mode: 'Markdown',
+                    link_preview_options: {
+                        is_disabled: true,
+                    },
+                })
+
+                form.scammerData = {
+                    username: existingScammer.username,
+                    telegramId: existingScammer.telegramId,
+                    registrationDate: existingScammer.registrationDate,
+                    collectionUsernames: existingScammer.collectionUsernames.map(u => u.username),
+                    twinAccounts: existingScammer.twinAccounts as any,
+                    existingScammerId: existingScammer.id
+                }
+            }
+
+           
             const info = await this.telegramClient.getUserData(userSharedId.toString());
-            console.log(info)
-
+           
             if (userSharedId) {
                 form.scammerData.telegramId = userSharedId.toString();
                 form.scammerData.username = info?.username;
@@ -559,8 +582,6 @@ export class ScammerFrom {
             }
 
 
-
-
             form.step = 2;
             await ctx.reply(
                 this.localizationService.getT('complaint.form.step2', this.language)
@@ -568,7 +589,6 @@ export class ScammerFrom {
                 {
                     reply_markup: {
                         keyboard: [
-                            // ScammerFrom.KEYBOARDS.ADD_TWIN,
                             ScammerFrom.KEYBOARDS.SKIP_TWINS,
                             ScammerFrom.KEYBOARDS.CANCEL
                         ],

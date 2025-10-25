@@ -2,6 +2,7 @@ import { IUser } from "@/types/auth"
 import { Send, ShieldCheck, UserCircle2 } from "lucide-react"
 import { Block } from "../ui/Block"
 import { GradientLine } from "../ui/GradientLine"
+import { ScamFormList } from "../scamform"
 
 interface UserProfileProps {
     user: IUser
@@ -103,6 +104,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     </div>
                 )}
             </div>
+
+
+            <ScamFormList scamForms={user?.ScamForms || []}/>
         </Block>
     )
 } 
