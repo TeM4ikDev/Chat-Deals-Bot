@@ -1,18 +1,16 @@
 import { AdminService } from '@/admin/admin.service';
 import { DatabaseService } from '@/database/database.service';
-import { ScamformService } from '@/scamform/scamform.service';
-import { banStatuses, IMessageDataScamForm, IScammerData, IScammerPayload, IUserTwink } from '@/types/types';
+import {IMessageDataScamForm, IScammerData, IUserTwink } from '@/types/types';
 import { UsersService } from '@/users/users.service';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ChatConfig, Prisma, ScammerStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import * as fs from 'fs';
 import { InjectBot } from 'nestjs-telegraf';
 import { Context, Input, Telegraf } from 'telegraf';
 import { InlineKeyboardButton, InputFile, InputMediaPhoto, InputMediaVideo, User } from 'telegraf/typings/core/types/typegram';
-import { BOT_NAME, IMAGE_PATHS } from './constants/telegram.constants';
 import { LocalizationService } from './services/localization.service';
-import { BusinessModeUpdate } from './updates/businessMode.update';
+import { FORM_LIMITS } from './constants/form-limits.constants';
 
 
 @Injectable()
@@ -24,11 +22,9 @@ export class TelegramService {
     private readonly usersService: UsersService,
     private readonly database: DatabaseService,
     private readonly configService: ConfigService,
-    private readonly scamformService: ScamformService,
     private readonly localizationService: LocalizationService,
     @Inject(forwardRef(() => AdminService))
     private readonly adminService: AdminService,
-    private readonly businessModeUpdate: BusinessModeUpdate
   ) { }
 
   private mainGroupName: string = this.configService.get<string>('MAIN_GROUP_NAME')
@@ -50,9 +46,9 @@ export class TelegramService {
 
     switch (command) {
       case 'chatActions':
-        console.log(commandData)
-        await this.businessModeUpdate.onChatActions(ctx, Number(commandData))
-        await ctx.deleteMessage()
+        // console.log(commandData)
+        // await this.businessModeUpdate.onChatActions(ctx, Number(commandData))
+        // await ctx.deleteMessage()
         return true
       default:
         return false
@@ -113,64 +109,6 @@ export class TelegramService {
     return await this.bot.telegram.sendMessage(telegramId, message, options)
   }
 
-  async replyWithAutoDelete(ctx: Context, text: string, options?: any, deleteAfterMs: number = 15000) {
-    const message = await ctx.reply(text, {
-      parse_mode: 'Markdown',
-      link_preview_options: {
-        is_disabled: true,
-      },
-      ...options
-    });
-
-    // if (await this.checkIsChatPrivate(ctx)) return
-
-    setTimeout(async () => {
-      try {
-        await ctx.deleteMessage(message.message_id);
-        if (ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
-      } catch (error: any) {
-        console.log('Не удалось удалить сообщение:', error.message);
-      }
-    }, deleteAfterMs);
-
-    return message;
-  }
-
-  async replyMediaWithAutoDelete(ctx: Context, source: InputFile | string, options: any, mediaType: 'photo' | 'video', deleteAfterMs: number = 60000, isDisable: boolean = true) {
-
-    const message = mediaType === 'photo' ?
-      await ctx.replyWithPhoto(source, {
-        parse_mode: 'Markdown',
-        link_preview_options: {
-          is_disabled: true,
-        }, ...options
-      })
-      : await ctx.replyWithVideo(source, {
-        parse_mode: 'Markdown',
-        link_preview_options: {
-          is_disabled: true,
-        }, ...options
-      });
-
-    // if (await this.checkIsChatPrivate(ctx)) return
-
-    if (await this.checkIsChatPrivate(ctx)) {
-      return
-    }
-
-    // if (isDisable) {
-    //   return
-    // }
-
-    setTimeout(async () => {
-      try {
-        await ctx.deleteMessage(message.message_id);
-        if (ctx?.message?.message_id) await ctx.deleteMessage(ctx.message.message_id);
-      } catch (error: any) {
-        console.log('Не удалось удалить сообщение:', error.message);
-      }
-    }, deleteAfterMs);
-  }
 
   async sendMessageToChannelLayer(channelId: string, message: string, options?: any) {
     try {
@@ -197,103 +135,63 @@ export class TelegramService {
     return arrAccepted.includes(telegramId)
   }
 
-  async complaintOutcome(
-    complaint: Prisma.ScamFormGetPayload<{ include: { scammer, user } }>,
-    status: ScammerStatus,
-  ) {
-    const scammerInfo: string = complaint.scammer.telegramId || complaint.scammer.username
-    let textReq: string;
-
-    switch (status) {
-      case ScammerStatus.SCAMMER:
-        textReq = `✅ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nАккаунт добавлен в базу мошенников.`;
-        break;
-
-      case ScammerStatus.SUSPICIOUS:
-        textReq = `☑️ Исход вашей жалобы \`${complaint.id}\` на \`${scammerInfo}\`.\nПользователь добавлен в базу подозрительных аккаунтов.`;
-        break;
-
-      case ScammerStatus.UNKNOWN:
-      default:
-        textReq = `🚫 Ваша жалоба \`${complaint.id}\` на \`${scammerInfo}\` отклонена.\n\nПричина: Недостаточность / неинформативность / невалидность отправленных вами доказательств.\n\nУчтите это, соберите доказательства повторно и отправьте жалобу заново.`;
-        break;
+  formatUserInfo(dealsInfo: any){
+    if (!dealsInfo) {
+        return {info:`📝 <b>Информация профиля</b>\n\n❌ Информация не заполнена\n\nНажмите кнопку ниже, чтобы заполнить данные для сделок.`};
     }
 
-    await this.sendMessage(complaint.user.telegramId, textReq, {
-      parse_mode: 'Markdown',
-    })
-  }
+    const addresses = dealsInfo.addresses ? JSON.parse(dealsInfo.addresses as string) : [];
+    const keyboardUrls = dealsInfo.KeyboardUrls ? JSON.parse(dealsInfo.KeyboardUrls as string) : [];
 
-  async checkIsGarant(username: string): Promise<boolean> {
-    const garants = await this.usersService.findGarants();
+    let result = `📝 <b>Информация профиля</b>\n\n`;
+    let addressesText = '💰 <b>Адреса кошельков:</b>\n\n'
 
-    if (!username) return false;
-
-    return garants.some(garant =>
-      garant.username?.toLowerCase() === username.toLowerCase()
-    );
-  }
-
-  formatUserInfo(userData: IScammerData, language: string = 'ru', escapeMarkdown: boolean = true): string {
-    const { username, telegramId, twinAccounts, collectionUsernames } = userData
-
-    const escapedUsername = username && typeof username === 'string' ? (escapeMarkdown ? this.escapeMarkdown(username) : username) : ''
-    if (username && telegramId) {
-      return this.localizationService.getT('userInfo.withUsernameAndId', language)
-        .replace('{username}', escapedUsername)
-        .replace('{telegramId}', telegramId)
-        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.filter(username => username && typeof username === 'string').map(username => `@${this.escapeMarkdown(username)}`).join(', ')}` : ''}`)
-
-        .replace('{collectionUsernames}', `${collectionUsernames?.length > 0 ? ` | ${collectionUsernames?.map(username => `@${this.escapeMarkdown(username || (username as any).username)}`).join(', ')}` : ''}`)
-    } else if (username) {
-      return this.localizationService.getT('userInfo.withUsernameOnly', language)
-        .replace('{username}', escapedUsername);
-    } else if (telegramId) {
-      return this.localizationService.getT('userInfo.withIdOnly', language)
-        .replace('{telegramId}', telegramId);
+    // Адреса кошельков
+    if (addresses.length > 0) {
+        result += `💰 <b>Адреса кошельков:</b>\n`;
+        addresses.forEach((address: string, index: number) => {
+            result += `   ${index + 1}) <code>${address}</code>\n`;
+            addressesText +=`${index + 1}) <code>${address}</code>\n`
+        });
+        
+        addressesText+= '\nТакже можете отправить деньги быстро через кнопку ниже:'
+        result += `\n`;
     } else {
-      return this.localizationService.getT('userInfo.noInfo', language);
+        result += `💰 <b>Адреса кошельков:</b> ❌ Не указаны\n\n`;
     }
-  }
 
-  formatTwinAccounts(twinAccounts: any[], escapeMarkdown: boolean = true): string {
-    if (!twinAccounts || twinAccounts?.length === 0) return '—';
-    let slicedTwins = twinAccounts.slice(0, 15)
-    const sliced = twinAccounts.length - slicedTwins.length
+    // Ссылки для кнопок
+    if (keyboardUrls.length > 0) {
+        result += `🔗 <b>Ссылки для кнопок:</b>\n`;
+        keyboardUrls.forEach((urlObj: any, index: number) => {
+            // Проверяем, является ли это старым форматом (строка) или новым (объект)
+            if (typeof urlObj === 'string') {
+                result += `   ${index + 1}. <a href="${urlObj}">${urlObj}</a>\n`;
+            } else {
+                result += `   ${index + 1}. <b>${urlObj.text}</b> - <a href="${urlObj.link}">${urlObj.link}</a>\n`;
+            }
+        });
+        result += `\n`;
+    } else {
+        result += `🔗 <b>Ссылки для кнопок:</b> ❌ Не указаны\n\n`;
+    }
 
-    // Transform twin accounts to match IUserTwink interface
-    const transformedTwins: IUserTwink[] = slicedTwins.map(twin => ({
-      username: twin.username,
-      telegramId: twin.telegramId,
-      registrationDate: twin.registrationDate,
-      collectionUsernames: twin.collectionUsernames?.map((cu: any) => 
-        typeof cu === 'string' ? cu : cu.username
-      ) || []
-    }));
+    result += `📊 <b>Статистика:</b>\n`;
+    result += `   • Адресов кошельков: ${addresses.length}/${FORM_LIMITS.MAX_ADDRESSES}\n`;
+    result += `   • Ссылок для кнопок: ${keyboardUrls.length}/${FORM_LIMITS.MAX_URLS}\n\n`;
+    
+    result += `💡 Нажмите кнопку ниже, чтобы изменить информацию.`;
 
-    console.log(transformedTwins)
+    return {info: result, addressesText};
+}
+ 
 
-    return (transformedTwins.map(twin => `• ${(this.formatUserInfo(twin, 'ru', escapeMarkdown))}`).join('\n')) + (sliced > 0 ? `\n  +${sliced}` : '')
-  }
-
+ 
   encodeParams(payload: {}) {
     return Buffer.from(JSON.stringify(payload)).toString('base64url');
   }
 
-  getScammerStatusText(scammer: Prisma.ScammerGetPayload<{}>) {
-    switch (scammer.status) {
-      case ScammerStatus.SCAMMER:
-        return "Скамер"
-      case ScammerStatus.SPAMMER:
-        return "Спаммер"
-      case ScammerStatus.SUSPICIOUS:
-        return "Подозрительный"
-      case ScammerStatus.UNKNOWN:
-        return "Неизвестный"
-      default:
-        return "Неизвестный"
-    }
-  }
+
 
   escapeMarkdown(text: string): string {
     if (!text) return '';
@@ -310,252 +208,11 @@ export class TelegramService {
     return `${userLink} (ID: \`${id}\`)`;
   }
 
-  async banScammerFromGroup(scammer: | (Prisma.ScammerGetPayload<{ include: { twinAccounts: true } }>) | { username: string, telegramId: string }) {
-    try {
-
-
-      console.log('banScammerFromGroup вызван для:', scammer, 'с telegramId:', scammer.telegramId);
-
-      if (!scammer.telegramId || scammer.telegramId === '') {
-        console.log('Invalid telegramId for ban:', scammer.telegramId);
-        return;
-      }
-
-      const telegramId = Number(scammer.telegramId);
-      const userText = this.formatUserLink(
-        telegramId,
-        scammer.username || 'Без имени',
-        scammer.username || undefined,
-      );
-
-      console.log('Отправляем сообщение о бане для:', userText);
-
-      await this.bot.telegram.sendMessage(
-        this.mainGroupName,
-        `${userText} забанен в чате`,
-        {
-          parse_mode: 'Markdown',
-          link_preview_options: {
-            is_disabled: true,
-          },
-        }
-      );
-
-      if (Array.isArray((scammer as any).twinAccounts)) {
-        for (const twin of (scammer as any).twinAccounts) {
-          await this.banScammerFromGroup({
-            telegramId: twin.telegramId,
-            username: twin.username,
-          });
-        }
-      }
-
-
-      console.log('Баним пользователя с ID:', telegramId);
-      await this.bot.telegram.banChatMember(this.mainGroupName, telegramId);
-
-
-
-    } catch (error) {
-      console.error('Error banning scammer:', error);
-    }
-  }
-
-  async unbanScammerFromGroup(scammer: | (Prisma.ScammerGetPayload<{ include: { twinAccounts: true } }>) | { username: string, telegramId: string }) {
-    try {
-      console.log('unbanScammerFromGroup вызван для:', scammer.username, 'с telegramId:', scammer.telegramId);
-
-      if (!scammer.telegramId || scammer.telegramId === '') {
-        console.log('Invalid telegramId for unban:', scammer.telegramId);
-        return;
-      }
-
-      if (Array.isArray((scammer as any).twinAccounts)) {
-        for (const twin of (scammer as any).twinAccounts) {
-          await this.unbanScammerFromGroup({
-            telegramId: twin.telegramId,
-            username: twin.username,
-          });
-        }
-      }
-
-
-      console.log('Разбаниваем пользователя с ID:', Number(scammer.telegramId));
-      await this.bot.telegram.unbanChatMember(this.mainGroupName, Number(scammer.telegramId))
-    } catch (error) {
-      console.error('Error unbanning scammer:');
-    }
-  }
-
-  async sendScamFormMessageToChannel(messageData: IMessageDataScamForm) {
-    const { fromUser, scamForm, scammerData } = messageData
-    const channelId = this.scamFormsChannel;
-
-    // const { textInfo } = this.formatScammerData(scammerData as IScammerPayload, false, "ru")
-    const userInfo = fromUser.username ? `@${this.escapeMarkdown(fromUser.username)}` : `ID: ${fromUser.telegramId}`;
-
-    const scammerInfo = this.formatUserInfo(scammerData);
-    const encoded = this.encodeParams({ id: scammerData.telegramId, formId: scamForm.id })
-    const description = (scamForm.description)
-
-    const channelMessage = this.localizationService.getT('complaint.form.channelMessage', "ru")
-      .replace('{botName}', BOT_NAME)
-      .replace('{scammerInfo}', scammerInfo)
-      .replace('{twinAccounts}', this.formatTwinAccounts(scammerData.twinAccounts))
-      .replace('{description}', description || '')
-      .replace('{encoded}', encoded)
-      .replace('{userInfo}', userInfo);
-
-    try {
-      let replyToMessageId: number | undefined;
-      const media = messageData.media;
-
-      if (media.length > 0) {
-        const mediaGroup = media.slice(0, 10).map((m) => ({
-          type: m.type === 'photo' ? 'photo' : 'video',
-          media: m.file_id
-        }));
-
-        const messages = await this.sendMediaGroupToChannel(channelId, mediaGroup);
-
-        if (messages && messages.length > 0) {
-          replyToMessageId = messages[0].message_id;
-        }
-      }
-
-      await this.sendMessageToChannelLayer(channelId, channelMessage, {
-        parse_mode: 'Markdown',
-        // reply_markup,
-        reply_to_message_id: replyToMessageId,
-        link_preview_options: {
-          is_disabled: true,
-        },
-      });
-    } catch (error) {
-      console.error('Error sending to channel: ' + channelId, error);
-    }
-  }
-
-  async sendNewUserMessage(ctx: Context, newMember: User) {
-    // console.log('sendNewUserMessage', ctx.chat)
-    const chatUsername = (ctx as any).chat.username
-
-    const message = await this.adminService.findChatConfigByUsername(chatUsername)
-    if (!message) return
-    // console.log('message', message)
-    const newUser = await this.scamformService.findOrCreateScammer(newMember.username, newMember.id.toString())
-
-
-    if (banStatuses.includes(newUser.status)) {
-      this.banScammerFromGroup(newUser)
-    }
-    // console.log(newUser)
-
-    const userLink = newUser.username
-      ? `[${this.escapeMarkdown(newMember.first_name)}](https://t.me/${newMember.username})`
-      : `[${this.escapeMarkdown(newMember.first_name)}](tg://user?id=${newMember.id})`;
-
-    const userInfo = message.showNewUserInfo ?
-      `• Статус: \`${newUser.status}\`\n` +
-      `• Количество жалоб: \`${newUser.scamForms.length || 0}\`\n\n` : ''
-
-    const userRulesLink = message.rulesTelegramLink ? `📖 Пожалуйста, ознакомься с [правилами чата](${message.rulesTelegramLink})\n\n` : ''
-
-    await this.replyWithAutoDelete(ctx,
-      `👋 Привет, ${userLink}!\n` +
-      `🎉 Добро пожаловать в @${this.escapeMarkdown(chatUsername)}!\n\n` +
-      `${this.escapeMarkdown(message.newUserMessage || '')}\n\n` +
-      userInfo +
-      userRulesLink +
-      "разработчик бота: [Artem](https://t.me/TeM4ik20)",
-      {
-        parse_mode: 'Markdown',
-        link_preview_options: { is_disabled: true }
-      },
-      30000
-    );
-  }
 
   async getChatConfig() {
     return await this.usersService.findUsersConfig()
   }
 
-  async sendChatAutoMessage(chatConfig: ChatConfig) {
-    const { autoMessageId, autoMessageIntervalSec, autoMessageKeyboardUrls } = chatConfig
-    if (!autoMessageId || !autoMessageIntervalSec) return
-    const [chatFromUsername, messageId] = autoMessageId.split('/').slice(-2)
-
-    const chatCopyFrom = `@${chatFromUsername}`
-
-    const message = await this.bot.telegram.copyMessage(chatCopyFrom, `@${chatConfig.username}`, Number(messageId))
-
-    await this.bot.telegram.editMessageReplyMarkup(chatCopyFrom, message.message_id, undefined, {
-      inline_keyboard: JSON.parse(autoMessageKeyboardUrls as string) as InlineKeyboardButton[][]
-    })
-  }
-
-  formatScammerData(scammer: IScammerPayload, photo: boolean = false, lang: string = 'ru', withWarning: boolean = false, escapeMarkdown: boolean = true) {
-    console.log('scammer format data', scammer)
-
-    let username = this.escapeMarkdown(scammer.username || scammer.telegramId || 'без username');
-    username = `${username} ${scammer.collectionUsernames && scammer?.collectionUsernames?.length > 0 ? `(${scammer?.collectionUsernames?.map((username: any) => `@${this.escapeMarkdown(username.username || username)}`).join(', ')})` : ''}`;
-    const telegramId = scammer.telegramId || '--';
-    const registrationDate = this.formatRegistrationDate(scammer.registrationDate, lang);
-    const formsCount = scammer?.scamForms?.length || 0;
-    const status = scammer.status
-    const views = scammer.views?.length || 0;
-
-
-    console.log(scammer.mainScamForm)
-    let description = this.escapeMarkdown(scammer.description || scammer.mainScamForm?.description || 'нет описания')
-    const link = `https://t.me/svdbasebot/scamforms?startapp=${scammer.username || scammer.telegramId}`;
-    let photoStream = photo ? fs.createReadStream(IMAGE_PATHS[status]) : null;
-    const twinAccounts = this.formatTwinAccounts(scammer.twinAccounts, escapeMarkdown)
-
-
-    let textInfo = ''
-
-    if (withWarning && status == 'UNKNOWN') {
-      textInfo = this.localizationService.getT('userCheck.userDetailsWithWarning', lang)
-        .replace('{username}', username)
-        .replace('{telegramId}', telegramId)
-        .replace('{registrationDate}', registrationDate || '--')
-        .replace('{status}', status)
-        .replace('{formsCount}', formsCount.toString())
-        .replace('{description}', description)
-        .replace('{twinAccounts}', twinAccounts)
-        .replace('{link}', link)
-        .replace('{views}', views.toString())
-    }
-    else {
-      textInfo = this.localizationService.getT('userCheck.userDetails', lang)
-        .replace('{username}', username)
-        .replace('{telegramId}', telegramId)
-        .replace('{registrationDate}', registrationDate || '--')
-        .replace('{status}', status)
-        .replace('{formsCount}', formsCount.toString())
-        .replace('{description}', description)
-        .replace('{twinAccounts}', twinAccounts)
-        .replace('{link}', link)
-        .replace('{views}', views.toString())
-    }
-
-
-
-    return {
-      textInfo,
-      username,
-      telegramId,
-      registrationDate,
-      formsCount,
-      status,
-      description,
-      link,
-      photoStream,
-      twinAccounts,
-      views
-    }
-  }
 
   formatRegistrationDate(date: Date, language: string = 'ru'): string | null {
     if (!date) return null

@@ -1,16 +1,15 @@
 import { UserCheckMiddleware } from '@/auth/strategies/telegram.strategy';
-import { ScamformService } from '@/scamform/scamform.service';
 import { UsersService } from '@/users/users.service';
 import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Action, Command, Ctx, Start, Update } from 'nestjs-telegraf';
-import { Context, Scenes } from 'telegraf';
-import { BOT_NAME, SCENES } from '../constants/telegram.constants';
+import { Context } from 'telegraf';
+import { SceneContext } from 'telegraf/typings/scenes';
+import { FORM_LIMITS } from '../constants/form-limits.constants';
+import { SCENES } from '../constants/telegram.constants';
 import { Language } from '../decorators/language.decorator';
 import { LocalizationService } from '../services/localization.service';
 import { TelegramService } from '../telegram.service';
-import { UserRoles } from '@prisma/client';
-import { SceneContext } from 'telegraf/typings/scenes';
 
 
 @UseGuards(UserCheckMiddleware)
@@ -21,8 +20,9 @@ export class MainMenuUpdate {
         protected readonly configService: ConfigService,
         protected readonly userService: UsersService,
         private readonly localizationService: LocalizationService,
-        private readonly scamformService: ScamformService,
     ) { }
+
+    
 
     @Start()
     async onStart(@Ctx() ctx: Context, @Language() language: string) {
@@ -41,119 +41,50 @@ export class MainMenuUpdate {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [
-                        [{ text: this.localizationService.getT('mainMenu.buttons.changeLang', language), callback_data: 'change_lang' }],
-                        [{ text: this.localizationService.getT('mainMenu.buttons.submitComplaint', language), callback_data: 'submit_complaint' }],
-                        [{ text: this.localizationService.getT('mainMenu.buttons.submitAppeal', language), callback_data: 'submit_appeal' }],
-
-                        [
-                            { text: this.localizationService.getT('mainMenu.buttons.catalog', language), url: 'https://t.me/nftcatalog' },
-                            { text: this.localizationService.getT('mainMenu.buttons.complaints', language), url: 'https://t.me/qyqly' },
-                        ],
-                        
-                        [
-                            { text: this.localizationService.getT('mainMenu.buttons.addToGroup', language), url: 'https://t.me/svdbasebot?startgroup=true' },
-                            { text: this.localizationService.getT('mainMenu.buttons.allProjects', language), url: 'https://t.me/giftthread' }
-                        ],
-
-                        [{ text: this.localizationService.getT('mainMenu.buttons.launchApp', language), url: `https://t.me/${BOT_NAME}?startapp` }],
-
-                        ...(user.role === UserRoles.SUPER_ADMIN ? [
-                            [{ text: '📰 Менеджер новостей', callback_data: 'bot_news' }]
-                        ] : [])
+                        [{ text: '📝 Заполнить информацию для сделок', callback_data: 'submit_fill_info' }]
                     ],
                 },
             })
     }
 
-    @Action('bot_news')
-    async onBotNews(@Ctx() ctx: SceneContext) {
-        await ctx.scene.enter(SCENES.NEWS)
-        await ctx.answerCbQuery();
-    }
 
-    @Command('report')
-    async reportUser(@Ctx() ctx: Context, @Language() language: string) {
-        // (ctx as any).scene.enter(SCENES.SCAMMER_FORM)
-
-        await ctx.reply(
-            this.localizationService.getT('complaint.fullInstructions', language), {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_scammer_form' }
-                    ],
-                ]
-            }
-        }
-        );
-    }
-
-    @Command('appeal')
+    @Command('fill_info')
     async onSubmitAppeal(@Ctx() ctx: Context, @Language() language: string) {
-        await ctx.reply(this.localizationService.getT('appeal.fullInstructions', language), {
+        const user = await this.userService.findUserByTelegramId(String(ctx.from.id))
+
+
+        console.log(user?.DealsInfo)
+        let {info} = this.telegramService.formatUserInfo(user?.DealsInfo);
+
+        await ctx.reply(info, {
             parse_mode: 'HTML',
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: this.localizationService.getT('mainMenu.buttons.fillform', language), callback_data: 'fill_appeal_form' }]
+                    [{ text: '📝 Изменить/заполнить информацию', callback_data: 'fill_info_form' }]
                 ]
-            }
+            },
+            link_preview_options:{
+                is_disabled: true
+            },
         });
     }
 
-    @Action('submit_complaint')
-    async onSubmitComplaint(@Ctx() ctx: Context, @Language() language: string) {
-        await this.reportUser(ctx, language)
-        await ctx.answerCbQuery();
-    }
+  
 
-    @Action('submit_appeal')
+    @Action('submit_fill_info')
     async onSubmitAppealAction(@Ctx() ctx: Context, @Language() language: string) {
         await this.onSubmitAppeal(ctx, language)
         await ctx.answerCbQuery();
 
     }
 
-    @Action('fill_scammer_form')
-    async fillScammerForm(@Ctx() ctx: Scenes.SceneContext) {
-        ctx.scene.enter(SCENES.SCAMMER_FORM)
+
+    @Action('fill_info_form')
+    async onFillInfoForm(@Ctx() ctx: SceneContext) {
+        await ctx.scene.enter(SCENES.FILL_INFO)
         await ctx.answerCbQuery();
 
     }
 
-    @Action('fill_appeal_form')
-    async fillAppealForm(@Ctx() ctx: Scenes.SceneContext) {
-        ctx.scene.enter(SCENES.APPEAL_FORM)
-        await ctx.answerCbQuery();
-    }
 
-    @Action('select_user')
-    async onSelectUser(@Ctx() ctx: Context, @Language() language: string) {
-        if ('callback_query' in ctx && ctx.callbackQuery?.id) {
-            await ctx.answerCbQuery();
-        }
-
-        await ctx.reply(this.localizationService.getT('complaint.selectUser', language), {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: this.localizationService.getT('mainMenu.buttons.back', language), callback_data: 'back_to_main' }]
-                ]
-            }
-        });
-    }
-
-    @Action('back_to_main')
-    async onBackToMain(@Ctx() ctx: Context, @Language() language: string) {
-        if ('callback_query' in ctx && ctx.callbackQuery?.id) {
-            await ctx.answerCbQuery();
-        }
-
-        if ('callback_query' in ctx && ctx.callbackQuery?.message?.message_id) {
-            try {
-                await ctx.telegram.deleteMessage(ctx.chat.id, ctx.callbackQuery.message.message_id);
-            } catch (e) { }
-        }
-
-        await this.onStart(ctx, language)
-    }
 }

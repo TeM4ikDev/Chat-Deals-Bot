@@ -11,11 +11,11 @@ export class AdminService {
     ) { }
 
     async findChatConfigByUsername(username: string) {
-        return await this.database.chatConfig.findUnique({
-            where: {
-                username
-            }
-        })
+        // return await this.database.chatConfig.findUnique({
+        //     where: {
+        //         username
+        //     }
+        // })
     }
 
 

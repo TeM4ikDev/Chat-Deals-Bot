@@ -1,11 +1,8 @@
-import { ScamformService } from "@/scamform/scamform.service";
 import { TelegramService } from "@/telegram/telegram.service";
 import { UsersService } from "@/users/users.service";
 import { Ctx, InjectBot, InlineQuery, Update } from "nestjs-telegraf";
 import { Context, Telegraf } from "telegraf";
-import { InlineQueryResult } from "telegraf/typings/core/types/typegram";
-import { GarantsUpdate } from "./garants.update";
-import { INLINE_QUERY_PATHS } from "../constants/telegram.constants";
+import { InlineKeyboardButton, InlineQueryResult } from "telegraf/typings/core/types/typegram";
 
 
 
@@ -15,106 +12,106 @@ export class InlineQueryUpdate {
     constructor(
         private readonly telegramService: TelegramService,
         private readonly usersService: UsersService,
-        private readonly garantsUpdateService: GarantsUpdate,
-        private readonly scamformService: ScamformService,
         @InjectBot() private readonly bot: Telegraf,
     ) { }
 
     @InlineQuery(/.*/)
     async onInlineQuery(@Ctx() ctx: Context) {
+        // const ctxt = ctx
+        // console.log((ctxt as any).scene.ctx)
+
         await this.handleInlineQuery(ctx);
     }
 
     private async handleInlineQuery(ctx: Context) {
-        const query = ctx.inlineQuery.query.trim().replace(/^@/, '');
+        const query = ctx.inlineQuery.query.trim()
+        let results: InlineQueryResult[] = []
 
+        const user = await this.usersService.findUserByTelegramId(String(ctx.from.id))
+
+
+        if (!user?.DealsInfo) {
+            await ctx.answerInlineQuery([])
+            return
+        }
+        const { addressesText } = this.telegramService.formatUserInfo(user.DealsInfo)
+
+        console.log(/^\d+(\.\d+)?$/.test(query))
         if (!query) {
-            const results: InlineQueryResult[] = [
+            const inline_keyboard = JSON.parse(user.DealsInfo.KeyboardUrls as string)
+
+            console.log(inline_keyboard)
+
+            results = [
                 {
                     type: 'article',
                     id: 'garants',
-                    thumbnail_url: INLINE_QUERY_PATHS.GARANTS,
-                    title: 'Проверенные исполнители',
+                    title: 'Отправить адрес',
                     input_message_content: {
-                        message_text: await this.garantsUpdateService.showGarants(ctx, 'ru', true),
-                        parse_mode: 'Markdown',
-                        link_preview_options: {
-                            is_disabled: true,
-                        },
+                        message_text: addressesText,
+                        parse_mode: 'HTML',
+                        link_preview_options: { is_disabled: true },
                     },
-                    description: 'Список всех проверенных пользователей'
+                    // reply_markup: {
+                    //     inline_keyboard: [
+                    //         [{ text: '📝 Сайт', url: 'https://cursor.com/' }],
+                    //     ],
+                    // },
+                    description: 'Отправить адрес',
                 },
                 {
                     type: 'article',
                     id: 'instruction',
-                    thumbnail_url: INLINE_QUERY_PATHS.USERNAME_SEARCH,
-                    title: 'Введите @username для поиска',
+                    // thumbnail_url: INLINE_QUERY_PATHS.USERNAME_SEARCH,
+                    title: 'Завершить сделку',
                     input_message_content: {
-                        message_text: '🔍 Введите @username для поиска в базе',
+                        message_text: `Сделка прошла успешно❤️\n#сделказавершена\n\nБуду благодарен отзыву со скрином и моим юзером <code>(@${user.username})</code> в мой чат`,
+                        parse_mode: 'HTML',
                     },
-                    description: 'Начните вводить username',
+                    reply_markup: {
+                        inline_keyboard: [inline_keyboard as any]
+                    },
+                    description: 'Завершить сделку',
                 },
-
             ];
-            await ctx.answerInlineQuery(results);
-            return;
         }
 
-        if (await this.telegramService.checkIsGarant(query)) {
-            const results: InlineQueryResult[] = [
+        else if (/^\d+(\.\d+)?$/.test(query)) {
+            results = [
                 {
                     type: 'article',
-                    id: 'garant_found',
-                    title: '✅ Проверенный гарант найден',
+                    id: 'zero',
+                    title: 'Отправить адрес +0%',
                     input_message_content: {
-                        message_text: `✅ **Проверенный гарант!**\n\n👤 **Пользователь:** @${this.telegramService.escapeMarkdown(query)}\n\n💎 Этот пользователь является проверенным гарантом проекта.\n\n✅ Рекомендуем проводить сделки через этого гаранта.`,
-                        parse_mode: 'Markdown',
-                        link_preview_options: {
-                            is_disabled: true,
-                        },
+                        message_text: `Сумма <code>${query}</code> TON\n\n${addressesText}`,
+                        parse_mode: 'HTML',
+                        link_preview_options: { is_disabled: true },
                     },
-                    description: 'Пользователь найден в базе гарантов',
+                    description: 'Отправить адрес и сумму +0%',
                 },
-            ];
-            await ctx.answerInlineQuery(results);
-            return;
+
+                {
+                    type: 'article',
+                    id: 'two',
+                    title: 'Отправить адрес +2%',
+                    input_message_content: {
+                        message_text: `Сумма <code>${(Number(query) * 1.02).toFixed(2)}</code> TON\n\n${addressesText}`,
+                        parse_mode: 'HTML',
+                        link_preview_options: { is_disabled: true },
+                    },
+                    // reply_markup: {
+                    //     inline_keyboard: [
+                    //         [{ text: '📝 Сайт', url: 'https://cursor.com/' }],
+                    //     ],
+                    // },
+                    description: 'Отправить адрес и сумму +0%',
+                },
+
+
+
+            ]
         }
 
-        const scammer = await this.scamformService.getScammerByQuery(query);
-        const results: InlineQueryResult[] = [];
-
-        if (!scammer) {
-            results.push({
-                type: 'article',
-                id: 'not_found',
-                title: 'Пользователь не найден',
-                input_message_content: {
-                    message_text: `🔍 Пользователь не найден в базе.\n\n⚠️ Помните: даже если пользователь отсутствует в базе, это **не гарантирует** его надежность.\n\n✅ Рекомендуем проводить сделки только через проверенного гаранта.`,
-                    parse_mode: 'Markdown',
-                    link_preview_options: {
-                        is_disabled: true,
-                    },
-                },
-                description: 'Пользователь не найден в базе',
-            });
-        } else {
-            const { textInfo, formsCount, status } = this.telegramService.formatScammerData(scammer, false, 'ru', false, false);
-
-            results.push({
-                type: 'article',
-                id: 'scammer_found',
-                thumbnail_url: INLINE_QUERY_PATHS[status],
-                title: `${status} найден`,
-                input_message_content: {
-                    message_text: textInfo,
-                    parse_mode: 'Markdown',
-                    link_preview_options: {
-                        is_disabled: true,
-                    },
-                },
-                description: `${status} • ${formsCount} жалоб`,
-            });
-        }
 
         await ctx.answerInlineQuery(results);
     }

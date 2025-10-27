@@ -7,11 +7,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DIRECT_URL")
-// }
-
 enum UserRoles {
   USER
   ADMIN
@@ -21,19 +16,6 @@ enum UserRoles {
 enum UserLanguage {
   RU
   EN
-}
-
-enum VoteType {
-  LIKE
-  DISLIKE
-}
-
-enum ScammerStatus {
-  SCAMMER
-  UNKNOWN
-  SUSPICIOUS
-  SPAMMER
-  TRUSTED
 }
 
 model User {
@@ -46,240 +28,38 @@ model User {
 
   banned Boolean @default(false)
 
-  isBusinessBotEnabled Boolean @default(false)
+  usersConfigId String?
+  UsersConfig   UsersConfig?
 
-  UsersConfig UsersConfig?
-
-  ScamForms    ScamForm[]
-  AppealForms  AppealForm[]
-  ScammerViews ScammerView[]
-
-  UserFormVote    UserFormVote[]
-  UserScammerVote UserScammerVote[]
+  dealsInfoId String?
+  DealsInfo   DealsInfo?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AccsessUsers{
+   id String @id @default(uuid())
+
+   usersnames Json? @default("[]")
+}
+
+model DealsInfo {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  addresses Json? @default("[]")
+
+  KeyboardUrls Json? @default("[]")
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UsersConfig {
   id     String @id @default(uuid())
   userId String @unique
 
-  tonWallet String?
-  card      String?
-  language  UserLanguage @default(RU)
+  language UserLanguage @default(RU)
 
   User User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Garants {
-  id String @id @default(uuid())
-
-  username    String @unique
-  description String @default("")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model TwinAccount {
-  id String @id @default(uuid())
-
-  username            String?
-  telegramId          String?
-  registrationDate    DateTime?
-  collectionUsernames collectionUsername[]
-
-  scammerId String
-  scammer   Scammer @relation(fields: [scammerId], references: [id])
-}
-
-model collectionUsername {
-  id       String @id @default(uuid())
-  username String 
-
-  Scammer   Scammer? @relation(fields: [scammerId], references: [id])
-  scammerId String?
-
-  TwinAccount   TwinAccount? @relation(fields: [twinAccountId], references: [id])
-  twinAccountId String?
-
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  @@unique([scammerId, username])
-  
-}
-
-model ScammerView {
-  id        String  @id @default(uuid())
-  scammerId String
-  scammer   Scammer @relation(fields: [scammerId], references: [id])
-
-  userTelegramId String
-  user           User   @relation(fields: [userTelegramId], references: [telegramId])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Scammer {
-  id         String  @id @default(uuid())
-  username   String?
-  telegramId String? @unique
-
-  description String?
-
-  registrationDate DateTime?
-
-  scamForms ScamForm[]
-
-  twinAccounts        TwinAccount[]
-  collectionUsernames collectionUsername[]
-
-  likes    Int @default(0)
-  dislikes Int @default(0)
-
-  views ScammerView[]
-
-  userVotes UserScammerVote[]
-
-  status ScammerStatus @default(UNKNOWN)
-  marked Boolean       @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ScamForm {
-  id          String @id @default(uuid())
-  description String
-
-  user   User?   @relation(fields: [userId], references: [id])
-  userId String?
-
-  scammer   Scammer @relation(fields: [scammerId], references: [id])
-  scammerId String
-
-  // если true, то эта та жалоба которая привела к изменению статуса пользователя(их может быть несколько, в описании отображается всегда последняя)
-  statusChanger Boolean @default(false)
-
-  likes    Int @default(0)
-  dislikes Int @default(0)
-
-  userVotes UserFormVote[]
-  media     Media[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AppealForm {
-  id          String @id @default(uuid())
-  description String
-
-  appealUsername   String?
-  appealTelegramId String?
-
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String?
-
-  media Media[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Media {
-  id     String @id @default(uuid())
-  type   String
-  fileId String
-
-  scamFormId   String?
-  appealFormId String?
-
-  scamForm   ScamForm?   @relation(fields: [scamFormId], references: [id], onDelete: Cascade)
-  appealForm AppealForm? @relation(fields: [appealFormId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-}
-
-model UserFormVote {
-  id String @id @default(uuid())
-
-  voteType VoteType
-
-  userId     String
-  scamFormId String
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ScamForm ScamForm @relation(fields: [scamFormId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, scamFormId])
-}
-
-model UserScammerVote {
-  id String @id @default(uuid())
-
-  voteType VoteType
-
-  userId    String
-  scammerId String
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, scammerId])
-}
-
-model ChatConfig {
-  id       String @id @default(uuid())
-  username String @unique
-
-  newUserMessage    String?
-  rulesTelegramLink String?
-  showNewUserInfo   Boolean @default(false)
-
-  autoMessageId          String?
-  autoMessageIntervalSec Int?
-
-  autoMessageKeyboardUrls Json? @default("[]")
-
-  banWords Json? @default("[]")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ______________
-
-model BotNewsHistory {
-  id String @id @default(uuid())
-
-  messageId String
-  chatId    String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ________
-
-model BusinesBotConnection {
-  id String @id @default(uuid())
-}
-
-model BusinessMemesGroup {
-  id            String         @id @default(uuid())
-  groupName     String         @unique
-  BusinessMemes BusinessMeme[]
-}
-
-model BusinessMeme {
-  id String @id @default(uuid())
-
-  url String
-
-  businessMemeGroupId String
-  businessMemesGroup  BusinessMemesGroup @relation(fields: [businessMemeGroupId], references: [id], onDelete: Cascade)
 }

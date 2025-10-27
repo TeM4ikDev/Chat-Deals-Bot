@@ -1,8 +1,7 @@
 import { DatabaseService } from '@/database/database.service';
-import { TelegramClient } from '@/telegram/updates/TelegramClient';
 import { IUser, superAdminsTelegramIds } from '@/types/types';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { ScammerStatus, UserLanguage, UserRoles } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { UserLanguage, UserRoles } from '@prisma/client';
 import { User } from 'telegraf/typings/core/types/typegram';
 
 
@@ -10,12 +9,9 @@ import { User } from 'telegraf/typings/core/types/typegram';
 export class UsersService {
   constructor(
     private database: DatabaseService,
-    @Inject(forwardRef(() => TelegramClient))
-    private telegramClient: TelegramClient) { }
+  ) 
+    { }
 
-  async getChatConfig() {
-    return await this.database.chatConfig.findMany()
-  }
 
   async findUsersConfig() {
     return await this.database.usersConfig.findMany()
@@ -74,7 +70,8 @@ export class UsersService {
         telegramId: telegramId
       },
       include: {
-        UsersConfig: true
+        UsersConfig: true,
+        DealsInfo: true
       }
 
     }) || null
@@ -132,23 +129,6 @@ export class UsersService {
       include: { UsersConfig: true }
     });
   }
-
-  async findGarants() {
-    return await this.database.garants.findMany({
-      orderBy: {
-        updatedAt: 'desc'
-      }
-    })
-  }
-
-  async findGarantByUsername(username: string) {
-    return await this.database.garants.findUnique({
-      where: {
-        username
-      }
-    })
-  }
-
   async updateUserRights(telegramId: string) {
     const user = await this.findUserByTelegramId(telegramId);
 
@@ -235,48 +215,49 @@ export class UsersService {
       where: { id: userId },
       include: {
         UsersConfig: true,
-        ScamForms: {
-          include: {
-            scammer: true
-          }
-        }
-        // ScamForms: {
-        //   where: {
-        //     scammer: {
-        //       marked: true
-        //       // status: ScammerStatus.SCAMMER
-        //     }
-        //   }
-        // },
       }
     });
   }
 
+  async createOrUpdateDealsInfo(telegramId: string, addresses: string[], keyboardUrls: Array<{text: string, url: string}>) {
+    const user = await this.findUserByTelegramId(telegramId);
+    if (!user) throw new Error('Пользователь не найден');
 
-  async getTopUsersWithScamForms() {
-    return await this.database.user.findMany({
-      take: 10,
-      orderBy: {
-        ScamForms: {
-          _count: 'desc',
+    const dealsInfoData = {
+      addresses: JSON.stringify(addresses),
+      KeyboardUrls: JSON.stringify(keyboardUrls)
+    };
+
+    if (user.dealsInfoId) {
+      return await this.database.dealsInfo.update({
+        where: { id: user.dealsInfoId },
+        data: dealsInfoData
+      });
+    } else {
+      const dealsInfo = await this.database.dealsInfo.create({
+        data: {
+          userId: user.id,
+          ...dealsInfoData
         }
-      },
-      include: {
-        ScamForms: {
-          where: {
-            scammer: {
-              marked: true
-            }
-          }
-        }
-      }
-    })
+      });
+
+      await this.database.user.update({
+        where: { id: user.id },
+        data: { dealsInfoId: dealsInfo.id }
+      });
+
+      return dealsInfo;
+    }
   }
 
+  async getDealsInfo(telegramId: string) {
+    const user = await this.findUserByTelegramId(telegramId);
+    if (!user || !user.dealsInfoId) return null;
+
+    return await this.database.dealsInfo.findUnique({
+      where: { id: user.dealsInfoId }
+    });
+  }
 }
-
-
-
-
 
 

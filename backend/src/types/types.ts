@@ -1,8 +1,7 @@
-import { Prisma, ScamForm, ScammerStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export const superAdminsTelegramIds = ['1162525174', '2027571609']
 
-export const banStatuses = [ScammerStatus.SCAMMER, ScammerStatus.SPAMMER] as string[]
 
 export type IUser = Prisma.UserGetPayload<{}>
 
@@ -34,7 +33,6 @@ export interface ITgUser {
 }
 
 
-export type IScammerPayload = Prisma.ScammerGetPayload<{ include: { scamForms: true, twinAccounts: {include: {collectionUsernames: true}}, collectionUsernames: true, views: true } }> & { mainScamForm: any }
 
 
 export interface IUserTwink{
@@ -65,9 +63,26 @@ export interface IMessageDataScamForm {
     username: string,
     telegramId: string
   },
-  scamForm: ScamForm,
   scammerData: IScammerData,
   media: Array<IMediaData>,
+}
+
+export interface IUserInfoForm {
+  step: number;
+  addresses: string[];
+  keyboardUrls: string[];
+  currentInput: 'address' | 'url' | null;
+  lastInstructionMessageId?: number;
+}
+
+export interface IUserInfoSession {
+  userInfoForm?: IUserInfoForm;
+}
+
+declare module 'telegraf' {
+  interface SessionData {
+    userInfoForm?: IUserInfoForm;
+  }
 }
 
 

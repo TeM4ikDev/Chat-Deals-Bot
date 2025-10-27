@@ -8,7 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseService } from './database/database.service';
 
-import { ScamformModule } from './scamform/scamform.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { UsersModule } from './users/users.module';
 import { UsersService } from './users/users.service';
@@ -25,7 +24,6 @@ import { UsersService } from './users/users.service';
     AdminModule,
     TelegramModule,
     UsersModule,
-    ScamformModule,
 
 
   ],
@@ -51,7 +49,6 @@ export class AppModule implements OnModuleInit {
     // await this.databaseService.media.deleteMany();
     // await this.databaseService.usersConfig.deleteMany();
     // await this.databaseService.user.deleteMany();
-    await this.databaseService.chatConfig.deleteMany();
   }
 
 

@@ -128,6 +128,30 @@
     "adminRemoved": "User @{username} is now a regular user.",
     "userNotFoundError": "Unable to identify user."
   },
+  "userInfoForm": {
+    "welcome": "📝 <b>Profile Information Update</b>\n\nHere you can add wallet addresses and button links.",
+    "step1": "💰 <b>Step 1: Wallet Addresses</b>\n\nSend your wallet addresses (one per message).\n\nCurrent addresses:\n{addresses}\n\nPress \"Done\" when you finish adding addresses.",
+    "step2": "🔗 <b>Step 2: Button Links</b>\n\nSend button links (one per message).\n\nCurrent links:\n{urls}\n\nPress \"Done\" when you finish adding links.",
+    "step3": "✅ <b>Step 3: Confirmation</b>\n\n<b>Wallet Addresses:</b>\n{addresses}\n\n<b>Button Links:</b>\n{urls}\n\nPress \"Save\" to save changes.",
+    "success": "✅ Profile information successfully updated!",
+    "cancelled": "❌ Profile update cancelled.",
+    "buttons": {
+      "addAddress": "💰 Add wallet address",
+      "addUrl": "🔗 Add link",
+      "done": "✅ Done",
+      "save": "💾 Save",
+      "cancel": "❌ Cancel",
+      "back": "⬅️ Back"
+    },
+    "errors": {
+      "invalidAddress": "❗️ Invalid wallet address.",
+      "invalidUrl": "❗️ Invalid link.",
+      "addressExists": "❗️ This address is already added.",
+      "urlExists": "❗️ This link is already added.",
+      "maxAddresses": "❗️ Maximum 10 wallet addresses.",
+      "maxUrls": "❗️ Maximum 10 links."
+    }
+  },
   "garant": {
     "notFound": "❌ The guarantors list is empty.\n\nNo available guarantors at the moment.",
     "show": "✅ List of reliable guarantors:\n\n {garants}",
