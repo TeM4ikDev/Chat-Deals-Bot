@@ -56,7 +56,7 @@ export class BybitService {
     this.checkPrices()
   }
 
-  @Cron('0 */3 * * * *')
+  @Cron('0 */5 * * * *')
   async checkPrices() {
     this.logger.log('Starting price check...');
 
