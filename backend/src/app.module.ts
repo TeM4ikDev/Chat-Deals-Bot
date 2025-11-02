@@ -5,6 +5,7 @@ import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { BybitModule } from './bybit/bybit.module';
 import { DatabaseModule } from './database/database.module';
 import { DatabaseService } from './database/database.service';
 
@@ -24,6 +25,7 @@ import { UsersService } from './users/users.service';
     AdminModule,
     TelegramModule,
     UsersModule,
+    BybitModule,
 
 
   ],

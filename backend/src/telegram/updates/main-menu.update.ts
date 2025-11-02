@@ -36,14 +36,14 @@ export class MainMenuUpdate {
         }
 
         await ctx.reply(
-            this.localizationService.getT('mainMenu.description', language),
+            "Теперь вы будете получать уведомления о новых сигналах раз в три минуты",
             {
                 parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: '📝 Заполнить информацию для сделок', callback_data: 'submit_fill_info' }]
-                    ],
-                },
+                // reply_markup: {
+                //     inline_keyboard: [
+                //         [{ text: '📝 Заполнить информацию для сделок', callback_data: 'submit_fill_info' }]
+                //     ],
+                // },
             })
     }
 
